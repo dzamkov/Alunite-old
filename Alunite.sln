@@ -1,18 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Alunite", "Alunite\Alunite.vcproj", "{04EC1423-1A38-42D5-AE8B-7CA1F132973A}"
+# Visual C# Express 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alunite", "Alunite\Alunite.csproj", "{50B33331-0290-4981-9E8B-8A26901D2B53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{04EC1423-1A38-42D5-AE8B-7CA1F132973A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{04EC1423-1A38-42D5-AE8B-7CA1F132973A}.Debug|Win32.Build.0 = Debug|Win32
-		{04EC1423-1A38-42D5-AE8B-7CA1F132973A}.Release|Win32.ActiveCfg = Release|Win32
-		{04EC1423-1A38-42D5-AE8B-7CA1F132973A}.Release|Win32.Build.0 = Release|Win32
+		{50B33331-0290-4981-9E8B-8A26901D2B53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50B33331-0290-4981-9E8B-8A26901D2B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50B33331-0290-4981-9E8B-8A26901D2B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50B33331-0290-4981-9E8B-8A26901D2B53}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
