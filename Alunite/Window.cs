@@ -26,9 +26,10 @@ namespace Alunite
             {
                 testvecs.Add(new Vector(r.NextDouble() - 0.5, r.NextDouble() - 0.5, r.NextDouble() - 0.5));
             }
+
             this._Data = new StandardArray<Vector>(testvecs.ToArray());
-            HashSet<Quadruple<int>> tetras;
-            HashSet<Triple<int>> tris;
+            HashSet<Tetrahedron<int>> tetras;
+            HashSet<Triangle<int>> tris;
             Triangulation.Triangulate(this._Data, out tris, out tetras);
             this._Tris = Triangulation.EnumerateTriangles(tris, this._Data);
         }
@@ -76,6 +77,6 @@ namespace Alunite
 
         private double _Rot;
         private StandardArray<Vector> _Data;
-        private IEnumerable<Triple<Vector>> _Tris;
+        private IEnumerable<Triangle<Vector>> _Tris;
     }
 }

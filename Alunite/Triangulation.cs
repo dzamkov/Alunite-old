@@ -14,44 +14,40 @@ namespace Alunite
         /// <summary>
         /// Creates a triangulation for the specified points.
         /// </summary>
-        public static void Triangulate<A, I>(A Input, out HashSet<Triple<I>> Surface, out HashSet<Quadruple<I>> Volume)
+        public static void Triangulate<A, I>(A Input, out HashSet<Triangle<I>> Surface, out HashSet<Tetrahedron<I>> Volume)
             where A : IArray<Vector, I>
             where I : IEquatable<I>
         {
-            Surface = new HashSet<Triple<I>>();
-            Volume = new HashSet<Quadruple<I>>();
+            Surface = new HashSet<Triangle<I>>();
+            Volume = new HashSet<Tetrahedron<I>>();
 
             // Add points one by one
-            List<KeyValuePair<I, Vector>> first = new List<KeyValuePair<I, Vector>>(4);
+            List<KeyValuePair<I, Vector>> points = new List<KeyValuePair<I, Vector>>();
             foreach (KeyValuePair<I, Vector> point in Input.Items)
             {
                 // First four items become a tetrahedron.
-                if (first != null)
+                points.Add(point);
+                if (points.Count == 4)
                 {
-                    first.Add(point);
-                    if (first.Count == 4)
+                    Tetrahedron<Vector> vecs = new Tetrahedron<Vector>(
+                        points[0].Value, points[1].Value, points[2].Value, points[3].Value);
+                    if (Tetrahedron.Determinant(vecs) < 0.0)
                     {
-                        Quadruple<Vector> vecs = new Quadruple<Vector>(
-                            first[0].Value, first[1].Value, first[2].Value, first[3].Value);
-                        if (Tetrahedron.Determinant(vecs) < 0.0)
-                        {
-                            KeyValuePair<I, Vector> temp = first[0];
-                            first[0] = first[1];
-                            first[1] = temp;
-                        }
+                        KeyValuePair<I, Vector> temp = points[0];
+                        points[0] = points[1];
+                        points[1] = temp;
+                    }
 
-                        Quadruple<I> inds = new Quadruple<I>(first[0].Key, first[1].Key, first[2].Key, first[3].Key);
-                        Quadruple<Triple<I>> tris = Tetrahedron.Faces(inds);
-                        Volume.Add(inds);
-                        foreach (Triple<I> tri in tris.Items)
-                        {
-                            Surface.Add(tri);
-                        }
-
-                        first = null;
+                    Tetrahedron<I> inds = new Tetrahedron<I>(points[0].Key, points[1].Key, points[2].Key, points[3].Key);
+                    Volume.Add(inds);
+                    foreach (Triangle<I> tri in inds.Faces)
+                    {
+                        Surface.Add(tri);
                     }
                 }
-                else
+
+                // Add next points incrementally.
+                if (points.Count > 4)
                 {
 
                 }
@@ -61,11 +57,11 @@ namespace Alunite
         /// <summary>
         /// Gets the actual triangles from an indexed source with the specified array.
         /// </summary>
-        public static IEnumerable<Triple<Vector>> EnumerateTriangles(IEnumerable<Triple<int>> Source, IArray<Vector, int> Array)
+        public static IEnumerable<Triangle<Vector>> EnumerateTriangles(IEnumerable<Triangle<int>> Source, IArray<Vector, int> Array)
         {
-            foreach (Triple<int> tri in Source)
+            foreach (Triangle<int> tri in Source)
             {
-                yield return new Triple<Vector>(Array.Item(tri.A), Array.Item(tri.B), Array.Item(tri.C));
+                yield return new Triangle<Vector>(Array.Item(tri.A), Array.Item(tri.B), Array.Item(tri.C));
             }
         }
 
@@ -88,14 +84,14 @@ namespace Alunite
         /// <summary>
         /// Draws a set of triangles.
         /// </summary>
-        public static void DebugDraw(IEnumerable<Triple<Vector>> Tris)
+        public static void DebugDraw(IEnumerable<Triangle<Vector>> Tris)
         {
             GL.Begin(BeginMode.Triangles);
             GL.Color3(1.0, 0.0, 0.0);
 
-            foreach (Triple<Vector> tri in Tris)
+            foreach (Triangle<Vector> tri in Tris)
             {
-                foreach (Vector v in tri.Items)
+                foreach (Vector v in tri.Points)
                 {
                     GL.Vertex3(v);
                 }
