@@ -16,14 +16,21 @@ namespace Alunite
         {
             GL.Enable(EnableCap.ColorMaterial);
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
+            GL.Enable(EnableCap.CullFace);
+
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             List<Vector> testvecs = new List<Vector>();
-            Random r = new Random();
-            for (int t = 0; t < 100; t++)
+            Random r = new Random(DateTime.Now.GetHashCode());
+            for (int t = 0; t < 5; t++)
             {
                 testvecs.Add(new Vector(r.NextDouble() - 0.5, r.NextDouble() - 0.5, r.NextDouble() - 0.5));
             }
             this._Data = new StandardArray<Vector>(testvecs.ToArray());
+            HashSet<Quadruple<int>> tetras;
+            HashSet<Triple<int>> tris;
+            Triangulation.Triangulate(this._Data, out tris, out tetras);
+            this._Tris = Triangulation.EnumerateTriangles(tris, this._Data);
         }
 
         /// <summary>
@@ -49,8 +56,9 @@ namespace Alunite
                 new Vector3d(0.0, 0.0, 1.0));
             GL.MultMatrix(ref view);
 
-            GL.Rotate(this._Rot * 8, new Vector(0.0, 0.0, 1.0));
+            GL.Rotate(this._Rot * 16, new Vector(0.0, 0.0, 1.0));
 
+            Triangulation.DebugDraw(this._Tris);
             Triangulation.DebugDraw(this._Data.Values);
 
             this.SwapBuffers();
@@ -68,5 +76,6 @@ namespace Alunite
 
         private double _Rot;
         private StandardArray<Vector> _Data;
+        private IEnumerable<Triple<Vector>> _Tris;
     }
 }

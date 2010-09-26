@@ -22,6 +22,17 @@ namespace Alunite
         public T C;
         public T D;
 
+        /// <summary>
+        /// Gets the items in the quadruple.
+        /// </summary>
+        public T[] Items
+        {
+            get
+            {
+                return new T[] { this.A, this.B, this.C, this.D };
+            }
+        }
+
         public bool Equals(Quadruple<T> other)
         {
             return this.A.Equals(other.A) && this.B.Equals(other.B) && this.C.Equals(other.C) && this.D.Equals(other.D);
@@ -34,8 +45,8 @@ namespace Alunite
             int b = this.B.GetHashCode();
             int c = this.C.GetHashCode();
             int d = this.D.GetHashCode();
-            h += a << 3 + b << 7 + c << 13 + d << 17 +
-                d >> 3 + c >> 7 + b >> 13 + a >> 17;
+            h += (a << 3) + (b << 7) + (c << 13) + (d << 17) +
+                (d >> 3) + (c >> 7) + (b >> 13) + (a >> 17);
             h = h ^ a ^ b ^ c ^ d;
             return h;
         }
@@ -58,6 +69,17 @@ namespace Alunite
         public T B;
         public T C;
 
+        /// <summary>
+        /// Gets the items in the triple.
+        /// </summary>
+        public T[] Items
+        {
+            get
+            {
+                return new T[] { this.A, this.B, this.C };
+            }
+        }
+
         public bool Equals(Triple<T> other)
         {
             return this.A.Equals(other.A) && this.B.Equals(other.B) && this.C.Equals(other.C);
@@ -69,8 +91,8 @@ namespace Alunite
             int a = this.A.GetHashCode();
             int b = this.B.GetHashCode();
             int c = this.C.GetHashCode();
-            h += a << 3 + b << 7 + c << 13 +
-                 c >> 3 + b >> 7 + a >> 13;
+            h += (a << 3) + (b << 7) + (c << 13) +
+                 (c >> 3) + (b >> 7) + (a >> 13);
             h = h ^ a ^ b ^ c;
             return h;
         }
