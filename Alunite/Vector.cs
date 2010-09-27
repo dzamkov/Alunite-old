@@ -31,6 +31,21 @@ namespace Alunite
             return A.X != B.X || A.Y != B.Y || A.Z != B.Z;
         }
 
+        public static Vector operator +(Vector A, Vector B)
+        {
+            return new Vector(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
+        }
+
+        public static Vector operator -(Vector A, Vector B)
+        {
+            return new Vector(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
+        }
+
+        public static Vector operator *(Vector A, double Magnitude)
+        {
+            return new Vector(A.X * Magnitude, A.Y * Magnitude, A.Z * Magnitude);
+        }
+
         public bool Equals(Vector other)
         {
             return this == other;
@@ -76,6 +91,37 @@ namespace Alunite
         public static double Dot(Vector A, Vector B)
         {
             return A.X * B.X + A.Y * B.Y + A.Z * B.Z;
+        }
+
+        /// <summary>
+        /// Gets the length of the vector.
+        /// </summary>
+        public double Length
+        {
+            get
+            {
+                return Math.Sqrt(this.X * this.X + this.Y * this.Y + this.Z * this.Z);
+            }
+        }
+
+        /// <summary>
+        /// Normalizes the vector so its length is one but its direction is unchanged.
+        /// </summary>
+        public void Normalize()
+        {
+            double ilen = 1.0 / this.Length;
+            this.X *= ilen;
+            this.Y *= ilen;
+            this.Z *= ilen;
+        }
+
+        /// <summary>
+        /// Normalizes the specified vector.
+        /// </summary>
+        public static Vector Normalize(Vector A)
+        {
+            A.Normalize();
+            return A;
         }
 
         public double X;

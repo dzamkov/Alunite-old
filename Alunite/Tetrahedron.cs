@@ -18,6 +18,14 @@ namespace Alunite
             this.D = D;
         }
 
+        public Tetrahedron(T Vertex, Triangle<T> Base)
+        {
+            this.A = Vertex;
+            this.B = Base.A;
+            this.C = Base.B;
+            this.D = Base.C;
+        }
+
         public bool Equals(Tetrahedron<T> Tetrahedron)
         {
             return this == Tetrahedron;
@@ -98,6 +106,22 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the faces of this tetrahedron that contain the vertex (point A).
+        /// </summary>
+        public Triangle<T>[] VertexFaces
+        {
+            get
+            {
+                return new Triangle<T>[]
+                {
+                    new Triangle<T>(this.A, this.B, this.C),
+                    new Triangle<T>(this.B, this.A, this.D),
+                    new Triangle<T>(this.C, this.D, this.A)
+                };
+            }
+        }
+
+        /// <summary>
         /// Gets the points (hopefully 4) in the tetrahedron.
         /// </summary>
         public T[] Points
@@ -112,6 +136,21 @@ namespace Alunite
                     this.D
                 };
             }
+        }
+
+        /// <summary>
+        /// Splits the tetrahedron into four others that have the same order, share three of the vertices
+        /// of the original tetrahedron and contain the specified mid value.
+        /// </summary>
+        public Tetrahedron<T>[] Split(T MidValue)
+        {
+            Triangle<T>[] faces = this.Faces;
+            Tetrahedron<T>[] splits = new Tetrahedron<T>[faces.Length];
+            for (int t = 0; t < splits.Length; t++)
+            {
+                splits[t] = new Tetrahedron<T>(MidValue, faces[t]);
+            }
+            return splits;
         }
 
         public T A;
@@ -167,5 +206,61 @@ namespace Alunite
                 Order(new Tetrahedron<Vector>(Tetrahedron.A, Tetrahedron.B, Point, Tetrahedron.D)) == order &&
                 Order(new Tetrahedron<Vector>(Tetrahedron.A, Tetrahedron.B, Tetrahedron.C, Point)) == order;
         }
+
+        /*/// <summary>
+        /// Gets if the two tetrahedrons overlap.
+        /// </summary>
+        /// <remarks>http://jgt.akpeters.com/papers/GanovelliPonchioRocchini02/</remarks>
+        public static bool Overlap(Tetrahedron<Vector> A, Tetrahedron<Vector> B)
+        {
+            Triangle<Vector>[] tris = A.Faces;
+            double[,] dots = new double[4, 4];
+            uint[] masks = new uint[4];
+
+            // Check which side all the points on B are on, compared to each triangle of A.
+            for (int t = 0; t < tris.Length; t++)
+            {
+                Triangle<Vector> tri = tris[t];
+                Vector norm = Triangle.Normal(tri);
+                double dota = Vector.Dot(norm, B.A - tri.A); dots[t, 0] = dota;
+                double dotb = Vector.Dot(norm, B.B - tri.A); dots[t, 1] = dotb;
+                double dotc = Vector.Dot(norm, B.C - tri.A); dots[t, 2] = dotc;
+                double dotd = Vector.Dot(norm, B.D - tri.A); dots[t, 3] = dotd;
+                byte curmask = 0x00;
+                
+            }
+
+
+            return false;
+        }
+
+        // For use only by overlap.
+        private static bool _FaceA(ref int Index, ref Triangle<Vector> Face, ref Tetrahedron<Vector> Other, ref double[,] Dots, ref uint[] Masks)
+        {
+            Vector norm = Triangle.Normal(Face);
+            double dota = Vector.Dot(norm, Other.A - Face.A); Dots[Index, 0] = dota;
+            double dotb = Vector.Dot(norm, Other.B - Face.A); Dots[Index, 1] = dotb;
+            double dotc = Vector.Dot(norm, Other.C - Face.A); Dots[Index, 2] = dotc;
+            double dotd = Vector.Dot(norm, Other.D - Face.A); Dots[Index, 3] = dotd;
+            uint mask = 0x00000000;
+            if (dota > 0.0)
+            {
+                mask |= 1;
+            }
+            if (dotb > 0.0)
+            {
+                mask |= 2;
+            }
+            if (dotc > 0.0)
+            {
+                mask |= 4;
+            }
+            if (dotd > 0.0)
+            {
+                mask |= 8;
+            }
+            Masks[Index] = mask;
+            return mask == 0;
+        }*/ // Implement later
     }
 }

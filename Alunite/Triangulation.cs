@@ -31,7 +31,7 @@ namespace Alunite
                 {
                     Tetrahedron<Vector> vecs = new Tetrahedron<Vector>(
                         points[0].Value, points[1].Value, points[2].Value, points[3].Value);
-                    if (Tetrahedron.Determinant(vecs) < 0.0)
+                    if (!Tetrahedron.Order(vecs))
                     {
                         KeyValuePair<I, Vector> temp = points[0];
                         points[0] = points[1];
@@ -49,7 +49,24 @@ namespace Alunite
                 // Add next points incrementally.
                 if (points.Count > 4)
                 {
-
+                    Vector vec = point.Value;
+                    List<Triangle<I>> toremove = new List<Triangle<I>>();
+                    List<Triangle<I>> toadd = new List<Triangle<I>>();
+                    foreach (Triangle<I> tri in Surface)
+                    {
+                        Triangle<Vector> vectri = new Triangle<Vector>(Input.Item(tri.A), Input.Item(tri.B), Input.Item(tri.C));
+                        if (Tetrahedron.Order(new Tetrahedron<Vector>(vec, vectri)))
+                        {
+                            toremove.Add(tri);
+                            foreach (Triangle<I> vtri in new Tetrahedron<I>(point.Key, tri).VertexFaces)
+                            {
+                                toadd.Add(vtri);
+                                toremove.Add(vtri.Flip());
+                            }
+                        }
+                    }
+                    Surface.UnionWith(toadd);
+                    Surface.ExceptWith(toremove);
                 }
             }
         }

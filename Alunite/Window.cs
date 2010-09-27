@@ -22,7 +22,7 @@ namespace Alunite
 
             List<Vector> testvecs = new List<Vector>();
             Random r = new Random(DateTime.Now.GetHashCode());
-            for (int t = 0; t < 5; t++)
+            for (int t = 0; t < 10; t++)
             {
                 testvecs.Add(new Vector(r.NextDouble() - 0.5, r.NextDouble() - 0.5, r.NextDouble() - 0.5));
             }

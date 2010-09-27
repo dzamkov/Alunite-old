@@ -86,6 +86,14 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Creates a flipped form of the triangle (same points, different order).
+        /// </summary>
+        public Triangle<T> Flip()
+        {
+            return new Triangle<T>(this.A, this.C, this.B);
+        }
+
         public T A;
         public T B;
         public T C;
@@ -96,6 +104,12 @@ namespace Alunite
     /// </summary>
     public static class Triangle
     {
-
+        /// <summary>
+        /// Gets the normal of the specified triangle.
+        /// </summary>
+        public static Vector Normal(Triangle<Vector> Triangle)
+        {
+            return Vector.Normalize(Vector.Cross(Triangle.C - Triangle.A, Triangle.B - Triangle.A));
+        }
     }
 }
