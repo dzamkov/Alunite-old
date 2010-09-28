@@ -49,36 +49,120 @@ namespace Alunite
                 // Add next points incrementally.
                 if (points.Count > 4)
                 {
-                    Vector vec = point.Value;
-                    List<Triangle<I>> toremove = new List<Triangle<I>>();
-                    List<Triangle<I>> toadd = new List<Triangle<I>>();
-                    foreach (Triangle<I> tri in Surface)
+                    // Check if point is already in volume in O(WTF) time
+                    Tetrahedron<I>? inside = null;
+                    foreach (Tetrahedron<I> tet in Volume)
                     {
-                        Triangle<Vector> vectri = new Triangle<Vector>(Input.Item(tri.A), Input.Item(tri.B), Input.Item(tri.C));
-                        if (Tetrahedron.Order(new Tetrahedron<Vector>(vec, vectri)))
+                        if (Tetrahedron.In(point.Value,
+                            new Tetrahedron<Vector>(
+                                Input.Item(tet.A),
+                                Input.Item(tet.B),
+                                Input.Item(tet.C),
+                                Input.Item(tet.D))))
                         {
-                            toremove.Add(tri);
-                            foreach (Triangle<I> vtri in new Tetrahedron<I>(point.Key, tri).VertexFaces)
-                            {
-                                toadd.Add(vtri);
-                                toremove.Add(vtri.Flip());
-                            }
+                            inside = tet;
+                            break;
                         }
                     }
-                    Surface.UnionWith(toadd);
-                    Surface.ExceptWith(toremove);
+
+
+                    if (inside.HasValue)
+                    {
+                        // Split tetrahedron
+                        Tetrahedron<I> tet = inside.Value;
+                        Volume.Remove(tet);
+                        Volume.UnionWith(tet.Split(point.Key));
+                    }
+                    else
+                    {
+                        // Add point to surface
+                        Vector vec = point.Value;
+                        List<Triangle<I>> toremove = new List<Triangle<I>>();
+                        List<Triangle<I>> toadd = new List<Triangle<I>>();
+                        foreach (Triangle<I> tri in Surface)
+                        {
+                            Triangle<Vector> vectri = new Triangle<Vector>(Input.Item(tri.A), Input.Item(tri.B), Input.Item(tri.C));
+                            if (Tetrahedron.Order(new Tetrahedron<Vector>(vec, vectri.Flip)))
+                            {
+                                Volume.Add(new Tetrahedron<I>(point.Key, tri.Flip));
+                                toremove.Add(tri);
+                                foreach (Triangle<I> vtri in new Tetrahedron<I>(point.Key, tri.Flip).VertexFaces)
+                                {
+                                    toadd.Add(vtri);
+                                    toremove.Add(vtri.Flip);
+                                }
+                            }
+                        }
+                        Surface.UnionWith(toadd);
+                        Surface.ExceptWith(toremove);
+                    }
                 }
             }
         }
 
         /// <summary>
-        /// Gets the actual triangles from an indexed source with the specified array.
+        /// Gets the edges connecting the specified tetrahedrons.
         /// </summary>
-        public static IEnumerable<Triangle<Vector>> EnumerateTriangles(IEnumerable<Triangle<int>> Source, IArray<Vector, int> Array)
+        /// <typeparam name="IT">Index type for tetrahedrons</typeparam>
+        /// <typeparam name="V">Type of vertice stored by tetrahedrons</typeparam>
+        public static void Edges<AT, IT, V>(AT Tetrahedrons, out HashSet<Edge<IT>> Edges)
+            where AT : IArray<Tetrahedron<V>, IT>
+            where IT : IEquatable<IT>
+            where V : IEquatable<V>
         {
-            foreach (Triangle<int> tri in Source)
+            Edges = new HashSet<Edge<IT>>();
+            Dictionary<Triangle<V>, IT> openfaces = new Dictionary<Triangle<V>, IT>();
+            foreach (KeyValuePair<IT, Tetrahedron<V>> item in Tetrahedrons.Items)
             {
-                yield return new Triangle<Vector>(Array.Item(tri.A), Array.Item(tri.B), Array.Item(tri.C));
+                // Try pairing together faces.
+                Tetrahedron<V> tetra = item.Value;
+                foreach (Triangle<V> face in tetra.Faces)
+                {
+                    IT connectedtetra;
+                    if (openfaces.TryGetValue(face, out connectedtetra))
+                    {
+                        Edges.Add(new Edge<IT>(item.Key, connectedtetra));
+                        openfaces.Remove(face);
+                    }
+                    else
+                    {
+                        openfaces.Add(face.Flip, item.Key);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Dereferences a collection of tetrahedrons through an array.
+        /// </summary>
+        public static IEnumerable<Tetrahedron<V>> Dereference<A, I, V>(A Vertices, IEnumerable<Tetrahedron<I>> Tetrahedrons)
+            where A : IArray<V, I>
+            where I : IEquatable<I>
+            where V : IEquatable<V>
+        {
+            foreach (Tetrahedron<I> tetra in Tetrahedrons)
+            {
+                yield return new Tetrahedron<V>(
+                    Vertices.Item(tetra.A),
+                    Vertices.Item(tetra.B),
+                    Vertices.Item(tetra.C),
+                    Vertices.Item(tetra.D));
+            }
+        }
+
+        /// <summary>
+        /// Dereferences a collection of edges through an array.
+        /// </summary>
+        public static IEnumerable<Edge<V>> Dereference<A, I, V>(A Vertices, IEnumerable<Edge<I>> Edges)
+            where A : IArray<V, I>
+            where I : IEquatable<I>
+            where V : IEquatable<V>
+        {
+            foreach (Edge<I> edge in Edges)
+            {
+                yield return new Edge<V>(
+                    Vertices.Item(edge.A),
+                    Vertices.Item(edge.B));
             }
         }
 
@@ -112,6 +196,23 @@ namespace Alunite
                 {
                     GL.Vertex3(v);
                 }
+            }
+
+            GL.End();
+        }
+
+        /// <summary>
+        /// Draws a set of edges.
+        /// </summary>
+        public static void DebugDraw(IEnumerable<Edge<Vector>> Edges)
+        {
+            GL.Begin(BeginMode.Lines);
+            GL.Color3(0.0, 1.0, 1.0);
+
+            foreach (Edge<Vector> edge in Edges)
+            {
+                GL.Vertex3(edge.A);
+                GL.Vertex3(edge.B);
             }
 
             GL.End();

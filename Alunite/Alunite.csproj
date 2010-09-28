@@ -42,6 +42,7 @@
   -->
   <ItemGroup>
     <Compile Include="Array.cs" />
+    <Compile Include="Edge.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Triangulation.cs" />

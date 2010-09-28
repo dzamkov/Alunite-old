@@ -38,6 +38,36 @@ namespace Alunite
             this._Items = Items;
         }
 
+        public StandardArray(IEnumerable<T> Items, int Count)
+        {
+            this._Items = new T[Count];
+            IEnumerator<T> e = Items.GetEnumerator();
+            for (int t = 0; t < this._Items.Length; t++)
+            {
+                if (e.MoveNext())
+                {
+                    this._Items[t] = e.Current;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates an array by transforming every element in this array by a mapping function.
+        /// </summary>
+        public StandardArray<F> Map<F>(Func<T, F> Mapping)
+        {
+            F[] otheritems = new F[this._Items.Length];
+            for (int t = 0; t < otheritems.Length; t++)
+            {
+                otheritems[t] = Mapping(this._Items[t]);
+            }
+            return new StandardArray<F>(otheritems);
+        }
+
         public T Item(int Index)
         {
             return this._Items[Index];

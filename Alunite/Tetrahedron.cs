@@ -21,9 +21,9 @@ namespace Alunite
         public Tetrahedron(T Vertex, Triangle<T> Base)
         {
             this.A = Vertex;
-            this.B = Base.A;
+            this.B = Base.C;
             this.C = Base.B;
-            this.D = Base.C;
+            this.D = Base.A;
         }
 
         public bool Equals(Tetrahedron<T> Tetrahedron)
@@ -75,6 +75,8 @@ namespace Alunite
             int b = this.B.GetHashCode();
             int c = this.C.GetHashCode();
             int d = this.D.GetHashCode();
+
+            // This is probably wrong
             if ((a > b) ^ (b > c) ^ (c > a) ^
                 (b > a) ^ (a > d) ^ (d > b) ^
                 (c > d) ^ (d > a) ^ (a > c) ^
@@ -205,6 +207,14 @@ namespace Alunite
                 Order(new Tetrahedron<Vector>(Tetrahedron.A, Point, Tetrahedron.C, Tetrahedron.D)) == order &&
                 Order(new Tetrahedron<Vector>(Tetrahedron.A, Tetrahedron.B, Point, Tetrahedron.D)) == order &&
                 Order(new Tetrahedron<Vector>(Tetrahedron.A, Tetrahedron.B, Tetrahedron.C, Point)) == order;
+        }
+
+        /// <summary>
+        /// Gets the midpoint of the specified tetrahedron.
+        /// </summary>
+        public static Vector Midpoint(Tetrahedron<Vector> Tetrahedron)
+        {
+            return (Tetrahedron.A + Tetrahedron.B + Tetrahedron.C + Tetrahedron.D) * (1.0 / 4.0);
         }
 
         /*/// <summary>

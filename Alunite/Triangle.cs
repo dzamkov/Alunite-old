@@ -87,11 +87,14 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a flipped form of the triangle (same points, different order).
+        /// Gets a flipped form of the triangle (same points, different order).
         /// </summary>
-        public Triangle<T> Flip()
+        public Triangle<T> Flip
         {
-            return new Triangle<T>(this.A, this.C, this.B);
+            get
+            {
+                return new Triangle<T>(this.A, this.C, this.B);
+            }
         }
 
         public T A;
