@@ -42,11 +42,13 @@
   -->
   <ItemGroup>
     <Compile Include="Array.cs" />
+    <Compile Include="Color.cs" />
     <Compile Include="Edge.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Triangulation.cs" />
+    <Compile Include="VBO.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>

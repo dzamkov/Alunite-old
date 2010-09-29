@@ -4,8 +4,11 @@ using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 
+
 namespace Alunite
 {
+    using CNVVBO = VBO<ColorNormalVertex, ColorNormalVertex.Model>;
+
     /// <summary>
     /// Main program window
     /// </summary>
@@ -32,8 +35,28 @@ namespace Alunite
                 rvec *= 0.1;
                 return In + rvec;
             }); // Point fiddlin'
-            HashSet<Tetrahedron<int>> tetras = new HashSet<Tetrahedron<int>>(gr.Volume);
-            this._Tetras = Triangulation.Dereference<StandardArray<Vector>, int, Vector>(this._Data, tetras);
+            HashSet<Tetrahedron<int>> hstetras = new HashSet<Tetrahedron<int>>(gr.Volume);
+            StandardArray<Tetrahedron<int>> tetras = new StandardArray<Tetrahedron<int>>(hstetras, hstetras.Count);
+            StandardArray<int> tris = tetras.Expand<int>(12, delegate(Tetrahedron<int> tetra)
+            {
+                int[] items = new int[12];
+                int i = 0;
+                foreach (Triangle<int> tri in tetra.Faces)
+                {
+                    foreach (int point in tri.Points)
+                    {
+                        items[i] = point;
+                        i++;
+                    }
+                }
+                return items;
+            });
+
+            // Make a vbo
+            this._VBO = new CNVVBO(ColorNormalVertex.Model.Singleton, this._Data.Map<ColorNormalVertex>(delegate(Vector v)
+                {
+                    return new ColorNormalVertex(Color.RGB(v.X + 0.5, v.Y + 0.5, v.Z + 0.5), v, new Vector());   
+                }), tris);
         }
 
         /// <summary>
@@ -61,8 +84,7 @@ namespace Alunite
 
             GL.Rotate(this._Rot * 16, new Vector(0.0, 0.0, 1.0));
 
-            Triangulation.DebugDraw(this._Tetras);
-            Triangulation.DebugDraw(this._Data.Values);
+            this._VBO.Render(BeginMode.Triangles);
 
             this.SwapBuffers();
         }
@@ -80,5 +102,6 @@ namespace Alunite
         private double _Rot;
         private StandardArray<Vector> _Data;
         private IEnumerable<Tetrahedron<Vector>> _Tetras;
+        private CNVVBO _VBO;
     }
 }

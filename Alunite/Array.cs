@@ -42,6 +42,15 @@ namespace Alunite
     }
 
     /// <summary>
+    /// An array where the indices have an ordering.
+    /// </summary>
+    public interface IOrderedArray<T, I> : IArray<T, I>
+        where I : IEquatable<I>
+    {
+    
+    }
+
+    /// <summary>
     /// An array (by alunite's definition) created from a .net array.
     /// </summary>
     public class StandardArray<T> : IFiniteArray<T, int>
@@ -86,6 +95,24 @@ namespace Alunite
             for (int t = 0; t < otheritems.Length; t++)
             {
                 otheritems[t] = Mapping(this._Items[t]);
+            }
+            return new StandardArray<F>(otheritems);
+        }
+
+        /// <summary>
+        /// Expands each item in the array in a 1:Amount ratio with another type.
+        /// </summary>
+        public StandardArray<F> Expand<F>(int Amount, Func<T, IEnumerable<F>> Mapping)
+        {
+            F[] otheritems = new F[this._Items.Length * Amount];
+            int cur = 0;
+            for (int t = 0; t < this._Items.Length; t++)
+            {
+                foreach (F f in Mapping(this._Items[t]))
+                {
+                    otheritems[cur] = f;
+                    cur++;
+                }
             }
             return new StandardArray<F>(otheritems);
         }
