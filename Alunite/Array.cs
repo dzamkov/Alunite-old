@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A finite enumerable collection of items stored at indices. This is a generalization of
+    /// A collection of items stored at indices. This is a generalization of
     /// .net arrays.
     /// </summary>
     /// <typeparam name="S">The type of items in the array.</typeparam>
@@ -15,8 +15,16 @@ namespace Alunite
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
-        T Item(I Index);
+        T Lookup(I Index);
+    }
 
+    /// <summary>
+    /// An array whose elements can be enumerated. Enumerable arrays must have a finite amount
+    /// of items.
+    /// </summary>
+    public interface IFiniteArray<T, I> : IArray<T, I>
+        where I : IEquatable<I>
+    {
         /// <summary>
         /// Gets the items in the array (in no particular order).
         /// </summary>
@@ -26,12 +34,17 @@ namespace Alunite
         /// Gets the values in the array (in no particular order).
         /// </summary>
         IEnumerable<T> Values { get; }
+
+        /// <summary>
+        /// Gets the size of the array.
+        /// </summary>
+        int Size { get; }
     }
 
     /// <summary>
     /// An array (by alunite's definition) created from a .net array.
     /// </summary>
-    public class StandardArray<T> : IArray<T, int>
+    public class StandardArray<T> : IFiniteArray<T, int>
     {
         public StandardArray(T[] Items)
         {
@@ -55,6 +68,15 @@ namespace Alunite
             }
         }
 
+        public StandardArray(IFiniteArray<T, int> Source)
+        {
+            this._Items = new T[Source.Size];
+            foreach (KeyValuePair<int, T> item in Source.Items)
+            {
+                this._Items[item.Key] = item.Value;
+            }
+        }
+
         /// <summary>
         /// Creates an array by transforming every element in this array by a mapping function.
         /// </summary>
@@ -68,7 +90,7 @@ namespace Alunite
             return new StandardArray<F>(otheritems);
         }
 
-        public T Item(int Index)
+        public T Lookup(int Index)
         {
             return this._Items[Index];
         }
@@ -89,6 +111,14 @@ namespace Alunite
             get
             {
                 return this._Items;
+            }
+        }
+
+        public int Size
+        {
+            get
+            {
+                return this._Items.Length;
             }
         }
 

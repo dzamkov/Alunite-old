@@ -20,30 +20,20 @@ namespace Alunite
 
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
-            List<Vector> testvecs = new List<Vector>();
-            Random r = new Random(DateTime.Now.GetHashCode());
-            for (int t = 0; t < 300; t++)
-            {
-                testvecs.Add(new Vector(r.NextDouble() - 0.5, r.NextDouble() - 0.5, r.NextDouble() - 0.5));
-            }
+            Random r = new Random(1337);
 
             // Gets the edges between the midpoints of the tetrahedrons in the triangulation of this set of points.
-            this._Data = new StandardArray<Vector>(testvecs.ToArray());
-            HashSet<Tetrahedron<int>> tetras;
-            HashSet<Triangle<int>> tris;
-            Triangulation.Triangulate(this._Data, out tris, out tetras);
-            StandardArray<Tetrahedron<int>> atetras = new StandardArray<Tetrahedron<int>>(tetras, tetras.Count);
-            StandardArray<Vector> tetramidpoints = atetras.Map<Vector>(delegate(Tetrahedron<int> tetra)
+            Grid gr = new Grid(new Lattice(new Vector(-0.5, -0.5, -0.5), new Vector(0.2, 0.2, 0.2)), new IVector(6, 6, 6));
+            this._Data = new StandardArray<Vector>(gr);
+            this._Data = this._Data.Map<Vector>(delegate(Vector In)
             {
-                return Tetrahedron.Midpoint(new Tetrahedron<Vector>(
-                    this._Data.Item(tetra.A),
-                    this._Data.Item(tetra.B),
-                    this._Data.Item(tetra.C),
-                    this._Data.Item(tetra.D)));
-            });
-            HashSet<Edge<int>> edges;
-            Triangulation.Edges<StandardArray<Tetrahedron<int>>, int, int>(atetras, out edges);
-            this._Edges = Triangulation.Dereference<StandardArray<Vector>, int, Vector>(tetramidpoints, edges);
+                Vector rvec = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble());
+                rvec -= new Vector(0.5, 0.5, 0.5);
+                rvec *= 0.1;
+                return In + rvec;
+            }); // Point fiddlin'
+            HashSet<Tetrahedron<int>> tetras = new HashSet<Tetrahedron<int>>(gr.Volume);
+            this._Tetras = Triangulation.Dereference<StandardArray<Vector>, int, Vector>(this._Data, tetras);
         }
 
         /// <summary>
@@ -71,7 +61,7 @@ namespace Alunite
 
             GL.Rotate(this._Rot * 16, new Vector(0.0, 0.0, 1.0));
 
-            Triangulation.DebugDraw(this._Edges);
+            Triangulation.DebugDraw(this._Tetras);
             Triangulation.DebugDraw(this._Data.Values);
 
             this.SwapBuffers();
@@ -89,6 +79,6 @@ namespace Alunite
 
         private double _Rot;
         private StandardArray<Vector> _Data;
-        private IEnumerable<Edge<Vector>> _Edges;
+        private IEnumerable<Tetrahedron<Vector>> _Tetras;
     }
 }

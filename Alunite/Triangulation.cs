@@ -15,7 +15,7 @@ namespace Alunite
         /// Creates a triangulation for the specified points.
         /// </summary>
         public static void Triangulate<A, I>(A Input, out HashSet<Triangle<I>> Surface, out HashSet<Tetrahedron<I>> Volume)
-            where A : IArray<Vector, I>
+            where A : IFiniteArray<Vector, I>
             where I : IEquatable<I>
         {
             Surface = new HashSet<Triangle<I>>();
@@ -55,10 +55,10 @@ namespace Alunite
                     {
                         if (Tetrahedron.In(point.Value,
                             new Tetrahedron<Vector>(
-                                Input.Item(tet.A),
-                                Input.Item(tet.B),
-                                Input.Item(tet.C),
-                                Input.Item(tet.D))))
+                                Input.Lookup(tet.A),
+                                Input.Lookup(tet.B),
+                                Input.Lookup(tet.C),
+                                Input.Lookup(tet.D))))
                         {
                             inside = tet;
                             break;
@@ -81,7 +81,7 @@ namespace Alunite
                         List<Triangle<I>> toadd = new List<Triangle<I>>();
                         foreach (Triangle<I> tri in Surface)
                         {
-                            Triangle<Vector> vectri = new Triangle<Vector>(Input.Item(tri.A), Input.Item(tri.B), Input.Item(tri.C));
+                            Triangle<Vector> vectri = new Triangle<Vector>(Input.Lookup(tri.A), Input.Lookup(tri.B), Input.Lookup(tri.C));
                             if (Tetrahedron.Order(new Tetrahedron<Vector>(vec, vectri.Flip)))
                             {
                                 Volume.Add(new Tetrahedron<I>(point.Key, tri.Flip));
@@ -106,7 +106,7 @@ namespace Alunite
         /// <typeparam name="IT">Index type for tetrahedrons</typeparam>
         /// <typeparam name="V">Type of vertice stored by tetrahedrons</typeparam>
         public static void Edges<AT, IT, V>(AT Tetrahedrons, out HashSet<Edge<IT>> Edges)
-            where AT : IArray<Tetrahedron<V>, IT>
+            where AT : IFiniteArray<Tetrahedron<V>, IT>
             where IT : IEquatable<IT>
             where V : IEquatable<V>
         {
@@ -143,10 +143,10 @@ namespace Alunite
             foreach (Tetrahedron<I> tetra in Tetrahedrons)
             {
                 yield return new Tetrahedron<V>(
-                    Vertices.Item(tetra.A),
-                    Vertices.Item(tetra.B),
-                    Vertices.Item(tetra.C),
-                    Vertices.Item(tetra.D));
+                    Vertices.Lookup(tetra.A),
+                    Vertices.Lookup(tetra.B),
+                    Vertices.Lookup(tetra.C),
+                    Vertices.Lookup(tetra.D));
             }
         }
 
@@ -161,8 +161,8 @@ namespace Alunite
             foreach (Edge<I> edge in Edges)
             {
                 yield return new Edge<V>(
-                    Vertices.Item(edge.A),
-                    Vertices.Item(edge.B));
+                    Vertices.Lookup(edge.A),
+                    Vertices.Lookup(edge.B));
             }
         }
 
@@ -195,6 +195,28 @@ namespace Alunite
                 foreach (Vector v in tri.Points)
                 {
                     GL.Vertex3(v);
+                }
+            }
+
+            GL.End();
+        }
+
+        /// <summary>
+        /// Draws a set of tetrahedrons
+        /// </summary>
+        public static void DebugDraw(IEnumerable<Tetrahedron<Vector>> Tetras)
+        {
+            GL.Begin(BeginMode.Triangles);
+            GL.Color3(1.0, 1.0, 0.0);
+
+            foreach (Tetrahedron<Vector> tetra in Tetras)
+            {
+                foreach (Triangle<Vector> tri in tetra.Faces)
+                {
+                    foreach (Vector v in tri.Points)
+                    {
+                        GL.Vertex3(v);
+                    }
                 }
             }
 

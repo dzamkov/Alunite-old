@@ -217,6 +217,38 @@ namespace Alunite
             return (Tetrahedron.A + Tetrahedron.B + Tetrahedron.C + Tetrahedron.D) * (1.0 / 4.0);
         }
 
+        /// <summary>
+        /// Creates tetrahedra (5) to occupy the entire volume of a cube with the specified points. The points in
+        /// the array are ordered (0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1). An additional
+        /// parameter can be used to reverse the the axies the tetrahedra are created on (the order will still remain possible).
+        /// </summary>
+        public static Tetrahedron<T>[] Tesselate<T>(T[] Cube, bool Reverse)
+            where T : IEquatable<T>
+        {
+            if (Reverse)
+            {
+                return new Tetrahedron<T>[]
+                {
+                    new Tetrahedron<T>(Cube[1], Cube[5], Cube[0], Cube[3]),
+                    new Tetrahedron<T>(Cube[2], Cube[6], Cube[3], Cube[0]),
+                    new Tetrahedron<T>(Cube[7], Cube[3], Cube[6], Cube[5]),
+                    new Tetrahedron<T>(Cube[4], Cube[0], Cube[5], Cube[6]),
+                    new Tetrahedron<T>(Cube[5], Cube[0], Cube[3], Cube[6]),
+                };
+            }
+            else
+            {
+                return new Tetrahedron<T>[]
+                {
+                    new Tetrahedron<T>(Cube[0], Cube[4], Cube[2], Cube[1]),
+                    new Tetrahedron<T>(Cube[3], Cube[7], Cube[1], Cube[2]),
+                    new Tetrahedron<T>(Cube[5], Cube[1], Cube[7], Cube[4]),
+                    new Tetrahedron<T>(Cube[6], Cube[2], Cube[4], Cube[7]),
+                    new Tetrahedron<T>(Cube[4], Cube[2], Cube[1], Cube[7]),
+                };
+            }
+        }
+
         /*/// <summary>
         /// Gets if the two tetrahedrons overlap.
         /// </summary>

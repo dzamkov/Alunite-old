@@ -16,6 +16,13 @@ namespace Alunite
             this.Z = Z;
         }
 
+        public Vector(IVector Source)
+        {
+            this.X = Source.X;
+            this.Y = Source.Y;
+            this.Z = Source.Z;
+        }
+
         public static implicit operator Vector3d(Vector Vector)
         {
             return new Vector3d(Vector.X, Vector.Y, Vector.Z);
@@ -86,6 +93,22 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Multiplies each component of the vectors with the other's corresponding component.
+        /// </summary>
+        public static Vector Scale(Vector A, Vector B)
+        {
+            return new Vector(A.X * B.X, A.Y * B.Y, A.Z * B.Z);
+        }
+
+        /// <summary>
+        /// Multiplies each component of the vectors with the other's corresponding component.
+        /// </summary>
+        public static Vector Scale(Vector A, IVector B)
+        {
+            return new Vector(A.X * B.X, A.Y * B.Y, A.Z * B.Z);
+        }
+
+        /// <summary>
         /// Gets the dot product between two vectors.
         /// </summary>
         public static double Dot(Vector A, Vector B)
@@ -127,5 +150,69 @@ namespace Alunite
         public double X;
         public double Y;
         public double Z;
+    }
+
+    /// <summary>
+    /// A vector of ints.
+    /// </summary>
+    public struct IVector : IEquatable<IVector>
+    {
+        public IVector(int X, int Y, int Z)
+        {
+            this.X = X;
+            this.Y = Y;
+            this.Z = Z;
+        }
+
+        public override int GetHashCode()
+        {
+            int h = 0x19104123;
+            int x = this.X.GetHashCode();
+            int y = this.Y.GetHashCode();
+            int z = this.Z.GetHashCode();
+            h += (x << 3) + (y << 7) + (z << 13)
+                + (z >> 3) + (y >> 7) + (x >> 13);
+            h = h ^ x ^ y ^ z;
+            return h;
+        }
+
+        public bool Equals(IVector other)
+        {
+            return this == other;
+        }
+
+        public override bool Equals(object obj)
+        {
+            IVector? v = obj as IVector?;
+            if (v.HasValue)
+            {
+                return this == v.Value;
+            }
+            return false;
+        }
+
+        public static bool operator ==(IVector A, IVector B)
+        {
+            return A.X == B.X && A.Y == B.Y && A.Z == B.Z;
+        }
+
+        public static bool operator !=(IVector A, IVector B)
+        {
+            return A.X != B.X || A.Y != B.Y || A.Z != B.Z;
+        }
+
+        public static IVector operator +(IVector A, IVector B)
+        {
+            return new IVector(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
+        }
+
+        public static IVector operator -(IVector A, IVector B)
+        {
+            return new IVector(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
+        }
+
+        public int X;
+        public int Y;
+        public int Z;
     }
 }
