@@ -108,6 +108,23 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the ordered points for the faces of this tetrahedron.
+        /// </summary>
+        public T[] FacePoints
+        {
+            get
+            {
+                return new T[]
+                {
+                    this.A, this.B, this.C,
+                    this.B, this.A, this.D,
+                    this.C, this.D, this.A,
+                    this.D, this.C, this.B
+                };
+            }
+        }
+
+        /// <summary>
         /// Gets the faces of this tetrahedron that contain the vertex (point A).
         /// </summary>
         public Triangle<T>[] VertexFaces
@@ -162,7 +179,7 @@ namespace Alunite
     }
 
     /// <summary>
-    /// Tetrahedron (4-simplex) related maths.
+    /// Tetrahedron (3-simplex) related maths.
     /// </summary>
     public static class Tetrahedron
     {
@@ -185,6 +202,59 @@ namespace Alunite
                 Tetrahedron.A.Z * Tetrahedron.B.Y * Tetrahedron.C.X + Tetrahedron.A.Y * Tetrahedron.B.Z * Tetrahedron.C.X +
                 Tetrahedron.A.Z * Tetrahedron.B.X * Tetrahedron.C.Y - Tetrahedron.A.X * Tetrahedron.B.Z * Tetrahedron.C.Y -
                 Tetrahedron.A.Y * Tetrahedron.B.X * Tetrahedron.C.Z + Tetrahedron.A.X * Tetrahedron.B.Y * Tetrahedron.C.Z;
+        }
+
+        /// <summary>
+        /// Finds the borders in an array of tetrahedra. Looking up a value in a resulting tetrahedron will get the index for
+        /// the tetrahedron that borders it at the face opposite the point that was used or -1 if there is no border on that face.
+        /// </summary>
+        public static StandardArray<Tetrahedron<int>> Borders<V>(StandardArray<Tetrahedron<V>> Tetrahedrons)
+            where V : IEquatable<V>
+        {
+            Dictionary<Triangle<V>, KeyValuePair<int, int>> opentriangles = new Dictionary<Triangle<V>, KeyValuePair<int, int>>();
+            int[,] borders = new int[Tetrahedrons.Size, 4]; // 0 means no border, every value after is offset by one.
+
+            // Determine connections for the tetrahedrons.
+            foreach (KeyValuePair<int, Tetrahedron<V>> kvp in Tetrahedrons.Items)
+            {
+                Triangle<V>[] tris = kvp.Value.Faces;
+                for(int t = 0; t < tris.Length; t++)
+                {
+                    Triangle<V> tri = tris[t];
+                    KeyValuePair<int, int> val;
+                    if (opentriangles.TryGetValue(tri, out val))
+                    {
+                        borders[kvp.Key, t] = val.Key + 1;
+                        borders[val.Key, val.Value] = kvp.Key + 1;
+                    }
+                    else
+                    {
+                        opentriangles.Add(tri.Flip, new KeyValuePair<int, int>(kvp.Key, t));
+                    }
+                }
+            }
+
+            // Stuff border info into the tetrahedron array.
+            Tetrahedron<int>[] nodes = new Tetrahedron<int>[Tetrahedrons.Size];
+            for (int t = 0; t < nodes.Length; t++)
+            {
+                nodes[t] = new Tetrahedron<int>(
+                    borders[t, 0] - 1,
+                    borders[t, 1] - 1,
+                    borders[t, 2] - 1,
+                    borders[t, 3] - 1);
+            }
+
+            return new StandardArray<Tetrahedron<int>>(nodes);
+        }
+
+        /// <summary>
+        /// Gets the points on the faces of the specified tetrahedron.
+        /// </summary>
+        public static T[] FacePoints<T>(Tetrahedron<T> Tetrahedron)
+            where T : IEquatable<T>
+        {
+            return Tetrahedron.FacePoints;
         }
 
         /// <summary>

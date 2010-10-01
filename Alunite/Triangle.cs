@@ -103,7 +103,7 @@ namespace Alunite
     }
 
     /// <summary>
-    /// Triangle (3-simplex) related functions.
+    /// Triangle (2-simplex) related functions.
     /// </summary>
     public static class Triangle
     {

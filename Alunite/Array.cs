@@ -19,6 +19,18 @@ namespace Alunite
     }
 
     /// <summary>
+    /// An array where every any element may be changed.
+    /// </summary>
+    public interface IMutableArray<T, I>
+        where I : IEquatable<I>
+    {
+        /// <summary>
+        /// Modifies an element in the array to reflect a value.
+        /// </summary>
+        void Modify(I Index, T Value);
+    }
+
+    /// <summary>
     /// An array whose elements can be enumerated. Enumerable arrays must have a finite amount
     /// of items.
     /// </summary>
@@ -53,7 +65,7 @@ namespace Alunite
     /// <summary>
     /// An array (by alunite's definition) created from a .net array.
     /// </summary>
-    public class StandardArray<T> : IFiniteArray<T, int>
+    public class StandardArray<T> : IFiniteArray<T, int>, IMutableArray<T, int>
     {
         public StandardArray(T[] Items)
         {
@@ -84,6 +96,12 @@ namespace Alunite
             {
                 this._Items[item.Key] = item.Value;
             }
+        }
+
+        public StandardArray(IEnumerable<T> Source)
+        {
+            List<T> items = new List<T>(Source);
+            this._Items = items.ToArray();
         }
 
         /// <summary>
@@ -120,6 +138,11 @@ namespace Alunite
         public T Lookup(int Index)
         {
             return this._Items[Index];
+        }
+
+        public void Modify(int Index, T Value)
+        {
+            this._Items[Index] = Value;
         }
 
         public IEnumerable<KeyValuePair<int, T>> Items

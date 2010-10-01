@@ -85,7 +85,7 @@ namespace Alunite
     }
 
     /// <summary>
-    /// Edge (2-simplex) related functions.
+    /// Edge (1-simplex) related functions.
     /// </summary>
     public static class Edge
     {
