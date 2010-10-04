@@ -17,8 +17,6 @@ namespace Alunite
         public Window()
             : base(640, 480, GraphicsMode.Default, "Alunite")
         {
-            this.VSync = VSyncMode.Off;
-
             GL.Enable(EnableCap.ColorMaterial);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
@@ -28,8 +26,8 @@ namespace Alunite
 
             GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.2, 0.2, 0.2));
             GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.6, 0.6, 0.6));
-            GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 1.0, 1.0));
-            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, 7.8f, 0.0f));
+            GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 0.6, 0.6));
+            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, -7.8f, 0.0f));
 
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
@@ -37,18 +35,18 @@ namespace Alunite
             Random r = new Random();
 
             
-            Grid gr = new Grid(new Lattice(new Vector(-0.5, -0.5, -0.5), new Vector(0.1, 0.1, 0.1)), new IVector(11, 11, 11));
+            Grid gr = new Grid(new Lattice(new Vector(-0.5, -0.5, -0.5), new Vector(0.05, 0.05, 0.05)), new IVector(21, 21, 21));
             this._Data = new StandardArray<Vector>(gr);
             this._Data.Map(delegate(Vector In)
             {
                 Vector rvec = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble());
                 rvec -= new Vector(0.5, 0.5, 0.5);
-                rvec *= 0.05;
+                rvec *= 0.01;
                 return In + rvec;
             }); // Point fiddlin'
             StandardArray<Tetrahedron<int>> tetras = new StandardArray<Tetrahedron<int>>(gr.Volume);
             StandardArray<Tetrahedron<int>> tetraborders = Tetrahedron.Borders(tetras);
-            StandardArray<Content> tetracontents = Seed(tetraborders, r);
+            StandardArray<Content> tetracontents = Seed(this._Data, tetras, tetraborders, r);
             ISequentialArray<ColorNormalVertex> vertices;
             ISequentialArray<int> indices;
             Tesselate(this._Data, tetras, tetraborders, tetracontents, out vertices, out indices);
@@ -60,45 +58,31 @@ namespace Alunite
         /// <summary>
         /// Creates the (content) states for a tetrahedron node graph and makes a randomish structure.
         /// </summary>
-        public static StandardArray<Content> Seed(StandardArray<Tetrahedron<int>> Borders, Random Random)
+        public static StandardArray<Content> Seed(StandardArray<Vector> Vertices, StandardArray<Tetrahedron<int>> Indices,
+            StandardArray<Tetrahedron<int>> Borders, Random Random)
         {
             // Create an array of contents for each tetrahedron.
             Content[] contents = new Content[Borders.Count];
 
-            // The open set contains the fringe of the ever expanding blue form.
-            HashSet<int> openset = new HashSet<int>();
-
-            // Stuff some random seeds in there.
-            for (int t = 0; t < 5; t++)
+            foreach (KeyValuePair<int, Tetrahedron<int>> kvp in Indices.Items)
             {
-                openset.Add(Random.Next(contents.Length));
-            }
-            
-            // Begin growth
-            int iteration = 0;
-            HashSet<int> newopenset = new HashSet<int>();
-            while (iteration < 20)
-            {
-                foreach (int tetra in openset)
+                Tetrahedron<int> tetra = kvp.Value;
+                Tetrahedron<Vector> vectetra = new Tetrahedron<Vector>(
+                    Vertices.Lookup(tetra.A),
+                    Vertices.Lookup(tetra.B),
+                    Vertices.Lookup(tetra.C),
+                    Vertices.Lookup(tetra.D));
+                Vector midpoint = Tetrahedron.Midpoint(vectetra);
+                if (midpoint.Z < 0.0)
                 {
-                    contents[tetra] = Content.Full;
-                    
-                    // SPREAD!!
-                    foreach (int bord in Borders.Lookup(tetra).Points)
-                    {
-                        if (bord >= 0 && contents[bord] == Content.Empty && Random.NextDouble() > 0.4)
-                        {
-                            newopenset.Add(bord);
-                        }
-                    }
+                    contents[kvp.Key] = Content.Full;
                 }
-
-                HashSet<int> temp = openset;
-                openset.Clear();
-                openset = newopenset;
-                newopenset = temp;
-                iteration++;
+                else
+                {
+                    contents[kvp.Key] = Content.Empty;
+                }
             }
+
 
             return new StandardArray<Content>(contents);
         }
