@@ -53,6 +53,26 @@ namespace Alunite
 
             // Make a vbo
             this._VBO = new CNVVBO(ColorNormalVertex.Model.Singleton, vertices, indices);
+
+            // Shader test
+            int vshade = GL.CreateShader(ShaderType.VertexShader);
+            int fshade = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(vshade, @"void main()
+{
+    gl_FrontColor = gl_Color;
+    gl_Position = ftransform();
+}");
+            GL.ShaderSource(fshade, @"void main()
+{
+    gl_FragColor = gl_Color;
+}");
+            GL.CompileShader(vshade);
+            GL.CompileShader(fshade);
+            int prog = GL.CreateProgram();
+            GL.AttachShader(prog, vshade);
+            GL.AttachShader(prog, fshade);
+            GL.LinkProgram(prog);
+            GL.UseProgram(prog);
         }
 
         /// <summary>
