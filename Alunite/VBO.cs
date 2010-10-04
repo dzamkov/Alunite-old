@@ -102,28 +102,28 @@ namespace Alunite
         where V : struct, IVertex
         where M : IVertexModel<V>
     {
-        public VBO(M Model, IFiniteArray<V, int> Source)
+        public VBO(M Model, ISequentialArray<V> Source)
         {
             this._Model = Model;
-            this._Count = Source.Size;
+            this._Count = Source.Count;
             this._ArrayBuffer = _WriteArrayBuffer(Model, Source);
         }
 
-        public VBO(M Model, IFiniteArray<V, int> VerticeSource, IFiniteArray<int, int> IndiceSource)
+        public VBO(M Model, ISequentialArray<V> VerticeSource, ISequentialArray<int> IndiceSource)
         {
             this._Model = Model;
-            this._Count = IndiceSource.Size;
+            this._Count = IndiceSource.Count;
             this._ArrayBuffer = _WriteArrayBuffer(Model, VerticeSource);
             this._ElementArrayBuffer = _WriteElementArrayBuffer(IndiceSource);
         }
 
-        private static unsafe uint _WriteArrayBuffer(M Model, IFiniteArray<V, int> Source)
+        private static unsafe uint _WriteArrayBuffer(M Model, ISequentialArray<V> Source)
         {
             uint ab;
             int vertsize = Model.Size;
             GL.GenBuffers(1, out ab);
             GL.BindBuffer(BufferTarget.ArrayBuffer, ab);
-            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Source.Size * vertsize), IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Source.Count * vertsize), IntPtr.Zero, BufferUsageHint.StaticDraw);
             byte* buffer = (byte*)GL.MapBuffer(BufferTarget.ArrayBuffer, BufferAccess.WriteOnly).ToPointer();
             foreach (KeyValuePair<int, V> kvp in Source.Items)
             {
@@ -133,12 +133,12 @@ namespace Alunite
             return ab;
         }
 
-        private static unsafe uint _WriteElementArrayBuffer(IFiniteArray<int, int> Source)
+        private static unsafe uint _WriteElementArrayBuffer(ISequentialArray<int> Source)
         {
             uint eab;
             GL.GenBuffers(1, out eab);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, eab);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(Source.Size * sizeof(uint)), IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(Source.Count * sizeof(uint)), IntPtr.Zero, BufferUsageHint.StaticDraw);
             uint* buffer = (uint*)GL.MapBuffer(BufferTarget.ElementArrayBuffer, BufferAccess.WriteOnly).ToPointer();
             foreach (KeyValuePair<int, int> kvp in Source.Items)
             {

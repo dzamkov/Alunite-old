@@ -212,7 +212,7 @@ namespace Alunite
             where V : IEquatable<V>
         {
             Dictionary<Triangle<V>, KeyValuePair<int, int>> opentriangles = new Dictionary<Triangle<V>, KeyValuePair<int, int>>();
-            int[,] borders = new int[Tetrahedrons.Size, 4]; // 0 means no border, every value after is offset by one.
+            int[,] borders = new int[Tetrahedrons.Count, 4]; // 0 means no border, every value after is offset by one.
 
             // Determine connections for the tetrahedrons.
             foreach (KeyValuePair<int, Tetrahedron<V>> kvp in Tetrahedrons.Items)
@@ -235,7 +235,7 @@ namespace Alunite
             }
 
             // Stuff border info into the tetrahedron array.
-            Tetrahedron<int>[] nodes = new Tetrahedron<int>[Tetrahedrons.Size];
+            Tetrahedron<int>[] nodes = new Tetrahedron<int>[Tetrahedrons.Count];
             for (int t = 0; t < nodes.Length; t++)
             {
                 nodes[t] = new Tetrahedron<int>(

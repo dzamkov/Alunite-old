@@ -23,6 +23,14 @@ namespace Alunite
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
 
+            GL.Enable(EnableCap.Lighting);
+            GL.Enable(EnableCap.Light0);
+
+            GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.2, 0.2, 0.2));
+            GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.6, 0.6, 0.6));
+            GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 1.0, 1.0));
+            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, 7.8f, 0.0f));
+
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
@@ -31,7 +39,7 @@ namespace Alunite
             
             Grid gr = new Grid(new Lattice(new Vector(-0.5, -0.5, -0.5), new Vector(0.1, 0.1, 0.1)), new IVector(11, 11, 11));
             this._Data = new StandardArray<Vector>(gr);
-            this._Data = this._Data.Map<Vector>(delegate(Vector In)
+            this._Data.Map(delegate(Vector In)
             {
                 Vector rvec = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble());
                 rvec -= new Vector(0.5, 0.5, 0.5);
@@ -41,13 +49,12 @@ namespace Alunite
             StandardArray<Tetrahedron<int>> tetras = new StandardArray<Tetrahedron<int>>(gr.Volume);
             StandardArray<Tetrahedron<int>> tetraborders = Tetrahedron.Borders(tetras);
             StandardArray<Content> tetracontents = Seed(tetraborders, r);
-            StandardArray<int> tris = Tesselate(tetras, tetraborders, tetracontents);
+            ISequentialArray<ColorNormalVertex> vertices;
+            ISequentialArray<int> indices;
+            Tesselate(this._Data, tetras, tetraborders, tetracontents, out vertices, out indices);
 
             // Make a vbo
-            this._VBO = new CNVVBO(ColorNormalVertex.Model.Singleton, this._Data.Map<ColorNormalVertex>(delegate(Vector v)
-                {
-                    return new ColorNormalVertex(Color.RGB(v.X + 0.5, v.Y + 0.5, v.Z + 0.5), v, new Vector());   
-                }), tris);
+            this._VBO = new CNVVBO(ColorNormalVertex.Model.Singleton, vertices, indices);
         }
 
         /// <summary>
@@ -56,7 +63,7 @@ namespace Alunite
         public static StandardArray<Content> Seed(StandardArray<Tetrahedron<int>> Borders, Random Random)
         {
             // Create an array of contents for each tetrahedron.
-            Content[] contents = new Content[Borders.Size];
+            Content[] contents = new Content[Borders.Count];
 
             // The open set contains the fringe of the ever expanding blue form.
             HashSet<int> openset = new HashSet<int>();
@@ -99,9 +106,13 @@ namespace Alunite
         /// <summary>
         /// Creates triangles for rendering purposes for the specified node graph.
         /// </summary>
-        public static StandardArray<int> Tesselate(StandardArray<Tetrahedron<int>> Tetrahedrons, StandardArray<Tetrahedron<int>> Borders, StandardArray<Content> Contents)
+        public static void Tesselate(
+            StandardArray<Vector> VertexPositions,
+            StandardArray<Tetrahedron<int>> Tetrahedrons, StandardArray<Tetrahedron<int>> Borders, StandardArray<Content> Contents,
+            out ISequentialArray<ColorNormalVertex> Vertices, out ISequentialArray<int> Indices)
         {
-            List<int> tris = new List<int>();
+            Dictionary<int, ColorNormalVertex> verts = new Dictionary<int, ColorNormalVertex>();
+            ListArray<int> tris = new ListArray<int>();
             foreach (KeyValuePair<int, Tetrahedron<int>> kvp in Tetrahedrons.Items)
             {
                 if (Contents.Lookup(kvp.Key) == Content.Full)
@@ -113,14 +124,39 @@ namespace Alunite
                         if (borders[t] < 0 || Contents.Lookup(borders[t]) == Content.Empty)
                         {
                             Triangle<int> face = faces[t];
+                            Vector facenorm = Triangle.Normal(new Triangle<Vector>(
+                                VertexPositions.Lookup(face.A),
+                                VertexPositions.Lookup(face.B),
+                                VertexPositions.Lookup(face.C)));
                             tris.Add(face.A);
                             tris.Add(face.B);
                             tris.Add(face.C);
+                            foreach (int point in face.Points)
+                            {
+                                ColorNormalVertex vert;
+                                if (!verts.TryGetValue(point, out vert))
+                                {
+                                    vert = new ColorNormalVertex(Color.RGB(0.6, 0.6, 0.6), VertexPositions.Lookup(point), new Vector());
+                                }
+                                verts[point] = new ColorNormalVertex(vert.Color, vert.Position, vert.Normal + facenorm);
+                            }
                         }
                     }
                 }
             }
-            return new StandardArray<int>(tris, tris.Count);
+
+            // Remap vertex data with those that are actually used.
+            Dictionary<int, int> vertmapping = new Dictionary<int, int>();
+            ListArray<ColorNormalVertex> vertices = new ListArray<ColorNormalVertex>();
+            foreach (KeyValuePair<int, ColorNormalVertex> vert in verts)
+            {
+                vertmapping.Add(vert.Key, vertices.Count);
+                vertices.Add(vert.Value);
+            }
+            tris.Map(x => vertmapping[x]);
+
+            Vertices = vertices;
+            Indices = tris;
         }
 
         /// <summary>

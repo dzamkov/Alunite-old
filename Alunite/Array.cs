@@ -4,8 +4,9 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A collection of items stored at indices. This is a generalization of
-    /// .net arrays.
+    /// A possibly-infinite collection of items stored at indices. This is a generalization of
+    /// .net arrays and is closer to a function but arrays can be mutable. Unless otherwise stated,
+    /// arrays may not change from outside influence when used in an argument.
     /// </summary>
     /// <typeparam name="S">The type of items in the array.</typeparam>
     /// <typeparam name="I">The type of indexes(or references) to the array.</typeparam>
@@ -13,26 +14,39 @@ namespace Alunite
         where I : IEquatable<I>
     {
         /// <summary>
-        /// Gets the item at the specified index.
+        /// Gets the item at the specified index. This function may throw an exception for some values, but it may
+        /// not cause a modification in the array or the programs state (besides the side effects of the lookup).
         /// </summary>
         T Lookup(I Index);
     }
 
     /// <summary>
-    /// An array where every any element may be changed.
+    /// An array whose elements may be changed.
     /// </summary>
     public interface IMutableArray<T, I>
         where I : IEquatable<I>
     {
         /// <summary>
-        /// Modifies an element in the array to reflect a value.
+        /// Modifies an element in the array to reflect a value. This function may throw an exception to indicate
+        /// failure.
         /// </summary>
         void Modify(I Index, T Value);
     }
 
     /// <summary>
-    /// An array whose elements can be enumerated. Enumerable arrays must have a finite amount
-    /// of items.
+    /// An array where an in-place mapping can be applied.
+    /// </summary>
+    public interface IMapableArray<T, I> : IArray<T, I>
+        where I : IEquatable<I>
+    {
+        /// <summary>
+        /// Applies an in-place mapping, transforming all the elements in the array by the specified function.
+        /// </summary>
+        void Map(Func<T, T> Mapping);
+    }
+
+    /// <summary>
+    /// An array whose intresting values can be enumerated.
     /// </summary>
     public interface IFiniteArray<T, I> : IArray<T, I>
         where I : IEquatable<I>
@@ -46,30 +60,55 @@ namespace Alunite
         /// Gets the values in the array (in no particular order).
         /// </summary>
         IEnumerable<T> Values { get; }
-
-        /// <summary>
-        /// Gets the size of the array.
-        /// </summary>
-        int Size { get; }
     }
 
     /// <summary>
-    /// An array where the indices have an ordering.
+    /// A numerically-indexed array containing a finite amount of data. The "intresting values" (as defined by IFiniteArray)
+    /// must be produced (using Values and Items) in sequential order starting at index 0 and stopping at the index before Count.
     /// </summary>
-    public interface IOrderedArray<T, I> : IArray<T, I>
-        where I : IEquatable<I>
+    public interface ISequentialArray<T> : IFiniteArray<T, int>
     {
-    
+        /// <summary>
+        /// Gets a positive integer that defines the integer range [0, Count) where Values and Items iterates.
+        /// </summary>
+        int Count { get; }
+    }
+
+    /// <summary>
+    /// A sequential array where items can be added at the end.
+    /// </summary>
+    public interface IExtendableArray<T> : ISequentialArray<T>
+    {
+        /// <summary>
+        /// Adds an item to the array, incrementing its size.
+        /// </summary>
+        void Add(T Item);
+
+        /// <summary>
+        /// Adds an ordered collection of items to the array.
+        /// </summary>
+        void Add(IEnumerable<T> Items);
     }
 
     /// <summary>
     /// An array (by alunite's definition) created from a .net array.
     /// </summary>
-    public class StandardArray<T> : IFiniteArray<T, int>, IMutableArray<T, int>
+    public class StandardArray<T> : IMutableArray<T, int>, ISequentialArray<T>, IMapableArray<T, int>
     {
         public StandardArray(T[] Items)
         {
             this._Items = Items;
+        }
+
+        public StandardArray(ISequentialArray<T> Source)
+        {
+            this._Items = new T[Source.Count];
+            int i = 0;
+            foreach (T item in Source.Values)
+            {
+                this._Items[i] = item;
+                i++;
+            }
         }
 
         public StandardArray(IEnumerable<T> Items, int Count)
@@ -89,32 +128,18 @@ namespace Alunite
             }
         }
 
-        public StandardArray(IFiniteArray<T, int> Source)
-        {
-            this._Items = new T[Source.Size];
-            foreach (KeyValuePair<int, T> item in Source.Items)
-            {
-                this._Items[item.Key] = item.Value;
-            }
-        }
-
         public StandardArray(IEnumerable<T> Source)
         {
             List<T> items = new List<T>(Source);
             this._Items = items.ToArray();
         }
 
-        /// <summary>
-        /// Creates an array by transforming every element in this array by a mapping function.
-        /// </summary>
-        public StandardArray<F> Map<F>(Func<T, F> Mapping)
+        public void Map(Func<T, T> Mapping)
         {
-            F[] otheritems = new F[this._Items.Length];
-            for (int t = 0; t < otheritems.Length; t++)
+            for (int t = 0; t < this._Items.Length; t++)
             {
-                otheritems[t] = Mapping(this._Items[t]);
+                this._Items[t] = Mapping(this._Items[t]);
             }
-            return new StandardArray<F>(otheritems);
         }
 
         /// <summary>
@@ -137,7 +162,14 @@ namespace Alunite
 
         public T Lookup(int Index)
         {
-            return this._Items[Index];
+            if (Index >= 0 && Index < this._Items.Length)
+            {
+                return this._Items[Index];
+            }
+            else
+            {
+                return default(T);
+            }
         }
 
         public void Modify(int Index, T Value)
@@ -147,11 +179,11 @@ namespace Alunite
 
         public IEnumerable<KeyValuePair<int, T>> Items
         {
-            get 
+            get
             {
-                for (int i = 0; i < this._Items.Length; i++)
+                for (int t = 0; t < this._Items.Length; t++)
                 {
-                    yield return new KeyValuePair<int, T>(i, this._Items[i]);
+                    yield return new KeyValuePair<int, T>(t, this._Items[t]);
                 }
             }
         }
@@ -164,14 +196,122 @@ namespace Alunite
             }
         }
 
-        public int Size
+        public int Count
         {
-            get
+            get 
             {
                 return this._Items.Length;
             }
         }
 
+        public T Default
+        {
+            get 
+            {
+                return default(T);
+            }
+        }
+
         private T[] _Items;
+    }
+
+    /// <summary>
+    /// A numerically-indexed array where items can be added and removed quickly.
+    /// </summary>
+    public class ListArray<T> : IMutableArray<T, int>, IExtendableArray<T>, IMapableArray<T, int>
+    {
+        public ListArray()
+        {
+            this._Items = new List<T>();
+        }
+
+        public ListArray(ISequentialArray<T> Source)
+        {
+            this._Items = new List<T>(Source.Values);
+        }
+
+        public ListArray(List<T> Source)
+        {
+            this._Items = Source;
+        }
+
+        public ListArray(IEnumerable<T> Source)
+        {
+            this._Items = new List<T>(Source);
+        }
+
+        public IEnumerable<T> Values
+        {
+            get 
+            {
+                return this._Items;
+            }
+        }
+
+        public int Count
+        {
+            get 
+            {
+                return this._Items.Count;
+            }
+        }
+
+        public T Default
+        {
+            get 
+            {
+                return default(T);
+            }
+        }
+
+        public T Lookup(int Index)
+        {
+            if (Index >= 0 && Index < this._Items.Count)
+            {
+                return this._Items[Index];
+            }
+            else
+            {
+                return default(T);
+            }
+        }
+
+        public IEnumerable<KeyValuePair<int, T>> Items
+        {
+            get
+            {
+                int i = 0;
+                foreach (T item in this._Items)
+                {
+                    yield return new KeyValuePair<int, T>(i, item);
+                    i++;
+                }
+            }
+        }
+
+        public void Modify(int Index, T Value)
+        {
+            this._Items[Index] = Value;
+        }
+
+        public void Add(T Item)
+        {
+            this._Items.Add(Item);
+        }
+
+        public void Add(IEnumerable<T> Items)
+        {
+            this._Items.AddRange(Items);
+        }
+
+        public void Map(Func<T, T> Mapping)
+        {
+            for (int t = 0; t < this._Items.Count; t++)
+            {
+                this._Items[t] = Mapping(this._Items[t]);
+            }
+        }
+
+        private List<T> _Items;
     }
 }

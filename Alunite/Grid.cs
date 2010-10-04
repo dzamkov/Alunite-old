@@ -26,16 +26,13 @@ namespace Alunite
     /// <summary>
     /// A finite area on a lattice.
     /// </summary>
-    public class Grid : IFiniteArray<Vector, int>, IFiniteArray<Vector, IVector>
+    public class Grid : ISequentialArray<Vector>, IFiniteArray<Vector, IVector>
     {
         public Grid(Lattice Source, IVector Size)
         {
             this._Source = Source;
             this._Size = Size;
         }
-
-        private Lattice _Source;
-        private IVector _Size;
 
         public Vector Lookup(IVector Index)
         {
@@ -87,6 +84,14 @@ namespace Alunite
             }
         }
 
+        public Vector Default
+        {
+            get
+            {
+                return new Vector();
+            }
+        }
+
         IEnumerable<KeyValuePair<IVector, Vector>> IFiniteArray<Vector, IVector>.Items
         {
             get
@@ -122,7 +127,7 @@ namespace Alunite
             }
         }
 
-        public int Size
+        public int Count
         {
             get
             {
@@ -167,5 +172,8 @@ namespace Alunite
 
             }
         }
+
+        private Lattice _Source;
+        private IVector _Size;
     }
 }
