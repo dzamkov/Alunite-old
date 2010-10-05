@@ -112,7 +112,7 @@ namespace Alunite
         /// </summary>
         public static Vector Normal(Triangle<Vector> Triangle)
         {
-            return Vector.Normalize(Vector.Cross(Triangle.C - Triangle.A, Triangle.B - Triangle.A));
+            return Vector.Normalize(Vector.Cross(Triangle.B - Triangle.A, Triangle.C - Triangle.A));
         }
     }
 }

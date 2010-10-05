@@ -45,7 +45,9 @@
     <Compile Include="Color.cs" />
     <Compile Include="Edge.cs" />
     <Compile Include="Grid.cs" />
+    <Compile Include="Path.cs" />
     <Compile Include="Tetrahedron.cs" />
+    <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />
     <Compile Include="Triangulation.cs" />
     <Compile Include="VBO.cs" />
@@ -59,5 +61,6 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
 </Project>

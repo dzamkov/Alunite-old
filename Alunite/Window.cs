@@ -54,18 +54,16 @@ namespace Alunite
             // Make a vbo
             this._VBO = new CNVVBO(ColorNormalVertex.Model.Singleton, vertices, indices);
 
+            // Resources
+            Path resources = Path.ApplicationStartup.Parent.Parent.Parent["Resources"];
+            Path shaders = resources["Shaders"];
+            Path textures = resources["Textures"];
+
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
             int fshade = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(vshade, @"void main()
-{
-    gl_FrontColor = gl_Color;
-    gl_Position = ftransform();
-}");
-            GL.ShaderSource(fshade, @"void main()
-{
-    gl_FragColor = gl_Color;
-}");
+            GL.ShaderSource(vshade, Path.ReadText(shaders["TestVS.glsl"]));
+            GL.ShaderSource(fshade, Path.ReadText(shaders["TestFS.glsl"]));
             GL.CompileShader(vshade);
             GL.CompileShader(fshade);
             int prog = GL.CreateProgram();
@@ -73,6 +71,12 @@ namespace Alunite
             GL.AttachShader(prog, fshade);
             GL.LinkProgram(prog);
             GL.UseProgram(prog);
+
+            // Textures
+            Texture test = Texture.Load(textures["Test.png"]);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            test.Bind();
+            GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
         }
 
         /// <summary>
@@ -190,12 +194,10 @@ namespace Alunite
             Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(0.7, (double)this.Width / (double)this.Height, 0.01, 50.0);
             GL.LoadMatrix(ref proj);
             Matrix4d view = Matrix4d.LookAt(
-                new Vector3d(1.1, 1.1, 1.1),
+                new Vector3d(Math.Sin(this._Rot), Math.Cos(this._Rot), 1.1),
                 new Vector3d(0.0, 0.0, 0.0),
                 new Vector3d(0.0, 0.0, 1.0));
             GL.MultMatrix(ref view);
-
-            GL.Rotate(this._Rot * 16, new Vector(0.0, 0.0, 1.0));
 
             this._VBO.Render(BeginMode.Triangles);
 
@@ -204,7 +206,7 @@ namespace Alunite
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
-            this._Rot += e.Time;
+            this._Rot += e.Time / 5;
         }
 
         protected override void OnResize(EventArgs e)
