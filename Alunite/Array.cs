@@ -314,4 +314,128 @@ namespace Alunite
 
         private List<T> _Items;
     }
+
+    /// <summary>
+    /// Acts as an array that has a one to one mapping to a source array.
+    /// </summary>
+    public class MapSequentialArray<T, F> : ISequentialArray<F>
+    {
+        public MapSequentialArray(ISequentialArray<T> Source, Func<T, F> Mapping)
+        {
+            this._Source = Source;
+            this._Mapping = Mapping;
+        }
+
+        public int Count
+        {
+            get 
+            {
+                return this._Source.Count;
+            }
+        }
+
+        public IEnumerable<KeyValuePair<int, F>> Items
+        {
+            get 
+            {
+                foreach (KeyValuePair<int, T> items in this._Source.Items)
+                {
+                    yield return new KeyValuePair<int, F>(items.Key, this._Mapping(items.Value));
+                }
+            }
+        }
+
+        public IEnumerable<F> Values
+        {
+            get 
+            {
+                foreach (T val in this._Source.Values)
+                {
+                    yield return this._Mapping(val);
+                }
+            }
+        }
+
+        public F Lookup(int Index)
+        {
+            return this._Mapping(this._Source.Lookup(Index));
+        }
+
+        private ISequentialArray<T> _Source;
+        private Func<T, F> _Mapping;
+    }
+
+    /// <summary>
+    /// Acts as an array produced by a one to many (constant number) mapping from the source array.
+    /// </summary>
+    public class ExpansionSequentialArray<T, F> : ISequentialArray<F>
+    {
+        public ExpansionSequentialArray(ISequentialArray<T> Source, int Expansion, Func<T, IEnumerable<F>> Mapping)
+        {
+            this._Source = Source;
+            this._Expansion = Expansion;
+            this._Mapping = Mapping;
+        }
+
+        public int Count
+        {
+            get
+            {
+                return this._Expansion * this._Source.Count;
+            }
+        }
+
+        public IEnumerable<KeyValuePair<int, F>> Items
+        {
+            get 
+            {
+                foreach (KeyValuePair<int, T> item in this._Source.Items)
+                {
+                    int i = item.Key * this._Expansion;
+                    foreach (F aval in this._Mapping(item.Value))
+                    {
+                        yield return new KeyValuePair<int, F>(i, aval);
+                        i++;
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<F> Values
+        {
+            get 
+            {
+                foreach (T val in this._Source.Values)
+                {
+                    foreach (F aval in this._Mapping(val))
+                    {
+                        yield return aval;
+                    }
+                }
+            }
+        }
+
+        public F Lookup(int Index)
+        {
+            int o = Index / this._Expansion;
+            int r = Index % this._Expansion;
+            IEnumerable<F> items = this._Mapping(this._Source.Lookup(o));
+            foreach (F item in items)
+            {
+                if (r > 0)
+                {
+                    r--;
+                }
+                else
+                {
+                    return item;
+                }
+            }
+            return default(F); // Should never happen.
+        }
+
+        private ISequentialArray<T> _Source;
+        private Func<T, IEnumerable<F>> _Mapping;
+        private int _Expansion;
+    }
 }

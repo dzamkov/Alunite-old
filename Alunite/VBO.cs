@@ -95,6 +95,53 @@ namespace Alunite
     }
 
     /// <summary>
+    /// A vertex with no additional information other than position.
+    /// </summary>
+    public struct Vertex : IVertex
+    {
+        public Vertex(Vector Position)
+        {
+            this.Position = Position;
+        }
+
+        public Vector Position;
+
+        /// <summary>
+        /// Vertex model for ColorNormalVertex
+        /// </summary>
+        public class Model : IVertexModel<Vertex>
+        {
+            private Model()
+            {
+
+            }
+
+            public unsafe void Write(Vertex Vertex, void* Buffer)
+            {
+                float* m = (float*)Buffer;
+                m[0] = (float)Vertex.Position.X;
+                m[1] = (float)Vertex.Position.Y;
+                m[2] = (float)Vertex.Position.Z;
+            }
+
+            public int Size
+            {
+                get
+                {
+                    return sizeof(float) * 3;
+                }
+            }
+
+            public void Initialize()
+            {
+                GL.InterleavedArrays(InterleavedArrayFormat.V3f, 0, IntPtr.Zero);
+            }
+
+            public static readonly Model Singleton = new Model();
+        }
+    }
+
+    /// <summary>
     /// Represents an array/element vertex buffer stored on the graphics device. Vertices must be
     /// completely self-contained to be used in this VBO.
     /// </summary>
@@ -115,6 +162,13 @@ namespace Alunite
             this._Count = IndiceSource.Count;
             this._ArrayBuffer = _WriteArrayBuffer(Model, VerticeSource);
             this._ElementArrayBuffer = _WriteElementArrayBuffer(IndiceSource);
+        }
+
+        public VBO(M Model, ISequentialArray<V> VerticeSource, ISequentialArray<Triangle<int>> TriangleSource)
+            : this(Model, VerticeSource, new ExpansionSequentialArray<Triangle<int>, int>(
+                TriangleSource, 3, x => x.Points))
+        {
+
         }
 
         private static unsafe uint _WriteArrayBuffer(M Model, ISequentialArray<V> Source)

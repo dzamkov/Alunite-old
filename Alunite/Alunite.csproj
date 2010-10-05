@@ -45,6 +45,7 @@
     <Compile Include="Color.cs" />
     <Compile Include="Edge.cs" />
     <Compile Include="Grid.cs" />
+    <Compile Include="Model.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Texture.cs" />

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 namespace Alunite
 {
     using CNVVBO = VBO<ColorNormalVertex, ColorNormalVertex.Model>;
+    using VVBO = VBO<Vertex, Vertex.Model>;
 
     /// <summary>
     /// Main program window
@@ -34,30 +35,19 @@ namespace Alunite
 
             Random r = new Random();
 
-            
-            Grid gr = new Grid(new Lattice(new Vector(-0.5, -0.5, -0.5), new Vector(0.05, 0.05, 0.05)), new IVector(21, 21, 21));
-            this._Data = new StandardArray<Vector>(gr);
-            this._Data.Map(delegate(Vector In)
-            {
-                Vector rvec = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble());
-                rvec -= new Vector(0.5, 0.5, 0.5);
-                rvec *= 0.01;
-                return In + rvec;
-            }); // Point fiddlin'
-            StandardArray<Tetrahedron<int>> tetras = new StandardArray<Tetrahedron<int>>(gr.Volume);
-            StandardArray<Tetrahedron<int>> tetraborders = Tetrahedron.Borders(tetras);
-            StandardArray<Content> tetracontents = Seed(this._Data, tetras, tetraborders, r);
-            ISequentialArray<ColorNormalVertex> vertices;
-            ISequentialArray<int> indices;
-            Tesselate(this._Data, tetras, tetraborders, tetracontents, out vertices, out indices);
-
-            // Make a vbo
-            this._VBO = new CNVVBO(ColorNormalVertex.Model.Singleton, vertices, indices);
-
             // Resources
             Path resources = Path.ApplicationStartup.Parent.Parent.Parent["Resources"];
             Path shaders = resources["Shaders"];
             Path textures = resources["Textures"];
+            Path models = resources["Models"];
+
+            // Model
+            ISequentialArray<Vector> teapotverts;
+            ISequentialArray<Triangle<int>> teapottris;
+            Model.LoadObj(models["Test.obj"], out teapotverts, out teapottris);
+
+            // Make a vbo
+            this._VBO = new VVBO(Vertex.Model.Singleton, new MapSequentialArray<Vector, Vertex>(teapotverts, x => new Vertex(x)), teapottris);
 
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
@@ -215,8 +205,6 @@ namespace Alunite
         }
 
         private double _Rot;
-        private StandardArray<Vector> _Data;
-        private IEnumerable<Tetrahedron<Vector>> _Tetras;
-        private CNVVBO _VBO;
+        private VVBO _VBO;
     }
 }
