@@ -63,6 +63,28 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Computes the normals for the specified set of vertices and triangles. The indices for the normals are aligned with vertices.
+        /// </summary>
+        public static ISequentialArray<Vector> ComputeNormals(ISequentialArray<Vector> Vertices, ISequentialArray<Triangle<int>> Triangles, bool Normalize)
+        {
+            Vector[] normals = new Vector[Vertices.Count];
+            foreach (Triangle<int> tri in Triangles.Values)
+            {
+                Triangle<Vector> vectri = new Triangle<Vector>(Vertices.Lookup(tri.A), Vertices.Lookup(tri.B), Vertices.Lookup(tri.C));
+                Vector norm = Triangle.Normal(vectri);
+                normals[tri.A] += norm;
+                normals[tri.B] += norm;
+                normals[tri.C] += norm;
+            }
+            if (Normalize)
+            {
+                for (int t = 0; t < normals.Length; t++)
+                {
+                    normals[t] = Vector.Normalize(normals[t]);
+                }
+            }
+            return new StandardArray<Vector>(normals);
+        }
     }
-
 }

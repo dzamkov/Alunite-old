@@ -438,4 +438,60 @@ namespace Alunite
         private Func<T, IEnumerable<F>> _Mapping;
         private int _Expansion;
     }
+
+    /// <summary>
+    /// Acts as an array produced by combining two elements present in seperate arrays.
+    /// </summary>
+    public class ZipSequentialArray<TA, TB> : ISequentialArray<Tuple<TA, TB>>
+    {
+        public ZipSequentialArray(ISequentialArray<TA> SourceA, ISequentialArray<TB> SourceB)
+        {
+            this._SourceA = SourceA;
+            this._SourceB = SourceB;
+        }
+
+        public int Count
+        {
+            get 
+            {
+                return Math.Min(this._SourceA.Count, this._SourceB.Count);
+            }
+        }
+
+        public IEnumerable<KeyValuePair<int, Tuple<TA, TB>>> Items
+        {
+            get 
+            {
+                int i = 0;
+                IEnumerator<TA> ae = this._SourceA.Values.GetEnumerator();
+                IEnumerator<TB> be = this._SourceB.Values.GetEnumerator();
+                while (ae.MoveNext() && be.MoveNext())
+                {
+                    yield return new KeyValuePair<int, Tuple<TA, TB>>(i, Tuple.Create(ae.Current, be.Current));
+                    i++;
+                }
+            }
+        }
+
+        public IEnumerable<Tuple<TA, TB>> Values
+        {
+            get 
+            {
+                IEnumerator<TA> ae = this._SourceA.Values.GetEnumerator();
+                IEnumerator<TB> be = this._SourceB.Values.GetEnumerator();
+                while (ae.MoveNext() && be.MoveNext())
+                {
+                    yield return Tuple.Create(ae.Current, be.Current);
+                }
+            }
+        }
+
+        public Tuple<TA, TB> Lookup(int Index)
+        {
+            return Tuple.Create(this._SourceA.Lookup(Index), this._SourceB.Lookup(Index));
+        }
+
+        private ISequentialArray<TA> _SourceA;
+        private ISequentialArray<TB> _SourceB;
+    }
 }

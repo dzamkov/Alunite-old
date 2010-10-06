@@ -142,6 +142,58 @@ namespace Alunite
     }
 
     /// <summary>
+    /// A vertex with normal and position.
+    /// </summary>
+    public struct NormalVertex : IVertex
+    {
+        public NormalVertex(Vector Position, Vector Normal)
+        {
+            this.Position = Position;
+            this.Normal = Normal;
+        }
+
+        public Vector Position;
+        public Vector Normal;
+
+        /// <summary>
+        /// Vertex model for ColorNormalVertex
+        /// </summary>
+        public class Model : IVertexModel<NormalVertex>
+        {
+            private Model()
+            {
+
+            }
+
+            public unsafe void Write(NormalVertex Vertex, void* Buffer)
+            {
+                float* m = (float*)Buffer;
+                m[0] = (float)Vertex.Normal.X;
+                m[1] = (float)Vertex.Normal.Y;
+                m[2] = (float)Vertex.Normal.Z;
+                m[3] = (float)Vertex.Position.X;
+                m[4] = (float)Vertex.Position.Y;
+                m[5] = (float)Vertex.Position.Z;
+            }
+
+            public int Size
+            {
+                get
+                {
+                    return sizeof(float) * 6;
+                }
+            }
+
+            public void Initialize()
+            {
+                GL.InterleavedArrays(InterleavedArrayFormat.N3fV3f, 0, IntPtr.Zero);
+            }
+
+            public static readonly Model Singleton = new Model();
+        }
+    }
+
+    /// <summary>
     /// Represents an array/element vertex buffer stored on the graphics device. Vertices must be
     /// completely self-contained to be used in this VBO.
     /// </summary>

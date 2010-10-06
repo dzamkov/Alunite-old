@@ -8,6 +8,7 @@ using System.Collections.Generic;
 namespace Alunite
 {
     using CNVVBO = VBO<ColorNormalVertex, ColorNormalVertex.Model>;
+    using NVVBO = VBO<NormalVertex, NormalVertex.Model>;
     using VVBO = VBO<Vertex, Vertex.Model>;
 
     /// <summary>
@@ -42,12 +43,19 @@ namespace Alunite
             Path models = resources["Models"];
 
             // Model
-            ISequentialArray<Vector> teapotverts;
-            ISequentialArray<Triangle<int>> teapottris;
-            Model.LoadObj(models["Test.obj"], out teapotverts, out teapottris);
+            ISequentialArray<Vector> verts;
+            ISequentialArray<Triangle<int>> tris;
+            Model.LoadObj(models["Test.obj"], out verts, out tris);
+            ISequentialArray<Vector> norms = Model.ComputeNormals(verts, tris, true);
 
             // Make a vbo
-            this._VBO = new VVBO(Vertex.Model.Singleton, new MapSequentialArray<Vector, Vertex>(teapotverts, x => new Vertex(x)), teapottris);
+            this._VBO = new NVVBO(NormalVertex.Model.Singleton,
+                new MapSequentialArray<Tuple<Vector, Vector>, NormalVertex>(
+                    new ZipSequentialArray<Vector, Vector>(verts, norms),
+                    delegate(Tuple<Vector, Vector> PosNorm)
+                    {
+                        return new NormalVertex(PosNorm.A, PosNorm.B);
+                    }), tris);
 
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
@@ -205,6 +213,6 @@ namespace Alunite
         }
 
         private double _Rot;
-        private VVBO _VBO;
+        private NVVBO _VBO;
     }
 }
