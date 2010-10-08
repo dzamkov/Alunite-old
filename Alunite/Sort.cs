@@ -22,19 +22,19 @@ namespace Alunite
         /// <summary>
         /// Sorts the specified region of the array of data using an in-place algorithim.
         /// </summary>
-        public static void InPlace<A, T>(A Data, Func<Tuple<T, T>, bool> Comparison, int Start, int Size)
+        public static void InPlace<A, T>(A Data, Func<Tuple<T, T>, bool> Comparison, int Start, int End)
             where A : ISequentialArray<T>, IMutableArray<T, int>
         {
-            if (Size > 1)
+            if (End - Start > 0)
             {
-                int pivotinitial = Start + Size / 2;
-                int last = Start + Size - 1;
+                int pivotinitial = (Start + End) / 2;
+                int last = End - 1;
                 T pivot = Data.Lookup(pivotinitial);
                 Data.Modify(pivotinitial, Data.Lookup(last));
                 Data.Modify(last, pivot);
 
-                int curstore = 0;
-                for (int t = 0; t < Size - 1; t++)
+                int curstore = Start;
+                for (int t = Start; t < End; t++)
                 {
                     T val = Data.Lookup(t);
                     if (Comparison(new Tuple<T, T>(pivot, val)))
@@ -52,8 +52,8 @@ namespace Alunite
                 Data.Modify(curstore, pivot);
 
                 // RECURSE!
-                InPlace<A, T>(Data, Comparison, 0, curstore);
-                InPlace<A, T>(Data, Comparison, curstore + 1, Size - curstore - 1);
+                InPlace<A, T>(Data, Comparison, Start, curstore);
+                InPlace<A, T>(Data, Comparison, curstore + 1, End);
             }
         }
     }
