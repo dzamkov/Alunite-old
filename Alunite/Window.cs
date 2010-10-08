@@ -32,7 +32,7 @@ namespace Alunite
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, -7.8f, 0.0f));
 
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             Random r = new Random();
 
@@ -46,23 +46,36 @@ namespace Alunite
             ISequentialArray<Vector> verts;
             ISequentialArray<Triangle<int>> tris;
             Model.LoadObj(models["Test.obj"], out verts, out tris);
-            ISequentialArray<Vector> norms = Model.ComputeNormals(verts, tris, true);
 
             // Make a tetrahedralization
             ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralization.Delaunay(verts);
-            ISequentialArray<int> tetratris = new ExpansionSequentialArray<Tetrahedron<int>, int>(tetras, 12, Tetrahedron.FacePoints);
+
+            // Select only some tetrahedra (to make a fractured shape).
+            ListArray<Tetrahedron<int>> passedtetras = new ListArray<Tetrahedron<int>>();
+            foreach (Tetrahedron<int> tetra in tetras.Values)
+            {
+                Tetrahedron<Vector> actualtetra = new Tetrahedron<Vector>(
+                    verts.Lookup(tetra.A), 
+                    verts.Lookup(tetra.B), 
+                    verts.Lookup(tetra.C), 
+                    verts.Lookup(tetra.D));
+                if (Tetrahedron.Midpoint(actualtetra).X < 0.0)
+                {
+                    passedtetras.Add(tetra);
+                }
+            }
+
+            ISequentialArray<Triangle<int>> tetratris = Tetrahedralization.Boundary(passedtetras);
+            ISequentialArray<Vector> norms = Model.ComputeNormals(verts, tetratris, true);
 
             // Make a vbo
-            /*this._VBO = new NVVBO(NormalVertex.Model.Singleton,
+            this._VBO = new NVVBO(NormalVertex.Model.Singleton,
                 new MapSequentialArray<Tuple<Vector, Vector>, NormalVertex>(
                     new ZipSequentialArray<Vector, Vector>(verts, norms),
                     delegate(Tuple<Vector, Vector> PosNorm)
                     {
                         return new NormalVertex(PosNorm.A, PosNorm.B);
-                    }), tris);*/
-            this._VBO = new VBO<NormalVertex, NormalVertex.Model>(NormalVertex.Model.Singleton,
-                new MapSequentialArray<Vector, NormalVertex>(verts, x => new NormalVertex(x, new Vector())),
-                tetratris);
+                    }), tetratris);
 
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
@@ -74,14 +87,14 @@ namespace Alunite
             int prog = GL.CreateProgram();
             GL.AttachShader(prog, vshade);
             GL.AttachShader(prog, fshade);
-            //GL.LinkProgram(prog);
-            //GL.UseProgram(prog);
+            GL.LinkProgram(prog);
+            GL.UseProgram(prog);
 
             // Textures
             Texture test = Texture.Load(textures["Test.png"]);
-            //GL.ActiveTexture(TextureUnit.Texture0);
-            //test.Bind();
-            //GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            test.Bind();
+            GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
         }
 
         /// <summary>

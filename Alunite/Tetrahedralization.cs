@@ -100,5 +100,26 @@ namespace Alunite
             }
             return new StandardArray<Tetrahedron<int>>(tetras, tetras.Count);
         }
+
+        /// <summary>
+        /// Gets the boundary triangles (triangles which are one the face of exactly one tetrahedron) of the specified 
+        /// tetrahedral mesh. 
+        /// </summary>
+        public static ISequentialArray<Triangle<int>> Boundary(ISequentialArray<Tetrahedron<int>> Mesh)
+        {
+            // Since lookups and modifications on hashsets are in constant time, this function runs in linear time.
+            HashSet<Triangle<int>> cur = new HashSet<Triangle<int>>();
+            foreach (Tetrahedron<int> tetra in Mesh.Values) 
+            {
+                foreach (Triangle<int> tri in tetra.Faces)
+                {
+                    if (!cur.Remove(tri.Flip))
+                    {
+                        cur.Add(tri);
+                    }
+                }
+            }
+            return new StandardArray<Triangle<int>>(cur, cur.Count);
+        }
     }
 }
