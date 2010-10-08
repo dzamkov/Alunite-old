@@ -93,6 +93,24 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Compares two vectors lexographically.
+        /// </summary>
+        public static bool Compare(Vector A, Vector B)
+        {
+            if (A.X > B.X)
+                return true;
+            if (A.X < B.X)
+                return false;
+            if (A.Y > B.Y)
+                return true;
+            if (A.Y < B.Y)
+                return false;
+            if (A.Z > B.Z)
+                return true;
+            return false;
+        }
+
+        /// <summary>
         /// Multiplies each component of the vectors with the other's corresponding component.
         /// </summary>
         public static Vector Scale(Vector A, Vector B)

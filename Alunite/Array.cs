@@ -494,4 +494,90 @@ namespace Alunite
         private ISequentialArray<TA> _SourceA;
         private ISequentialArray<TB> _SourceB;
     }
+
+    /// <summary>
+    /// A sequential array that acts as a range of integers.
+    /// </summary>
+    public struct IntRange : ISequentialArray<int>
+    {
+        public IntRange(int Start, int Count)
+        {
+            this.Start = Start;
+            this.Count = Count;
+        }
+
+        int ISequentialArray<int>.Count
+        {
+            get 
+            {
+                return this.Count;
+            }
+        }
+
+        public IEnumerable<KeyValuePair<int, int>> Items
+        {
+            get
+            {
+                for (int i = 0; i < this.Count; i++)
+                {
+                    yield return new KeyValuePair<int, int>(i, this.Start + i);
+                }
+            }
+        }
+
+        public IEnumerable<int> Values
+        {
+            get 
+            {
+                int end = this.Start + this.Count;
+                for (int i = this.Start; i < end; i++)
+                {
+                    yield return i;
+                }
+            }
+        }
+
+        public int Lookup(int Index)
+        {
+            return Index + Start;
+        }
+
+        public int Start;
+        public int Count; 
+    }
+
+    /// <summary>
+    /// An array that will always report that it has no elements.
+    /// </summary>
+    public struct EmptyArray<T> : ISequentialArray<T>
+    {
+        public int Count
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public IEnumerable<KeyValuePair<int, T>> Items
+        {
+            get 
+            {
+                return new KeyValuePair<int, T>[0];
+            }
+        }
+
+        public IEnumerable<T> Values
+        {
+            get 
+            {
+                return new T[0];
+            }
+        }
+
+        public T Lookup(int Index)
+        {
+            return default(T);
+        }
+    }
 }

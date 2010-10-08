@@ -141,6 +141,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets a flipped form of the tetrahedron (same points, different order).
+        /// </summary>
+        public Tetrahedron<T> Flip
+        {
+            get
+            {
+                return new Tetrahedron<T>(this.A, this.B, this.D, this.C);
+            }
+        }
+
+        /// <summary>
         /// Gets the points (hopefully 4) in the tetrahedron.
         /// </summary>
         public T[] Points
@@ -248,6 +259,8 @@ namespace Alunite
             return new StandardArray<Tetrahedron<int>>(nodes);
         }
 
+        
+
         /// <summary>
         /// Gets the points on the faces of the specified tetrahedron.
         /// </summary>
@@ -280,7 +293,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the midpoint of the specified tetrahedron.
+        /// Gets the midpoint (centroid) of the specified tetrahedron.
         /// </summary>
         public static Vector Midpoint(Tetrahedron<Vector> Tetrahedron)
         {

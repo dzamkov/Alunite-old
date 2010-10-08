@@ -32,7 +32,7 @@ namespace Alunite
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, -7.8f, 0.0f));
 
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             Random r = new Random();
 
@@ -48,14 +48,21 @@ namespace Alunite
             Model.LoadObj(models["Test.obj"], out verts, out tris);
             ISequentialArray<Vector> norms = Model.ComputeNormals(verts, tris, true);
 
+            // Make a tetrahedralization
+            ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralization.Delaunay(verts);
+            ISequentialArray<int> tetratris = new ExpansionSequentialArray<Tetrahedron<int>, int>(tetras, 12, Tetrahedron.FacePoints);
+
             // Make a vbo
-            this._VBO = new NVVBO(NormalVertex.Model.Singleton,
+            /*this._VBO = new NVVBO(NormalVertex.Model.Singleton,
                 new MapSequentialArray<Tuple<Vector, Vector>, NormalVertex>(
                     new ZipSequentialArray<Vector, Vector>(verts, norms),
                     delegate(Tuple<Vector, Vector> PosNorm)
                     {
                         return new NormalVertex(PosNorm.A, PosNorm.B);
-                    }), tris);
+                    }), tris);*/
+            this._VBO = new VBO<NormalVertex, NormalVertex.Model>(NormalVertex.Model.Singleton,
+                new MapSequentialArray<Vector, NormalVertex>(verts, x => new NormalVertex(x, new Vector())),
+                tetratris);
 
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
@@ -67,14 +74,14 @@ namespace Alunite
             int prog = GL.CreateProgram();
             GL.AttachShader(prog, vshade);
             GL.AttachShader(prog, fshade);
-            GL.LinkProgram(prog);
-            GL.UseProgram(prog);
+            //GL.LinkProgram(prog);
+            //GL.UseProgram(prog);
 
             // Textures
             Texture test = Texture.Load(textures["Test.png"]);
-            GL.ActiveTexture(TextureUnit.Texture0);
-            test.Bind();
-            GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
+            //GL.ActiveTexture(TextureUnit.Texture0);
+            //test.Bind();
+            //GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
         }
 
         /// <summary>

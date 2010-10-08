@@ -114,5 +114,26 @@ namespace Alunite
         {
             return Vector.Normalize(Vector.Cross(Triangle.B - Triangle.A, Triangle.C - Triangle.A));
         }
+
+        /// <summary>
+        /// Gets if the two vectors are on opposite sides of the plane defined by the triangle.
+        /// </summary>
+        public static bool Oppose(Vector A, Vector B, Triangle<Vector> Triangle)
+        {
+            Vector norm = Vector.Cross(Triangle.B - Triangle.A, Triangle.C - Triangle.A);
+            double dota = Vector.Dot(A - Triangle.A, norm);
+            double dotb = Vector.Dot(B - Triangle.A, norm);
+            return (dota > 0.0) ^ (dotb > 0.0);
+        }
+
+        /// <summary>
+        /// Gets if the specified vector is on the front side of the plane defined by the triangle.
+        /// </summary>
+        public static bool Front(Vector A, Triangle<Vector> Triangle)
+        {
+            Vector norm = Vector.Cross(Triangle.B - Triangle.A, Triangle.C - Triangle.A);
+            double dota = Vector.Dot(A - Triangle.A, norm);
+            return (dota > 0.0);
+        }
     }
 }
