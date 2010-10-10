@@ -9,3 +9,5 @@ bin
 obj
 */bin
 */obj
+*.userprefs
+*.pidb
