@@ -47,7 +47,7 @@ namespace Alunite
             ISequentialArray<Triangle<int>> tris;
             Model.LoadObj(models["Test.obj"], out sverts, out tris);
             StandardArray<Vector> verts = new StandardArray<Vector>(sverts);
-            verts.Map(x => x + new Vector(r.NextDouble() / 100.0, r.NextDouble() / 100.0, r.NextDouble() / 100.0));
+            verts.Map(x => x + new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()) * 0.01);
 
             // Make a tetrahedralization
             ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralize.Delaunay(verts);

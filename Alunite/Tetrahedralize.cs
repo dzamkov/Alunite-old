@@ -4,6 +4,131 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
+    /// Describes a valid collection of interconnected tetrahedra that encompass a volume. This also
+    /// contains information about the boundary and interior triangles.
+    /// </summary>
+    /// <typeparam name="T">Type that represents a point.</typeparam>
+    public class TetrahedralMesh<T>
+        where T : IEquatable<T>
+    {
+        public TetrahedralMesh()
+        {
+            this._Tetrahedra = new HashSet<Tetrahedron<T>>();
+            this._Boundaries = new Dictionary<Triangle<T>, Tetrahedron<T>>();
+            this._Interiors = new Dictionary<Triangle<T>, Tetrahedron<T>>();
+        }
+
+        /// <summary>
+        /// Adds a tetrahedron to the tetrahedral mesh, ensuring it does not conflict with any
+        /// other tetrahedra.
+        /// </summary>
+        public void Add(Tetrahedron<T> Tetrahedron)
+        {
+            foreach (Triangle<T> face in Tetrahedron.Faces)
+            {
+                Tetrahedron<T> bound;
+                if (this._Boundaries.TryGetValue(face.Flip, out bound))
+                {
+                    this._Interiors.Add(face.Flip, bound);
+                    this._Interiors.Add(face, Tetrahedron);
+                    this._Boundaries.Remove(face.Flip);
+                }
+                else
+                {
+                    this._Boundaries.Add(face, Tetrahedron);
+                }
+            }
+            this._Tetrahedra.Add(Tetrahedron);
+        }
+
+        /// <summary>
+        /// Removes a tetrahedron from the tetrahedral mesh.
+        /// </summary>
+        public bool Remove(Tetrahedron<T> Tetrahedron)
+        {
+            if (this._Tetrahedra.Remove(Tetrahedron))
+            {
+                foreach (Triangle<T> face in Tetrahedron.Faces)
+                {
+                    if (this._Interiors.ContainsKey(face))
+                    {
+                        this._Boundaries.Add(face.Flip, this._Interiors[face.Flip]);
+                        this._Interiors.Remove(face);
+                        this._Interiors.Remove(face.Flip);
+                    }
+                    else
+                    {
+                        this._Boundaries.Remove(face);
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Gets the tetrahedron that has the specified interior face.
+        /// </summary>
+        public Tetrahedron<T>? GetInterior(Triangle<T> Face)
+        {
+            Tetrahedron<T> tetra;
+            if (this._Interiors.TryGetValue(Face, out tetra))
+            {
+                return tetra;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets if the mesh contains the specified tetrahedron.
+        /// </summary>
+        public bool Contains(Tetrahedron<T> Tetrahedron)
+        {
+            return this._Tetrahedra.Contains(Tetrahedron);
+        }
+
+        /// <summary>
+        /// Gets all the tetrahedra in the mesh.
+        /// </summary>
+        public IEnumerable<Tetrahedron<T>> Tetrahedra
+        {
+            get
+            {
+                return this._Tetrahedra;
+            }
+        }
+
+        /// <summary>
+        /// Gets all the boundaries of the mesh, along with the tetrahedra the boundaries are on.
+        /// </summary>
+        public IEnumerable<KeyValuePair<Triangle<T>, Tetrahedron<T>>> Boundaries
+        {
+            get
+            {
+                return this._Boundaries;
+            }
+        }
+
+        /// <summary>
+        /// Gets the amount of tetrahedra in the mesh.
+        /// </summary>
+        public int Size
+        {
+            get
+            {
+                return this._Tetrahedra.Count;
+            }
+        }
+
+        private HashSet<Tetrahedron<T>> _Tetrahedra;
+        private Dictionary<Triangle<T>, Tetrahedron<T>> _Boundaries;
+        private Dictionary<Triangle<T>, Tetrahedron<T>> _Interiors;
+    }
+
+    /// <summary>
     /// Contains methods for creating a tetrahedral mesh from a set of points or a PLC.
     /// </summary>
     public static class Tetrahedralize
@@ -29,28 +154,18 @@ namespace Alunite
         public static ISequentialArray<Tetrahedron<int>> DelaunayOrdered<A>(A Input)
             where A : ISequentialArray<Vector>
         {
-            HashSet<Tetrahedron<int>> tetras = new HashSet<Tetrahedron<int>>();
-            var interiors = new Dictionary<Triangle<int>, Tetrahedron<int>>();
-            var bounds = new Dictionary<Triangle<int>, Tetrahedron<int>>();
+            TetrahedralMesh<int> mesh = new TetrahedralMesh<int>();
             if (Input.Count > 4)
             {
                 // Form initial tetrahedron.
                 Tetrahedron<int> first = new Tetrahedron<int>(0, 1, 2, 3);
-                Tetrahedron<Vector> firstactual = new Tetrahedron<Vector>(
-                    Input.Lookup(first.A),
-                    Input.Lookup(first.B),
-                    Input.Lookup(first.C),
-                    Input.Lookup(first.D));
+                Tetrahedron<Vector> firstactual = Tetrahedron.Dereference<A, int, Vector>(first, Input);
                 if (!Tetrahedron.Order(firstactual))
                 {
                     first = first.Flip;
                 }
                 Vector centroid = Tetrahedron.Midpoint(firstactual);
-                tetras.Add(first);
-                foreach(Triangle<int> face in first.Faces)
-                {
-                    bounds.Add(face, first);
-                }
+                mesh.Add(first);
 
                 // Begin incremental addition
                 Stack<Triangle<int>> newinteriors = new Stack<Triangle<int>>();
@@ -60,7 +175,7 @@ namespace Alunite
 
                     // Add tetrahedrons to exterior of convex hull
                     List<Tetrahedron<int>> newtetras = new List<Tetrahedron<int>>();
-                    foreach (KeyValuePair<Triangle<int>, Tetrahedron<int>> kvp in bounds)
+                    foreach (KeyValuePair<Triangle<int>, Tetrahedron<int>> kvp in mesh.Boundaries)
                     {
                         Triangle<int> bound = kvp.Key;
                         if (Triangle.Front(v, new Triangle<Vector>(Input.Lookup(bound.A), Input.Lookup(bound.B), Input.Lookup(bound.C))))
@@ -71,36 +186,21 @@ namespace Alunite
                         }
                     }
 
-                    // Apply changes to current bound and tetrahedron set.
+                    // Apply to tetrahedron set.
                     foreach (Tetrahedron<int> newtetra in newtetras)
                     {
-                        tetras.Add(newtetra);
-                        foreach (Triangle<int> face in newtetra.Faces)
-                        {
-                            Triangle<int> flipped = face.Flip;
-                            Tetrahedron<int> otherbound;
-                            if (bounds.TryGetValue(flipped, out otherbound))
-                            {
-                                interiors.Add(flipped, otherbound);
-                                interiors.Add(face, newtetra);
-                                bounds.Remove(flipped);
-                            }
-                            else
-                            {
-                                bounds.Add(face, newtetra);
-                            }
-                        }
+                        mesh.Add(newtetra);
                     }
 
                     // Refine tetrahedras to have the delaunay property.
                     while (newinteriors.Count > 0)
                     {
                         Triangle<int> bound = newinteriors.Pop();
-                        Tetrahedron<int> interiortetra;
-                        if (interiors.TryGetValue(bound, out interiortetra))
+                        Tetrahedron<int>? interiortetra = mesh.GetInterior(bound);
+                        if (interiortetra != null)
                         {
-                            Tetrahedron<int> hulla = Tetrahedron.Align(interiortetra, bound).GetValueOrDefault();
-                            Tetrahedron<int> hullb = Tetrahedron.Align(interiors[bound.Flip], bound.Flip).GetValueOrDefault();
+                            Tetrahedron<int> hulla = Tetrahedron.Align(interiortetra.Value, bound).GetValueOrDefault();
+                            Tetrahedron<int> hullb = Tetrahedron.Align(mesh.GetInterior(bound.Flip).Value, bound.Flip).GetValueOrDefault();
                             Vector hullaver = Input.Lookup(hulla.Vertex);
                             Vector hullbver = Input.Lookup(hullb.Vertex);
                             Triangle<Vector> boundver = new Triangle<Vector>(Input.Lookup(bound.A), Input.Lookup(bound.B), Input.Lookup(bound.C));
@@ -116,44 +216,11 @@ namespace Alunite
                                 Vector vectordummy;
                                 if (Triangle.Intersect(boundver, hullbver, hullaver, out doubledummy, out vectordummy))
                                 {
-                                    // Split the convex "hexahedron" into 3 tetrahedra.
-                                    tetras.Remove(hulla);
-                                    tetras.Remove(hullb);
-                                    Tetrahedron<int> newa = new Tetrahedron<int>(bound.A, bound.B, hullb.Vertex, hulla.Vertex);
-                                    Tetrahedron<int> newb = new Tetrahedron<int>(bound.B, bound.C, hullb.Vertex, hulla.Vertex);
-                                    Tetrahedron<int> newc = new Tetrahedron<int>(bound.C, bound.A, hullb.Vertex, hulla.Vertex);
-                                    tetras.Add(newa);
-                                    tetras.Add(newb);
-                                    tetras.Add(newc);
-                                    interiors.Remove(bound);
-                                    interiors.Remove(bound.Flip);
-                                    interiors.Add(new Triangle<int>(bound.A, hullb.Vertex, hulla.Vertex), newa);
-                                    interiors.Add(new Triangle<int>(bound.B, hullb.Vertex, hulla.Vertex), newb);
-                                    interiors.Add(new Triangle<int>(bound.C, hullb.Vertex, hulla.Vertex), newc);
-                                    interiors.Add(new Triangle<int>(bound.A, hulla.Vertex, hullb.Vertex), newc);
-                                    interiors.Add(new Triangle<int>(bound.B, hulla.Vertex, hullb.Vertex), newa);
-                                    interiors.Add(new Triangle<int>(bound.C, hulla.Vertex, hullb.Vertex), newb);
-
-                                    // Update bounds and interiors.
-                                    foreach (KeyValuePair<Triangle<int>, Tetrahedron<int>> kvp in new KeyValuePair<Triangle<int>, Tetrahedron<int>>[]
-                                        {
-                                            new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hullb.Vertex, bound.A, bound.B), newa),
-                                            new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hullb.Vertex, bound.B, bound.C), newb),
-                                            new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hullb.Vertex, bound.C, bound.A), newc),
-                                            new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hulla.Vertex, bound.B, bound.A), newa),
-                                            new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hulla.Vertex, bound.C, bound.B), newb),
-                                            new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hulla.Vertex, bound.A, bound.C), newc),
-                                        })
-                                    {
-                                        if (bounds.ContainsKey(kvp.Key))
-                                        {
-                                            bounds[kvp.Key] = kvp.Value;
-                                        }
-                                        else
-                                        {
-                                            interiors[kvp.Key] = kvp.Value;
-                                        }
-                                    }
+                                    mesh.Remove(hulla);
+                                    mesh.Remove(hullb);
+                                    mesh.Add(new Tetrahedron<int>(bound.A, bound.B, hullb.Vertex, hulla.Vertex));
+                                    mesh.Add(new Tetrahedron<int>(bound.B, bound.C, hullb.Vertex, hulla.Vertex));
+                                    mesh.Add(new Tetrahedron<int>(bound.C, bound.A, hullb.Vertex, hulla.Vertex));
                                 }
                                 else
                                 {
@@ -168,49 +235,20 @@ namespace Alunite
                                         })
                                     {
                                         Tetrahedron<int> other = new Tetrahedron<int>(hulla.Vertex, hullb.Vertex, edge.Value.A, edge.Value.B);
-                                        if (tetras.Contains(other))
+                                        if (mesh.Contains(other))
                                         {
                                             // Merge all three pieces into two
-                                            tetras.Remove(hulla);
-                                            tetras.Remove(hullb);
-                                            tetras.Remove(other);
+                                            mesh.Remove(hulla);
+                                            mesh.Remove(hullb);
+                                            mesh.Remove(other);
 
                                             // Relabel to make this process easier
                                             bound = new Triangle<int>(hulla.Vertex, hullb.Vertex, edge.Key);
                                             hulla = new Tetrahedron<int>(edge.Value.B, bound);
                                             hullb = new Tetrahedron<int>(edge.Value.A, bound.Flip);
 
-                                            tetras.Add(hulla);
-                                            tetras.Add(hullb);
-                                            interiors.Add(bound, hulla);
-                                            interiors.Add(bound.Flip, hullb);
-                                            interiors.Remove(new Triangle<int>(bound.A, hullb.Vertex, hulla.Vertex));
-                                            interiors.Remove(new Triangle<int>(bound.B, hullb.Vertex, hulla.Vertex));
-                                            interiors.Remove(new Triangle<int>(bound.C, hullb.Vertex, hulla.Vertex));
-                                            interiors.Remove(new Triangle<int>(bound.A, hulla.Vertex, hullb.Vertex));
-                                            interiors.Remove(new Triangle<int>(bound.B, hulla.Vertex, hullb.Vertex));
-                                            interiors.Remove(new Triangle<int>(bound.C, hulla.Vertex, hullb.Vertex));
-
-                                            // Update bounds and interiors.
-                                            foreach (KeyValuePair<Triangle<int>, Tetrahedron<int>> kvp in new KeyValuePair<Triangle<int>, Tetrahedron<int>>[]
-                                                {
-                                                    new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hullb.Vertex, bound.A, bound.B), hullb),
-                                                    new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hullb.Vertex, bound.B, bound.C), hullb),
-                                                    new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hullb.Vertex, bound.C, bound.A), hullb),
-                                                    new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hulla.Vertex, bound.B, bound.A), hulla),
-                                                    new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hulla.Vertex, bound.C, bound.B), hulla),
-                                                    new KeyValuePair<Triangle<int>, Tetrahedron<int>>(new Triangle<int>(hulla.Vertex, bound.A, bound.C), hulla),
-                                                })
-                                            {
-                                                if (bounds.ContainsKey(kvp.Key))
-                                                {
-                                                    bounds[kvp.Key] = kvp.Value;
-                                                }
-                                                else
-                                                {
-                                                    interiors[kvp.Key] = kvp.Value;
-                                                }
-                                            }
+                                            mesh.Add(hulla);
+                                            mesh.Add(hullb);
 
                                             transform = true;
                                             break;
@@ -231,7 +269,7 @@ namespace Alunite
                                             new Triangle<int>(hulla.Vertex, bound.A, bound.C)
                                         })
                                     {
-                                        if (!newinteriors.Contains(possiblebound) && interiors.ContainsKey(possiblebound))
+                                        if (!newinteriors.Contains(possiblebound) && mesh.GetInterior(possiblebound) != null)
                                         {
                                             newinteriors.Push(possiblebound);
                                         }
@@ -243,7 +281,7 @@ namespace Alunite
                     
                 }
             }
-            return new StandardArray<Tetrahedron<int>>(tetras, tetras.Count);
+            return new StandardArray<Tetrahedron<int>>(mesh.Tetrahedra, mesh.Size);
         }
 
         /// <summary>

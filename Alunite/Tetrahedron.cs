@@ -242,6 +242,21 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Dereferences a tetrahedron through an array.
+        /// </summary>
+        public static Tetrahedron<F> Dereference<A, T, F>(Tetrahedron<T> Source, A Array)
+            where A : IArray<F, T>
+            where T : IEquatable<T>
+            where F : IEquatable<F>
+        {
+            return new Tetrahedron<F>(
+                Array.Lookup(Source.A),
+                Array.Lookup(Source.B),
+                Array.Lookup(Source.C),
+                Array.Lookup(Source.D));
+        }
+
+        /// <summary>
         /// Finds the borders in an array of tetrahedra. Looking up a value in a resulting tetrahedron will get the index for
         /// the tetrahedron that borders it at the face opposite the point that was used or -1 if there is no border on that face.
         /// </summary>
