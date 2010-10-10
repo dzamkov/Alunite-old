@@ -48,7 +48,7 @@
     <Compile Include="Model.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Sort.cs" />
-    <Compile Include="Tetrahedralization.cs" />
+    <Compile Include="Tetrahedralize.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Triangle.cs" />

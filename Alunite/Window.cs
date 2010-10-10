@@ -43,12 +43,14 @@ namespace Alunite
             Path models = resources["Models"];
 
             // Model
-            ISequentialArray<Vector> verts;
+            ISequentialArray<Vector> sverts;
             ISequentialArray<Triangle<int>> tris;
-            Model.LoadObj(models["TestTetrahedralize.obj"], out verts, out tris);
+            Model.LoadObj(models["Test.obj"], out sverts, out tris);
+            StandardArray<Vector> verts = new StandardArray<Vector>(sverts);
+            verts.Map(x => x + new Vector(r.NextDouble() / 100.0, r.NextDouble() / 100.0, r.NextDouble() / 100.0));
 
             // Make a tetrahedralization
-            ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralization.Delaunay(verts);
+            ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralize.Delaunay(verts);
 
             // Select only some tetrahedra (to make a fractured shape).
             ListArray<Tetrahedron<int>> passedtetras = new ListArray<Tetrahedron<int>>();
@@ -65,7 +67,7 @@ namespace Alunite
                 }
             }
 
-            ISequentialArray<Triangle<int>> tetratris = Tetrahedralization.Boundary(passedtetras);
+            ISequentialArray<Triangle<int>> tetratris = Tetrahedralize.Boundary(passedtetras);
             ISequentialArray<Vector> norms = Model.ComputeNormals(verts, tetratris, true);
 
             // Make a vbo

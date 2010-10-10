@@ -580,4 +580,34 @@ namespace Alunite
             return default(T);
         }
     }
+
+    /// <summary>
+    /// Contains helper functions for alunite arrays.
+    /// </summary>
+    public static class Data
+    {
+        /// <summary>
+        /// Creates a standard array from a source array.
+        /// </summary>
+        public static StandardArray<T> CreateStandard<T>(ISequentialArray<T> Source)
+        {
+            return new StandardArray<T>(Source);
+        }
+
+        /// <summary>
+        /// Creates a mapped array from a source array.
+        /// </summary>
+        public static MapSequentialArray<T, F> Map<T, F>(ISequentialArray<T> Source, Func<T, F> Mapping)
+        {
+            return new MapSequentialArray<T, F>(Source, Mapping);
+        }
+
+        /// <summary>
+        /// Creates a zipped array from two source arrays.
+        /// </summary>
+        public static ZipSequentialArray<TA, TB> Zip<TA, TB>(ISequentialArray<TA> SourceA, ISequentialArray<TB> SourceB)
+        {
+            return new ZipSequentialArray<TA, TB>(SourceA, SourceB);
+        }
+    }
 }
