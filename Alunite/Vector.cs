@@ -146,6 +146,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the square of the length of the vector.
+        /// </summary>
+        public double SquareLength
+        {
+            get
+            {
+                return this.X * this.X + this.Y * this.Y + this.Z * this.Z;
+            }
+        }
+
+        /// <summary>
         /// Normalizes the vector so its length is one but its direction is unchanged.
         /// </summary>
         public void Normalize()

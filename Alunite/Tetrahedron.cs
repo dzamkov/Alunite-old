@@ -34,10 +34,10 @@ namespace Alunite
         public static bool operator ==(Tetrahedron<T> A, Tetrahedron<T> B)
         {
             T avertex = A.A;
-            Triangle<T> abase = new Triangle<T>(A.B, A.C, A.D);
+            Triangle<T> abase = A.Base;
             if (avertex.Equals(B.A))
             {
-                return abase == new Triangle<T>(B.B, B.C, B.D);
+                return abase == new Triangle<T>(B.D, B.C, B.B);
             }
             if (avertex.Equals(B.B))
             {
@@ -45,7 +45,7 @@ namespace Alunite
             }
             if (avertex.Equals(B.C))
             {
-                return abase == new Triangle<T>(B.D, B.A, B.B);
+                return abase == new Triangle<T>(B.B, B.A, B.D);
             }
             if (avertex.Equals(B.D))
             {
@@ -76,7 +76,6 @@ namespace Alunite
             int c = this.C.GetHashCode();
             int d = this.D.GetHashCode();
 
-            // This is probably wrong
             if ((a > b) ^ (b > c) ^ (c > a) ^
                 (b > a) ^ (a > d) ^ (d > b) ^
                 (c > d) ^ (d > a) ^ (a > c) ^
@@ -141,6 +140,28 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the primary vertex of the tetrahedron (point A).
+        /// </summary>
+        public T Vertex
+        {
+            get
+            {
+                return this.A;
+            }
+        }
+
+        /// <summary>
+        /// Gets the primary base of the tetrahedron (D, C, B)
+        /// </summary>
+        public Triangle<T> Base
+        {
+            get
+            {
+                return new Triangle<T>(this.D, this.C, this.B);
+            }
+        }
+
+        /// <summary>
         /// Gets a flipped form of the tetrahedron (same points, different order).
         /// </summary>
         public Tetrahedron<T> Flip
@@ -181,6 +202,11 @@ namespace Alunite
                 splits[t] = new Tetrahedron<T>(MidValue, faces[t]);
             }
             return splits;
+        }
+
+        public override string ToString()
+        {
+            return this.A.ToString() + ", " + this.B.ToString() + ", " + this.C.ToString() + ", " + this.D.ToString();
         }
 
         public T A;
@@ -259,7 +285,31 @@ namespace Alunite
             return new StandardArray<Tetrahedron<int>>(nodes);
         }
 
-        
+        /// <summary>
+        /// Aligns the base (D, C, B) of the source tetrahedron so that it equals the base. Returns
+        /// null if the tetrahedron does not include the specified base.
+        /// </summary>
+        public static Tetrahedron<T>? Align<T>(Tetrahedron<T> Source, Triangle<T> Base)
+            where T : IEquatable<T>
+        {
+            if (new Triangle<T>(Source.A, Source.B, Source.C) == Base)
+            {
+                return new Tetrahedron<T>(Source.D, Base);
+            }
+            if (new Triangle<T>(Source.B, Source.A, Source.D) == Base)
+            {
+                return new Tetrahedron<T>(Source.C, Base);
+            }
+            if (new Triangle<T>(Source.C, Source.D, Source.A) == Base)
+            {
+                return new Tetrahedron<T>(Source.B, Base);
+            }
+            if (new Triangle<T>(Source.D, Source.C, Source.B) == Base)
+            {
+                return new Tetrahedron<T>(Source.A, Base);
+            }
+            return null;
+        }
 
         /// <summary>
         /// Gets the points on the faces of the specified tetrahedron.
@@ -298,6 +348,30 @@ namespace Alunite
         public static Vector Midpoint(Tetrahedron<Vector> Tetrahedron)
         {
             return (Tetrahedron.A + Tetrahedron.B + Tetrahedron.C + Tetrahedron.D) * (1.0 / 4.0);
+        }
+
+        /// <summary>
+        /// Gets the circumcenter of the specified tetrahedron.
+        /// </summary>
+        public static Vector Circumcenter(Tetrahedron<Vector> Tetrahedron)
+        {
+            // From http://www.ics.uci.edu/~eppstein/junkyard/circumcenter.html
+            Vector ba = Tetrahedron.B - Tetrahedron.A;
+            Vector ca = Tetrahedron.C - Tetrahedron.A;
+            Vector da = Tetrahedron.D - Tetrahedron.A;
+            double balen = ba.SquareLength;
+            double calen = ca.SquareLength;
+            double dalen = da.SquareLength;
+            Vector crosscd = Vector.Cross(ca, da);
+            Vector crossdb = Vector.Cross(da, ba);
+            Vector crossbc = Vector.Cross(ba, ca);
+
+            double denominator = 0.5 / Vector.Dot(ba, crosscd); // Inexact
+
+            return new Vector(
+                (balen * crosscd.X + calen * crossdb.X + dalen * crossbc.X) * denominator,
+                (balen * crosscd.Y + calen * crossdb.Y + dalen * crossbc.Y) * denominator,
+                (balen * crosscd.Z + calen * crossdb.Z + dalen * crossbc.Z) * denominator) + Tetrahedron.A;
         }
 
         /// <summary>

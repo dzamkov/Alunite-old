@@ -32,7 +32,7 @@ namespace Alunite
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, -7.8f, 0.0f));
 
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             Random r = new Random();
 
@@ -45,7 +45,7 @@ namespace Alunite
             // Model
             ISequentialArray<Vector> verts;
             ISequentialArray<Triangle<int>> tris;
-            Model.LoadObj(models["Test.obj"], out verts, out tris);
+            Model.LoadObj(models["TestTetrahedralize.obj"], out verts, out tris);
 
             // Make a tetrahedralization
             ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralization.Delaunay(verts);
