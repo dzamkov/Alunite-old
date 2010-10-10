@@ -61,7 +61,7 @@ namespace Alunite
                     verts.Lookup(tetra.B), 
                     verts.Lookup(tetra.C), 
                     verts.Lookup(tetra.D));
-                if (Tetrahedron.Midpoint(actualtetra).X < 0.0)
+                if (Tetrahedron.Midpoint(actualtetra).Y < 0.0)
                 {
                     passedtetras.Add(tetra);
                 }

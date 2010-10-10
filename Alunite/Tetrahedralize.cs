@@ -19,14 +19,29 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Adds a tetrahedron to the tetrahedral mesh, ensuring it does not conflict with any
-        /// other tetrahedra.
+        /// Tries adding a tetrahedron to the tetrahedral mesh. If this will result in a conflict, the tetrahedron
+        /// is not added and false is returned.
         /// </summary>
-        public void Add(Tetrahedron<T> Tetrahedron)
+        public bool Add(Tetrahedron<T> Tetrahedron)
+        {
+            if (this.CanAdd(Tetrahedron))
+            {
+                this.AddUnchecked(Tetrahedron);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Forces the specified tetrahedron to be added, causing the validity of the structure to
+        /// fail if a conflict with another tetrahedron results.
+        /// </summary>
+        public void AddUnchecked(Tetrahedron<T> Tetrahedron)
         {
             foreach (Triangle<T> face in Tetrahedron.Faces)
             {
                 Tetrahedron<T> bound;
+
                 if (this._Boundaries.TryGetValue(face.Flip, out bound))
                 {
                     this._Interiors.Add(face.Flip, bound);
@@ -39,6 +54,21 @@ namespace Alunite
                 }
             }
             this._Tetrahedra.Add(Tetrahedron);
+        }
+
+        /// <summary>
+        /// Gets if the specified tetrahedron can be added to the mesh without conflict.
+        /// </summary>
+        public bool CanAdd(Tetrahedron<T> Tetrahedron)
+        {
+            foreach (Triangle<T> face in Tetrahedron.Faces)
+            {
+                if (this._Interiors.ContainsKey(face) || this._Boundaries.ContainsKey(face))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -67,6 +97,74 @@ namespace Alunite
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Merges the pentahedron defined by A and B (the area between them should be divided into three tetrahedra in
+        /// the mesh, each tetrahedra sharing two points on the base and the vertices of A and B) into two tetrahedra. If merging the pentahedron
+        /// will result in a conflict with other tetrahedra, no change is made and false is returned.
+        /// </summary>
+        public bool MergePentahedron(Tetrahedron<T> A, Tetrahedron<T> B)
+        {
+            Triangle<T> b = A.Base;
+            Tetrahedron<T> olda = new Tetrahedron<T>(B.Vertex, A.Vertex, b.A, b.B);
+            Tetrahedron<T> oldb = new Tetrahedron<T>(B.Vertex, A.Vertex, b.B, b.C);
+            Tetrahedron<T> oldc = new Tetrahedron<T>(B.Vertex, A.Vertex, b.C, b.A);
+            this.Remove(olda);
+            this.Remove(oldb);
+            this.Remove(oldc);
+            if (!this.Add(A))
+            {
+                this.Add(olda);
+                this.Add(oldb);
+                this.Add(oldc);
+                return false;
+            }
+            if (!this.Add(B))
+            {
+                this.Remove(A);
+                this.Add(olda);
+                this.Add(oldb);
+                this.Add(oldc);
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Splits the two tetrahedra sharing a common base into three tetrahedra. If splitting the pentahedron
+        /// they create will result in a conflict with other tetrahedra, no change is made and false is returned.
+        /// </summary>
+        public bool SplitPentahedron(Tetrahedron<T> A, Tetrahedron<T> B)
+        {
+            Triangle<T> b = A.Base;
+            Tetrahedron<T> newa = new Tetrahedron<T>(b.A, b.B, B.Vertex, A.Vertex);
+            Tetrahedron<T> newb = new Tetrahedron<T>(b.B, b.C, B.Vertex, A.Vertex); // hehe
+            Tetrahedron<T> newc = new Tetrahedron<T>(b.C, b.A, B.Vertex, A.Vertex);
+            this.Remove(A);
+            this.Remove(B);
+            if (!this.Add(newa))
+            {
+                this.Add(A);
+                this.Add(B);
+                return false;
+            }
+            if (!this.Add(newb))
+            {
+                this.Remove(newa);
+                this.Add(A);
+                this.Add(B);
+                return false;
+            }
+            if (!this.Add(newc))
+            {
+                this.Remove(newb);
+                this.Remove(newa);
+                this.Add(A);
+                this.Add(B);
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -216,11 +314,7 @@ namespace Alunite
                                 Vector vectordummy;
                                 if (Triangle.Intersect(boundver, hullbver, hullaver, out doubledummy, out vectordummy))
                                 {
-                                    mesh.Remove(hulla);
-                                    mesh.Remove(hullb);
-                                    mesh.Add(new Tetrahedron<int>(bound.A, bound.B, hullb.Vertex, hulla.Vertex));
-                                    mesh.Add(new Tetrahedron<int>(bound.B, bound.C, hullb.Vertex, hulla.Vertex));
-                                    mesh.Add(new Tetrahedron<int>(bound.C, bound.A, hullb.Vertex, hulla.Vertex));
+                                    transform = mesh.SplitPentahedron(hulla, hullb);
                                 }
                                 else
                                 {
@@ -237,20 +331,13 @@ namespace Alunite
                                         Tetrahedron<int> other = new Tetrahedron<int>(hulla.Vertex, hullb.Vertex, edge.Value.A, edge.Value.B);
                                         if (mesh.Contains(other))
                                         {
-                                            // Merge all three pieces into two
-                                            mesh.Remove(hulla);
-                                            mesh.Remove(hullb);
-                                            mesh.Remove(other);
-
                                             // Relabel to make this process easier
                                             bound = new Triangle<int>(hulla.Vertex, hullb.Vertex, edge.Key);
                                             hulla = new Tetrahedron<int>(edge.Value.B, bound);
                                             hullb = new Tetrahedron<int>(edge.Value.A, bound.Flip);
 
-                                            mesh.Add(hulla);
-                                            mesh.Add(hullb);
-
-                                            transform = true;
+                                            // Merge all three pieces into two
+                                            transform = mesh.MergePentahedron(hulla, hullb);
                                             break;
                                         }
                                     }
