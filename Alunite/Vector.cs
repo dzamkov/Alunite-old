@@ -80,6 +80,11 @@ namespace Alunite
             return h;
         }
 
+        public override string ToString()
+        {
+            return this.X.ToString() + ", " + this.Y.ToString() + ", " + this.Z.ToString();
+        }
+
         /// <summary>
         /// Gets the cross product of two vectors.
         /// </summary>

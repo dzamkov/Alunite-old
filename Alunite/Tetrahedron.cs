@@ -140,7 +140,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the primary vertex of the tetrahedron (point A).
+        /// Gets the primary vertex of the tetrahedron (A).
         /// </summary>
         public T Vertex
         {
@@ -326,7 +326,7 @@ namespace Alunite
         /// </summary>
         public static bool Order(Tetrahedron<Vector> Tetrahedron)
         {
-            return Determinant(Tetrahedron) > 0;
+            return !Triangle.Front(Tetrahedron.Vertex, Tetrahedron.Base);
         }
 
         /// <summary>

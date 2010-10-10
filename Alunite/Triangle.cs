@@ -17,6 +17,13 @@ namespace Alunite
             this.C = C;
         }
 
+        public Triangle(T Vertex, Edge<T> Base)
+        {
+            this.A = Vertex;
+            this.B = Base.A;
+            this.C = Base.B;
+        }
+
         public bool Equals(Triangle<T> Triangle)
         {
             return this == Triangle;   
@@ -103,6 +110,28 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the primary vertex of the triangle (A).
+        /// </summary>
+        public T Vertex
+        {
+            get
+            {
+                return this.A;
+            }
+        }
+
+        /// <summary>
+        /// Gets the primary base of the triangle (B, C).
+        /// </summary>
+        public Edge<T> Base
+        {
+            get
+            {
+                return new Edge<T>(this.B, this.C);
+            }
+        }
+
+        /// <summary>
         /// Gets a flipped form of the triangle (same points, different order).
         /// </summary>
         public Triangle<T> Flip
@@ -134,6 +163,28 @@ namespace Alunite
         public static Vector Normal(Triangle<Vector> Triangle)
         {
             return Vector.Normalize(Vector.Cross(Triangle.B - Triangle.A, Triangle.C - Triangle.A));
+        }
+
+        /// <summary>
+        /// Aligns the base (B, C) of the source triangle so that it equals the base. Returns
+        /// null if the triangle does not include the specified base.
+        /// </summary>
+        public static Triangle<T>? Align<T>(Triangle<T> Source, Edge<T> Base)
+            where T : IEquatable<T>
+        {
+            if (new Edge<T>(Source.A, Source.B) == Base)
+            {
+                return new Triangle<T>(Source.C, Base);
+            }
+            if (new Edge<T>(Source.B, Source.C) == Base)
+            {
+                return new Triangle<T>(Source.A, Base);
+            }
+            if (new Edge<T>(Source.C, Source.A) == Base)
+            {
+                return new Triangle<T>(Source.B, Base);
+            }
+            return null;
         }
 
         /// <summary>
