@@ -13,7 +13,7 @@ namespace Alunite
         /// <summary>
         /// Loads a model from an object file containing only location and face information.
         /// </summary>
-        public static void LoadObj(Path Path, out ISequentialArray<Vector> Vertices, out ISequentialArray<Triangle<int>> Triangles)
+        public static void LoadObj(Path Path, out IArray<Vector> Vertices, out IArray<Triangle<int>> Triangles)
         {
             using (FileStream fs = File.OpenRead(Path.PathString))
             {
@@ -24,7 +24,7 @@ namespace Alunite
         /// <summary>
         /// Loads a model from a stream containing an object file containing only location and face information.
         /// </summary>
-        public static void LoadObj(Stream Stream, out ISequentialArray<Vector> Vertices, out ISequentialArray<Triangle<int>> Triangles)
+        public static void LoadObj(Stream Stream, out IArray<Vector> Vertices, out IArray<Triangle<int>> Triangles)
         {
             StreamReader sr = new StreamReader(Stream);
             ListArray<Vector> verts = new ListArray<Vector>(); Vertices = verts;
@@ -66,10 +66,10 @@ namespace Alunite
         /// <summary>
         /// Computes the normals for the specified set of vertices and triangles. The indices for the normals are aligned with vertices.
         /// </summary>
-        public static ISequentialArray<Vector> ComputeNormals(ISequentialArray<Vector> Vertices, ISequentialArray<Triangle<int>> Triangles, bool Normalize)
+        public static IArray<Vector> ComputeNormals(IArray<Vector> Vertices, IArray<Triangle<int>> Triangles, bool Normalize)
         {
-            Vector[] normals = new Vector[Vertices.Count];
-            foreach (Triangle<int> tri in Triangles.Values)
+            Vector[] normals = new Vector[Vertices.Size];
+            foreach (Triangle<int> tri in Triangles.Items)
             {
                 Triangle<Vector> vectri = new Triangle<Vector>(Vertices.Lookup(tri.A), Vertices.Lookup(tri.B), Vertices.Lookup(tri.C));
                 Vector norm = Triangle.Normal(vectri);

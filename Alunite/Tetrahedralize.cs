@@ -234,12 +234,12 @@ namespace Alunite
         /// <summary>
         /// Creates a delaunay tetrahedralization of the specified input vertices.
         /// </summary>
-        public static ISequentialArray<Tetrahedron<int>> Delaunay<A>(A Input)
-            where A : ISequentialArray<Vector>
+        public static IArray<Tetrahedron<int>> Delaunay<A>(A Input)
+            where A : IArray<Vector>
         {
-            StandardArray<int> mapping = new StandardArray<int>(new IntRange(0, Input.Count));
+            StandardArray<int> mapping = new StandardArray<int>(new IntRange(0, Input.Size));
             Sort.InPlace<StandardArray<int>, int>(mapping, x => Vector.Compare(Input.Lookup(x.A), Input.Lookup(x.B)));
-            ISequentialArray<Tetrahedron<int>> mappedtetras = DelaunayOrdered(new MapSequentialArray<int, Vector>(mapping, x => Input.Lookup(x)));
+            IArray<Tetrahedron<int>> mappedtetras = DelaunayOrdered(Data.Map(mapping, x => Input.Lookup(x)));
             StandardArray<Tetrahedron<int>> tetras = new StandardArray<Tetrahedron<int>>(mappedtetras);
             tetras.Map(x => new Tetrahedron<int>(mapping.Lookup(x.A), mapping.Lookup(x.B), mapping.Lookup(x.C), mapping.Lookup(x.D)));
             return tetras;
@@ -251,15 +251,15 @@ namespace Alunite
         /// of the given points are coplanar, the tetrahedra outputted will not be delaunay and might not even have a positive
         /// volume.
         /// </summary>
-        public static ISequentialArray<Tetrahedron<int>> DelaunayOrdered<A>(A Input)
-            where A : ISequentialArray<Vector>
+        public static IArray<Tetrahedron<int>> DelaunayOrdered<A>(A Input)
+            where A : IArray<Vector>
         {
             TetrahedralMesh<int> mesh = new TetrahedralMesh<int>();
-            if (Input.Count > 4)
+            if (Input.Size > 4)
             {
                 // Form initial tetrahedron.
                 Tetrahedron<int> first = new Tetrahedron<int>(0, 1, 2, 3);
-                Tetrahedron<Vector> firstactual = Tetrahedron.Dereference<A, int, Vector>(first, Input);
+                Tetrahedron<Vector> firstactual = Tetrahedron.Dereference<A, Vector>(first, Input);
                 if (!Tetrahedron.Order(firstactual))
                 {
                     first = first.Flip;
@@ -269,7 +269,7 @@ namespace Alunite
 
                 // Begin incremental addition
                 Stack<Triangle<int>> newinteriors = new Stack<Triangle<int>>();
-                for (int i = 5; i < Input.Count; i++)
+                for (int i = 5; i < Input.Size; i++)
                 {
                     Vector v = Input.Lookup(i);
 
@@ -379,11 +379,11 @@ namespace Alunite
         /// Gets the boundary triangles (triangles which are one the face of exactly one tetrahedron) of the specified 
         /// tetrahedral mesh. 
         /// </summary>
-        public static ISequentialArray<Triangle<int>> Boundary(ISequentialArray<Tetrahedron<int>> Mesh)
+        public static IArray<Triangle<int>> Boundary(IArray<Tetrahedron<int>> Mesh)
         {
             // Since lookups and modifications on hashsets are in constant time, this function runs in linear time.
             HashSet<Triangle<int>> cur = new HashSet<Triangle<int>>();
-            foreach (Tetrahedron<int> tetra in Mesh.Values) 
+            foreach (Tetrahedron<int> tetra in Mesh.Items) 
             {
                 foreach (Triangle<int> tri in tetra.Faces)
                 {

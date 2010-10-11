@@ -4,40 +4,44 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A possibly-infinite collection of items stored at indices. This is a generalization of
-    /// .net arrays and is closer to a function but arrays can be mutable. Unless otherwise stated,
-    /// arrays may not change from outside influence when used in an argument.
+    /// A finite, ordered, and possibly mutable collection of items which can be referenced by an integer.
     /// </summary>
-    /// <typeparam name="S">The type of items in the array.</typeparam>
-    /// <typeparam name="I">The type of indexes(or references) to the array.</typeparam>
-    public interface IArray<T, I>
-        where I : IEquatable<I>
+    /// <typeparam name="T">The type of items in the array.</typeparam>
+    public interface IArray<T>
     {
         /// <summary>
         /// Gets the item at the specified index. This function may throw an exception for some values, but it may
         /// not cause a modification in the array or the programs state (besides the side effects of the lookup).
         /// </summary>
-        T Lookup(I Index);
+        T Lookup(int Index);
+
+        /// <summary>
+        /// Gets the amount of items in the array.
+        /// </summary>
+        int Size { get; }
+
+        /// <summary>
+        /// Gets the items in the array in order by their index.
+        /// </summary>
+        IEnumerable<T> Items { get; }
     }
 
     /// <summary>
-    /// An array whose elements may be changed.
+    /// An array where any element may be changed.
     /// </summary>
-    public interface IMutableArray<T, I>
-        where I : IEquatable<I>
+    public interface IMutableArray<T> : IArray<T>
     {
         /// <summary>
         /// Modifies an element in the array to reflect a value. This function may throw an exception to indicate
         /// failure.
         /// </summary>
-        void Modify(I Index, T Value);
+        void Modify(int Index, T Value);
     }
 
     /// <summary>
     /// An array where an in-place mapping can be applied.
     /// </summary>
-    public interface IMapableArray<T, I> : IArray<T, I>
-        where I : IEquatable<I>
+    public interface IMapableArray<T> : IArray<T>
     {
         /// <summary>
         /// Applies an in-place mapping, transforming all the elements in the array by the specified function.
@@ -46,38 +50,9 @@ namespace Alunite
     }
 
     /// <summary>
-    /// An array whose intresting values can be enumerated.
-    /// </summary>
-    public interface IFiniteArray<T, I> : IArray<T, I>
-        where I : IEquatable<I>
-    {
-        /// <summary>
-        /// Gets the items in the array (in no particular order).
-        /// </summary>
-        IEnumerable<KeyValuePair<I, T>> Items { get; }
-
-        /// <summary>
-        /// Gets the values in the array (in no particular order).
-        /// </summary>
-        IEnumerable<T> Values { get; }
-    }
-
-    /// <summary>
-    /// A numerically-indexed array containing a finite amount of data. The "intresting values" (as defined by IFiniteArray)
-    /// must be produced (using Values and Items) in sequential order starting at index 0 and stopping at the index before Count.
-    /// </summary>
-    public interface ISequentialArray<T> : IFiniteArray<T, int>
-    {
-        /// <summary>
-        /// Gets a positive integer that defines the integer range [0, Count) where Values and Items iterates.
-        /// </summary>
-        int Count { get; }
-    }
-
-    /// <summary>
     /// A sequential array where items can be added at the end.
     /// </summary>
-    public interface IExtendableArray<T> : ISequentialArray<T>
+    public interface IExtendableArray<T> : IArray<T>
     {
         /// <summary>
         /// Adds an item to the array, incrementing its size.
@@ -93,18 +68,18 @@ namespace Alunite
     /// <summary>
     /// An array (by alunite's definition) created from a .net array.
     /// </summary>
-    public class StandardArray<T> : IMutableArray<T, int>, ISequentialArray<T>, IMapableArray<T, int>
+    public class StandardArray<T> : IMutableArray<T>, IMapableArray<T>
     {
         public StandardArray(T[] Items)
         {
             this._Items = Items;
         }
 
-        public StandardArray(ISequentialArray<T> Source)
+        public StandardArray(IArray<T> Source)
         {
-            this._Items = new T[Source.Count];
+            this._Items = new T[Source.Size];
             int i = 0;
-            foreach (T item in Source.Values)
+            foreach (T item in Source.Items)
             {
                 this._Items[i] = item;
                 i++;
@@ -160,43 +135,17 @@ namespace Alunite
             return new StandardArray<F>(otheritems);
         }
 
-        public T Lookup(int Index)
-        {
-            if (Index >= 0 && Index < this._Items.Length)
-            {
-                return this._Items[Index];
-            }
-            else
-            {
-                return default(T);
-            }
-        }
-
         public void Modify(int Index, T Value)
         {
             this._Items[Index] = Value;
         }
 
-        public IEnumerable<KeyValuePair<int, T>> Items
+        public T Lookup(int Index)
         {
-            get
-            {
-                for (int t = 0; t < this._Items.Length; t++)
-                {
-                    yield return new KeyValuePair<int, T>(t, this._Items[t]);
-                }
-            }
+            return this._Items[Index];
         }
 
-        public IEnumerable<T> Values
-        {
-            get
-            {
-                return this._Items;
-            }
-        }
-
-        public int Count
+        public int Size
         {
             get 
             {
@@ -204,30 +153,30 @@ namespace Alunite
             }
         }
 
-        public T Default
+        public IEnumerable<T> Items
         {
             get 
             {
-                return default(T);
+                return this._Items;
             }
         }
 
-        private T[] _Items;
+        private T[] _Items; 
     }
 
     /// <summary>
     /// A numerically-indexed array where items can be added and removed quickly.
     /// </summary>
-    public class ListArray<T> : IMutableArray<T, int>, IExtendableArray<T>, IMapableArray<T, int>
+    public class ListArray<T> : IMutableArray<T>, IExtendableArray<T>, IMapableArray<T>
     {
         public ListArray()
         {
             this._Items = new List<T>();
         }
 
-        public ListArray(ISequentialArray<T> Source)
+        public ListArray(IArray<T> Source)
         {
-            this._Items = new List<T>(Source.Values);
+            this._Items = new List<T>(Source.Items);
         }
 
         public ListArray(List<T> Source)
@@ -240,15 +189,17 @@ namespace Alunite
             this._Items = new List<T>(Source);
         }
 
-        public IEnumerable<T> Values
+        public void Modify(int Index, T Value)
         {
-            get 
-            {
-                return this._Items;
-            }
+            this._Items[Index] = Value;
         }
 
-        public int Count
+        public T Lookup(int Index)
+        {
+            return this._Items[Index];
+        }
+
+        public int Size
         {
             get 
             {
@@ -256,42 +207,12 @@ namespace Alunite
             }
         }
 
-        public T Default
-        {
-            get 
-            {
-                return default(T);
-            }
-        }
-
-        public T Lookup(int Index)
-        {
-            if (Index >= 0 && Index < this._Items.Count)
-            {
-                return this._Items[Index];
-            }
-            else
-            {
-                return default(T);
-            }
-        }
-
-        public IEnumerable<KeyValuePair<int, T>> Items
+        public IEnumerable<T> Items
         {
             get
             {
-                int i = 0;
-                foreach (T item in this._Items)
-                {
-                    yield return new KeyValuePair<int, T>(i, item);
-                    i++;
-                }
+                return this._Items;
             }
-        }
-
-        public void Modify(int Index, T Value)
-        {
-            this._Items[Index] = Value;
         }
 
         public void Add(T Item)
@@ -318,38 +239,27 @@ namespace Alunite
     /// <summary>
     /// Acts as an array that has a one to one mapping to a source array.
     /// </summary>
-    public class MapSequentialArray<T, F> : ISequentialArray<F>
+    public class MapArray<T, F> : IArray<F>
     {
-        public MapSequentialArray(ISequentialArray<T> Source, Func<T, F> Mapping)
+        public MapArray(IArray<T> Source, Func<T, F> Mapping)
         {
             this._Source = Source;
             this._Mapping = Mapping;
         }
 
-        public int Count
+        public int Size
         {
             get 
             {
-                return this._Source.Count;
+                return this._Source.Size;
             }
         }
 
-        public IEnumerable<KeyValuePair<int, F>> Items
+        public IEnumerable<F> Items
         {
             get 
             {
-                foreach (KeyValuePair<int, T> items in this._Source.Items)
-                {
-                    yield return new KeyValuePair<int, F>(items.Key, this._Mapping(items.Value));
-                }
-            }
-        }
-
-        public IEnumerable<F> Values
-        {
-            get 
-            {
-                foreach (T val in this._Source.Values)
+                foreach (T val in this._Source.Items)
                 {
                     yield return this._Mapping(val);
                 }
@@ -361,51 +271,35 @@ namespace Alunite
             return this._Mapping(this._Source.Lookup(Index));
         }
 
-        private ISequentialArray<T> _Source;
+        private IArray<T> _Source;
         private Func<T, F> _Mapping;
     }
 
     /// <summary>
     /// Acts as an array produced by a one to many (constant number) mapping from the source array.
     /// </summary>
-    public class ExpansionSequentialArray<T, F> : ISequentialArray<F>
+    public class ExpansionArray<T, F> : IArray<F>
     {
-        public ExpansionSequentialArray(ISequentialArray<T> Source, int Expansion, Func<T, IEnumerable<F>> Mapping)
+        public ExpansionArray(IArray<T> Source, int Expansion, Func<T, IEnumerable<F>> Mapping)
         {
             this._Source = Source;
             this._Expansion = Expansion;
             this._Mapping = Mapping;
         }
 
-        public int Count
+        public int Size
         {
             get
             {
-                return this._Expansion * this._Source.Count;
+                return this._Expansion * this._Source.Size;
             }
         }
 
-        public IEnumerable<KeyValuePair<int, F>> Items
+        public IEnumerable<F> Items
         {
             get 
             {
-                foreach (KeyValuePair<int, T> item in this._Source.Items)
-                {
-                    int i = item.Key * this._Expansion;
-                    foreach (F aval in this._Mapping(item.Value))
-                    {
-                        yield return new KeyValuePair<int, F>(i, aval);
-                        i++;
-                    }
-                }
-            }
-        }
-
-        public IEnumerable<F> Values
-        {
-            get 
-            {
-                foreach (T val in this._Source.Values)
+                foreach (T val in this._Source.Items)
                 {
                     foreach (F aval in this._Mapping(val))
                     {
@@ -434,7 +328,7 @@ namespace Alunite
             return default(F); // Should never happen.
         }
 
-        private ISequentialArray<T> _Source;
+        private IArray<T> _Source;
         private Func<T, IEnumerable<F>> _Mapping;
         private int _Expansion;
     }
@@ -442,43 +336,28 @@ namespace Alunite
     /// <summary>
     /// Acts as an array produced by combining two elements present in seperate arrays.
     /// </summary>
-    public class ZipSequentialArray<TA, TB> : ISequentialArray<Tuple<TA, TB>>
+    public class ZipArray<TA, TB> : IArray<Tuple<TA, TB>>
     {
-        public ZipSequentialArray(ISequentialArray<TA> SourceA, ISequentialArray<TB> SourceB)
+        public ZipArray(IArray<TA> SourceA, IArray<TB> SourceB)
         {
             this._SourceA = SourceA;
             this._SourceB = SourceB;
         }
 
-        public int Count
+        public int Size
         {
             get 
             {
-                return Math.Min(this._SourceA.Count, this._SourceB.Count);
+                return Math.Min(this._SourceA.Size, this._SourceB.Size);
             }
         }
 
-        public IEnumerable<KeyValuePair<int, Tuple<TA, TB>>> Items
+        public IEnumerable<Tuple<TA, TB>> Items
         {
             get 
             {
-                int i = 0;
-                IEnumerator<TA> ae = this._SourceA.Values.GetEnumerator();
-                IEnumerator<TB> be = this._SourceB.Values.GetEnumerator();
-                while (ae.MoveNext() && be.MoveNext())
-                {
-                    yield return new KeyValuePair<int, Tuple<TA, TB>>(i, Tuple.Create(ae.Current, be.Current));
-                    i++;
-                }
-            }
-        }
-
-        public IEnumerable<Tuple<TA, TB>> Values
-        {
-            get 
-            {
-                IEnumerator<TA> ae = this._SourceA.Values.GetEnumerator();
-                IEnumerator<TB> be = this._SourceB.Values.GetEnumerator();
+                IEnumerator<TA> ae = this._SourceA.Items.GetEnumerator();
+                IEnumerator<TB> be = this._SourceB.Items.GetEnumerator();
                 while (ae.MoveNext() && be.MoveNext())
                 {
                     yield return Tuple.Create(ae.Current, be.Current);
@@ -491,45 +370,34 @@ namespace Alunite
             return Tuple.Create(this._SourceA.Lookup(Index), this._SourceB.Lookup(Index));
         }
 
-        private ISequentialArray<TA> _SourceA;
-        private ISequentialArray<TB> _SourceB;
+        private IArray<TA> _SourceA;
+        private IArray<TB> _SourceB;
     }
 
     /// <summary>
     /// A sequential array that acts as a range of integers.
     /// </summary>
-    public struct IntRange : ISequentialArray<int>
+    public struct IntRange : IArray<int>
     {
-        public IntRange(int Start, int Count)
+        public IntRange(int Start, int Size)
         {
             this.Start = Start;
-            this.Count = Count;
+            this.Size = Size;
         }
 
-        int ISequentialArray<int>.Count
+        int IArray<int>.Size
         {
             get 
             {
-                return this.Count;
+                return this.Size;
             }
         }
 
-        public IEnumerable<KeyValuePair<int, int>> Items
-        {
-            get
-            {
-                for (int i = 0; i < this.Count; i++)
-                {
-                    yield return new KeyValuePair<int, int>(i, this.Start + i);
-                }
-            }
-        }
-
-        public IEnumerable<int> Values
+        public IEnumerable<int> Items
         {
             get 
             {
-                int end = this.Start + this.Count;
+                int end = this.Start + this.Size;
                 for (int i = this.Start; i < end; i++)
                 {
                     yield return i;
@@ -543,15 +411,15 @@ namespace Alunite
         }
 
         public int Start;
-        public int Count; 
+        public int Size; 
     }
 
     /// <summary>
     /// An array that will always report that it has no elements.
     /// </summary>
-    public struct EmptyArray<T> : ISequentialArray<T>
+    public struct EmptyArray<T> : IArray<T>
     {
-        public int Count
+        public int Size
         {
             get
             {
@@ -559,15 +427,7 @@ namespace Alunite
             }
         }
 
-        public IEnumerable<KeyValuePair<int, T>> Items
-        {
-            get 
-            {
-                return new KeyValuePair<int, T>[0];
-            }
-        }
-
-        public IEnumerable<T> Values
+        public IEnumerable<T> Items
         {
             get 
             {
@@ -589,7 +449,7 @@ namespace Alunite
         /// <summary>
         /// Creates a standard array from a source array.
         /// </summary>
-        public static StandardArray<T> CreateStandard<T>(ISequentialArray<T> Source)
+        public static StandardArray<T> CreateStandard<T>(IArray<T> Source)
         {
             return new StandardArray<T>(Source);
         }
@@ -597,17 +457,25 @@ namespace Alunite
         /// <summary>
         /// Creates a mapped array from a source array.
         /// </summary>
-        public static MapSequentialArray<T, F> Map<T, F>(ISequentialArray<T> Source, Func<T, F> Mapping)
+        public static MapArray<T, F> Map<T, F>(IArray<T> Source, Func<T, F> Mapping)
         {
-            return new MapSequentialArray<T, F>(Source, Mapping);
+            return new MapArray<T, F>(Source, Mapping);
+        }
+
+        /// <summary>
+        /// Creates an expanded array from a source array.
+        /// </summary>
+        public static ExpansionArray<T, F> Expand<T, F>(IArray<T> Source, int Factor, Func<T, IEnumerable<F>> Mapping)
+        {
+            return new ExpansionArray<T, F>(Source, Factor, Mapping);
         }
 
         /// <summary>
         /// Creates a zipped array from two source arrays.
         /// </summary>
-        public static ZipSequentialArray<TA, TB> Zip<TA, TB>(ISequentialArray<TA> SourceA, ISequentialArray<TB> SourceB)
+        public static ZipArray<TA, TB> Zip<TA, TB>(IArray<TA> SourceA, IArray<TB> SourceB)
         {
-            return new ZipSequentialArray<TA, TB>(SourceA, SourceB);
+            return new ZipArray<TA, TB>(SourceA, SourceB);
         }
     }
 }

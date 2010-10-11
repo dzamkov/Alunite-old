@@ -42,42 +42,20 @@ namespace Alunite
             Path textures = resources["Textures"];
             Path models = resources["Models"];
 
-            // Model
-            ISequentialArray<Vector> sverts;
-            ISequentialArray<Triangle<int>> tris;
-            Model.LoadObj(models["Test.obj"], out sverts, out tris);
-            StandardArray<Vector> verts = new StandardArray<Vector>(sverts);
-            verts.Map(x => x + new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()) * 0.01);
-
-            // Make a tetrahedralization
-            ISequentialArray<Tetrahedron<int>> tetras = Tetrahedralize.Delaunay(verts);
-
-            // Select only some tetrahedra (to make a fractured shape).
-            ListArray<Tetrahedron<int>> passedtetras = new ListArray<Tetrahedron<int>>();
-            foreach (Tetrahedron<int> tetra in tetras.Values)
-            {
-                Tetrahedron<Vector> actualtetra = new Tetrahedron<Vector>(
-                    verts.Lookup(tetra.A), 
-                    verts.Lookup(tetra.B), 
-                    verts.Lookup(tetra.C), 
-                    verts.Lookup(tetra.D));
-                if (Tetrahedron.Midpoint(actualtetra).Y < 0.0)
-                {
-                    passedtetras.Add(tetra);
-                }
-            }
-
-            ISequentialArray<Triangle<int>> tetratris = Tetrahedralize.Boundary(passedtetras);
-            ISequentialArray<Vector> norms = Model.ComputeNormals(verts, tetratris, true);
+            // Shape
+            IArray<Vector> verts;
+            IArray<Triangle<int>> tris;
+            Model.LoadObj(models["Test.obj"], out verts, out tris);
+            IArray<Vector> norms = Model.ComputeNormals(verts, tris, true);
 
             // Make a vbo
             this._VBO = new NVVBO(NormalVertex.Model.Singleton,
-                new MapSequentialArray<Tuple<Vector, Vector>, NormalVertex>(
-                    new ZipSequentialArray<Vector, Vector>(verts, norms),
+                Data.Map<Tuple<Vector, Vector>, NormalVertex>(
+                    Data.Zip(verts, norms),
                     delegate(Tuple<Vector, Vector> PosNorm)
                     {
                         return new NormalVertex(PosNorm.A, PosNorm.B);
-                    }), tetratris);
+                    }), tris);
 
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
@@ -97,103 +75,6 @@ namespace Alunite
             GL.ActiveTexture(TextureUnit.Texture0);
             test.Bind();
             GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
-        }
-
-        /// <summary>
-        /// Creates the (content) states for a tetrahedron node graph and makes a randomish structure.
-        /// </summary>
-        public static StandardArray<Content> Seed(StandardArray<Vector> Vertices, StandardArray<Tetrahedron<int>> Indices,
-            StandardArray<Tetrahedron<int>> Borders, Random Random)
-        {
-            // Create an array of contents for each tetrahedron.
-            Content[] contents = new Content[Borders.Count];
-
-            foreach (KeyValuePair<int, Tetrahedron<int>> kvp in Indices.Items)
-            {
-                Tetrahedron<int> tetra = kvp.Value;
-                Tetrahedron<Vector> vectetra = new Tetrahedron<Vector>(
-                    Vertices.Lookup(tetra.A),
-                    Vertices.Lookup(tetra.B),
-                    Vertices.Lookup(tetra.C),
-                    Vertices.Lookup(tetra.D));
-                Vector midpoint = Tetrahedron.Midpoint(vectetra);
-                if (midpoint.Z < 0.0)
-                {
-                    contents[kvp.Key] = Content.Full;
-                }
-                else
-                {
-                    contents[kvp.Key] = Content.Empty;
-                }
-            }
-
-
-            return new StandardArray<Content>(contents);
-        }
-
-        /// <summary>
-        /// Creates triangles for rendering purposes for the specified node graph.
-        /// </summary>
-        public static void Tesselate(
-            StandardArray<Vector> VertexPositions,
-            StandardArray<Tetrahedron<int>> Tetrahedrons, StandardArray<Tetrahedron<int>> Borders, StandardArray<Content> Contents,
-            out ISequentialArray<ColorNormalVertex> Vertices, out ISequentialArray<int> Indices)
-        {
-            Dictionary<int, ColorNormalVertex> verts = new Dictionary<int, ColorNormalVertex>();
-            ListArray<int> tris = new ListArray<int>();
-            foreach (KeyValuePair<int, Tetrahedron<int>> kvp in Tetrahedrons.Items)
-            {
-                if (Contents.Lookup(kvp.Key) == Content.Full)
-                {
-                    Triangle<int>[] faces = kvp.Value.Faces;
-                    int[] borders = Borders.Lookup(kvp.Key).Points;
-                    for (int t = 0; t < borders.Length; t++)
-                    {
-                        if (borders[t] < 0 || Contents.Lookup(borders[t]) == Content.Empty)
-                        {
-                            Triangle<int> face = faces[t];
-                            Vector facenorm = Triangle.Normal(new Triangle<Vector>(
-                                VertexPositions.Lookup(face.A),
-                                VertexPositions.Lookup(face.B),
-                                VertexPositions.Lookup(face.C)));
-                            tris.Add(face.A);
-                            tris.Add(face.B);
-                            tris.Add(face.C);
-                            foreach (int point in face.Points)
-                            {
-                                ColorNormalVertex vert;
-                                if (!verts.TryGetValue(point, out vert))
-                                {
-                                    vert = new ColorNormalVertex(Color.RGB(0.6, 0.6, 0.6), VertexPositions.Lookup(point), new Vector());
-                                }
-                                verts[point] = new ColorNormalVertex(vert.Color, vert.Position, vert.Normal + facenorm);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Remap vertex data with those that are actually used.
-            Dictionary<int, int> vertmapping = new Dictionary<int, int>();
-            ListArray<ColorNormalVertex> vertices = new ListArray<ColorNormalVertex>();
-            foreach (KeyValuePair<int, ColorNormalVertex> vert in verts)
-            {
-                vertmapping.Add(vert.Key, vertices.Count);
-                vertices.Add(vert.Value);
-            }
-            tris.Map(x => vertmapping[x]);
-
-            Vertices = vertices;
-            Indices = tris;
-        }
-
-        /// <summary>
-        /// The contents of a tetrahedron node graph.
-        /// </summary>
-        public enum Content
-        {
-            Empty,
-            Full
         }
 
         /// <summary>

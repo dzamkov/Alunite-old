@@ -44,7 +44,6 @@
     <Compile Include="Array.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="Edge.cs" />
-    <Compile Include="Grid.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Sort.cs" />

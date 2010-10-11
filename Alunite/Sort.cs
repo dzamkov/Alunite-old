@@ -14,16 +14,16 @@ namespace Alunite
         /// the same, any result is acceptable.
         /// </summary>
         public static void InPlace<A, T>(A Data, Func<Tuple<T, T>, bool> Comparison)
-            where A : ISequentialArray<T>, IMutableArray<T, int>
+            where A : IArray<T>, IMutableArray<T>
         {
-            InPlace(Data, Comparison, 0, Data.Count);
+            InPlace(Data, Comparison, 0, Data.Size);
         }
 
         /// <summary>
         /// Sorts the specified region of the array of data using an in-place algorithim.
         /// </summary>
         public static void InPlace<A, T>(A Data, Func<Tuple<T, T>, bool> Comparison, int Start, int End)
-            where A : ISequentialArray<T>, IMutableArray<T, int>
+            where A : IArray<T>, IMutableArray<T>
         {
             if (End - Start > 0)
             {

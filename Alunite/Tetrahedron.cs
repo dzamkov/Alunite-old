@@ -244,9 +244,8 @@ namespace Alunite
         /// <summary>
         /// Dereferences a tetrahedron through an array.
         /// </summary>
-        public static Tetrahedron<F> Dereference<A, T, F>(Tetrahedron<T> Source, A Array)
-            where A : IArray<F, T>
-            where T : IEquatable<T>
+        public static Tetrahedron<F> Dereference<A, F>(Tetrahedron<int> Source, A Array)
+            where A : IArray<F>
             where F : IEquatable<F>
         {
             return new Tetrahedron<F>(
@@ -254,50 +253,6 @@ namespace Alunite
                 Array.Lookup(Source.B),
                 Array.Lookup(Source.C),
                 Array.Lookup(Source.D));
-        }
-
-        /// <summary>
-        /// Finds the borders in an array of tetrahedra. Looking up a value in a resulting tetrahedron will get the index for
-        /// the tetrahedron that borders it at the face opposite the point that was used or -1 if there is no border on that face.
-        /// </summary>
-        public static StandardArray<Tetrahedron<int>> Borders<V>(StandardArray<Tetrahedron<V>> Tetrahedrons)
-            where V : IEquatable<V>
-        {
-            Dictionary<Triangle<V>, KeyValuePair<int, int>> opentriangles = new Dictionary<Triangle<V>, KeyValuePair<int, int>>();
-            int[,] borders = new int[Tetrahedrons.Count, 4]; // 0 means no border, every value after is offset by one.
-
-            // Determine connections for the tetrahedrons.
-            foreach (KeyValuePair<int, Tetrahedron<V>> kvp in Tetrahedrons.Items)
-            {
-                Triangle<V>[] tris = kvp.Value.Faces;
-                for(int t = 0; t < tris.Length; t++)
-                {
-                    Triangle<V> tri = tris[t];
-                    KeyValuePair<int, int> val;
-                    if (opentriangles.TryGetValue(tri, out val))
-                    {
-                        borders[kvp.Key, t] = val.Key + 1;
-                        borders[val.Key, val.Value] = kvp.Key + 1;
-                    }
-                    else
-                    {
-                        opentriangles.Add(tri.Flip, new KeyValuePair<int, int>(kvp.Key, t));
-                    }
-                }
-            }
-
-            // Stuff border info into the tetrahedron array.
-            Tetrahedron<int>[] nodes = new Tetrahedron<int>[Tetrahedrons.Count];
-            for (int t = 0; t < nodes.Length; t++)
-            {
-                nodes[t] = new Tetrahedron<int>(
-                    borders[t, 0] - 1,
-                    borders[t, 1] - 1,
-                    borders[t, 2] - 1,
-                    borders[t, 3] - 1);
-            }
-
-            return new StandardArray<Tetrahedron<int>>(nodes);
         }
 
         /// <summary>
