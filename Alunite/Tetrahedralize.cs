@@ -247,7 +247,9 @@ namespace Alunite
 
         /// <summary>
         /// Creates a delaunay tetrahedralization for a set of vertices that are guaranteed to be ordered. The
-        /// algorithim used is described in the article "3-D TRIANGULATIONS FROM LOCAL TRANSFORMATIONS".
+        /// algorithim used is described in the article "3-D TRIANGULATIONS FROM LOCAL TRANSFORMATIONS". Note that if any
+        /// of the given points are coplanar, the tetrahedra outputted will not be delaunay and might not even have a positive
+        /// volume.
         /// </summary>
         public static ISequentialArray<Tetrahedron<int>> DelaunayOrdered<A>(A Input)
             where A : ISequentialArray<Vector>
@@ -306,12 +308,13 @@ namespace Alunite
                             double hullacircumradius = (hullaver - hullacircumcenter).Length;
                             if ((hullbver - hullacircumcenter).Length < hullacircumradius)
                             {
-                                bool transform = true;
-
                                 // Delaunay property needs fixin
                                 // Start by determining if the two tetrahedra's form a convex shape
                                 double doubledummy;
                                 Vector vectordummy;
+                                bool transform = true;
+
+                                // Tetrahedra are convex with no coplanar points
                                 if (Triangle.Intersect(boundver, hullbver, hullaver, out doubledummy, out vectordummy))
                                 {
                                     transform = mesh.SplitPentahedron(hulla, hullb);
@@ -347,14 +350,14 @@ namespace Alunite
                                 if (transform)
                                 {
                                     foreach (Triangle<int> possiblebound in new Triangle<int>[]
-                                        {
-                                            new Triangle<int>(hullb.Vertex, bound.A, bound.B),
-                                            new Triangle<int>(hullb.Vertex, bound.B, bound.C),
-                                            new Triangle<int>(hullb.Vertex, bound.C, bound.A),
-                                            new Triangle<int>(hulla.Vertex, bound.B, bound.A),
-                                            new Triangle<int>(hulla.Vertex, bound.C, bound.B),
-                                            new Triangle<int>(hulla.Vertex, bound.A, bound.C)
-                                        })
+                                    {
+                                        new Triangle<int>(hullb.Vertex, bound.A, bound.B),
+                                        new Triangle<int>(hullb.Vertex, bound.B, bound.C),
+                                        new Triangle<int>(hullb.Vertex, bound.C, bound.A),
+                                        new Triangle<int>(hulla.Vertex, bound.B, bound.A),
+                                        new Triangle<int>(hulla.Vertex, bound.C, bound.B),
+                                        new Triangle<int>(hulla.Vertex, bound.A, bound.C)
+                                    })
                                     {
                                         if (!newinteriors.Contains(possiblebound) && mesh.GetInterior(possiblebound) != null)
                                         {
@@ -362,6 +365,7 @@ namespace Alunite
                                         }
                                     }
                                 }
+
                             }
                         }
                     }

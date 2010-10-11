@@ -215,6 +215,28 @@ namespace Alunite
         /// </summary>
         public static bool Intersect(Triangle<Vector> Triangle, Vector Start, Vector End, out double Length, out Vector Position)
         {
+            double u;
+            double v;
+            Intersect(Triangle, Start, End, out Length, out Position, out u, out v);
+            if(Length >= 0.0 && Length <= 1.0)
+            {
+                if (u >= 0.0 && u <= 1.0)
+                {
+                    if (v >= 0.0 && (v + u) <= 1.0)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Finds where the segment intersects the plane and ouputs the point where the intersection
+        /// is made, the length along the segment the intersection is at, and the uv coordinates relative to the triangle the intersection is at.
+        /// </summary>
+        public static void Intersect(Triangle<Vector> Triangle, Vector Start, Vector End, out double Length, out Vector Position, out double U, out double V)
+        {
             Vector u = Triangle.B - Triangle.A;
             Vector v = Triangle.C - Triangle.A;
             Vector n = Vector.Cross(u, v);
@@ -226,34 +248,19 @@ namespace Alunite
             double b = Vector.Dot(n, raydir);
             double r = a / b;
 
-            if (r >= 0.0 && r <= 1.0 && b < 0.0)
-            {
-                Length = r;
-                Position = Start + (raydir * r);
+            Length = r;
+            Position = Start + (raydir * r);
 
-                // Check if point is in triangle.
-                Vector w = Position - Triangle.A;
-                double uu = Vector.Dot(u, u);
-                double uv = Vector.Dot(u, v);
-                double vv = Vector.Dot(v, v);
-                double wu = Vector.Dot(w, u);
-                double wv = Vector.Dot(w, v);
-                double d = (uv * uv) - (uu * vv);
-                double s = ((uv * wv) - (vv * wu)) / d;
-                if (s >= 0.0 && s <= 1.0)
-                {
-                    double t = ((uv * wu) - (uu * wv)) / d;
-                    if (t >= 0.0 && (s + t) <= 1.0)
-                    {
-                        // HIT!
-                        return true;
-                    }
-                }
-                return false;
-            }
-            Length = 0;
-            Position = new Vector(0.0, 0.0, 0.0);
-            return false;
+            // Check if point is in triangle.
+            Vector w = Position - Triangle.A;
+            double uu = Vector.Dot(u, u);
+            double uv = Vector.Dot(u, v);
+            double vv = Vector.Dot(v, v);
+            double wu = Vector.Dot(w, u);
+            double wv = Vector.Dot(w, v);
+            double d = (uv * uv) - (uu * vv);
+            U = ((uv * wv) - (vv * wu)) / d;
+            V = ((uv * wu) - (uu * wv)) / d;
         }
     }
 }
