@@ -46,6 +46,7 @@
     <Compile Include="Edge.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Path.cs" />
+    <Compile Include="Set.cs" />
     <Compile Include="Sort.cs" />
     <Compile Include="Tetrahedralize.cs" />
     <Compile Include="Tetrahedron.cs" />

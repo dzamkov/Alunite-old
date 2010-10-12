@@ -8,7 +8,7 @@ namespace Alunite
     /// contains information about the boundary and interior triangles.
     /// </summary>
     /// <typeparam name="T">Type that represents a point.</typeparam>
-    public class TetrahedralMesh<T>
+    public class TetrahedralMesh<T> : ISet<Tetrahedron<T>>
         where T : IEquatable<T>
     {
         public TetrahedralMesh()
@@ -16,6 +16,63 @@ namespace Alunite
             this._Tetrahedra = new HashSet<Tetrahedron<T>>();
             this._Boundaries = new Dictionary<Triangle<T>, Tetrahedron<T>>();
             this._Interiors = new Dictionary<Triangle<T>, Tetrahedron<T>>();
+        }
+
+        private TetrahedralMesh(
+            HashSet<Tetrahedron<T>> Tetrahedra, 
+            Dictionary<Triangle<T>, Tetrahedron<T>> Boundaries, 
+            Dictionary<Triangle<T>, Tetrahedron<T>> Interiors)
+        {
+            this._Tetrahedra = Tetrahedra;
+            this._Boundaries = Boundaries;
+            this._Interiors = Interiors;
+        }
+
+        /// <summary>
+        /// Creates a tetrahedral mesh from this mesh based on the specified point mapping with the requirement
+        /// that the mapping function is one to one.
+        /// </summary>
+        public TetrahedralMesh<F> Map<F>(Func<T, F> Mapping)
+            where F : IEquatable<F>
+        {
+            HashSet<Tetrahedron<F>> newtetras = new HashSet<Tetrahedron<F>>();
+            Dictionary<Triangle<F>, Tetrahedron<F>> newbounds = new Dictionary<Triangle<F>, Tetrahedron<F>>();
+            Dictionary<Triangle<F>, Tetrahedron<F>> newinteriors = new Dictionary<Triangle<F>, Tetrahedron<F>>();
+            foreach (Tetrahedron<T> tet in this._Tetrahedra)
+            {
+                newtetras.Add(new Tetrahedron<F>(
+                    Mapping(tet.A),
+                    Mapping(tet.B),
+                    Mapping(tet.C),
+                    Mapping(tet.D)));
+            }
+            foreach (KeyValuePair<Triangle<T>, Tetrahedron<T>> bound in this._Boundaries)
+            {
+                newbounds.Add(
+                    new Triangle<F>(
+                        Mapping(bound.Key.A),
+                        Mapping(bound.Key.B),
+                        Mapping(bound.Key.C)),
+                    new Tetrahedron<F>(
+                        Mapping(bound.Value.A),
+                        Mapping(bound.Value.B),
+                        Mapping(bound.Value.C),
+                        Mapping(bound.Value.D)));
+            }
+            foreach (KeyValuePair<Triangle<T>, Tetrahedron<T>> interior in this._Interiors)
+            {
+                newinteriors.Add(
+                    new Triangle<F>(
+                        Mapping(interior.Key.A),
+                        Mapping(interior.Key.B),
+                        Mapping(interior.Key.C)),
+                    new Tetrahedron<F>(
+                        Mapping(interior.Value.A),
+                        Mapping(interior.Value.B),
+                        Mapping(interior.Value.C),
+                        Mapping(interior.Value.D)));
+            }
+            return new TetrahedralMesh<F>(newtetras, newbounds, newinteriors);
         }
 
         /// <summary>
@@ -202,11 +259,22 @@ namespace Alunite
         /// <summary>
         /// Gets all the boundaries of the mesh, along with the tetrahedra the boundaries are on.
         /// </summary>
-        public IEnumerable<KeyValuePair<Triangle<T>, Tetrahedron<T>>> Boundaries
+        public IEnumerable<KeyValuePair<Triangle<T>, Tetrahedron<T>>> TetrahedraBoundaries
         {
             get
             {
                 return this._Boundaries;
+            }
+        }
+
+        /// <summary>
+        /// Gets the triangles that form the boundaries of this tetrahedral mesh.
+        /// </summary>
+        public ISet<Triangle<T>> Boundaries
+        {
+            get
+            {
+                return new SimpleSet<Triangle<T>>(this._Boundaries.Keys, this._Boundaries.Count);
             }
         }
 
@@ -218,6 +286,14 @@ namespace Alunite
             get
             {
                 return this._Tetrahedra.Count;
+            }
+        }
+
+        public IEnumerable<Tetrahedron<T>> Items
+        {
+            get 
+            {
+                return this._Tetrahedra;
             }
         }
 
@@ -234,14 +310,13 @@ namespace Alunite
         /// <summary>
         /// Creates a delaunay tetrahedralization of the specified input vertices.
         /// </summary>
-        public static IArray<Tetrahedron<int>> Delaunay<A>(A Input)
+        public static TetrahedralMesh<int> Delaunay<A>(A Input)
             where A : IArray<Vector>
         {
             StandardArray<int> mapping = new StandardArray<int>(new IntRange(0, Input.Size));
             Sort.InPlace<StandardArray<int>, int>(mapping, x => Vector.Compare(Input.Lookup(x.A), Input.Lookup(x.B)));
-            IArray<Tetrahedron<int>> mappedtetras = DelaunayOrdered(Data.Map(mapping, x => Input.Lookup(x)));
-            StandardArray<Tetrahedron<int>> tetras = new StandardArray<Tetrahedron<int>>(mappedtetras);
-            tetras.Map(x => new Tetrahedron<int>(mapping.Lookup(x.A), mapping.Lookup(x.B), mapping.Lookup(x.C), mapping.Lookup(x.D)));
+            TetrahedralMesh<int> tetras = DelaunayOrdered(Data.Map(mapping, x => Input.Lookup(x)));
+            tetras.Map(x => mapping.Lookup(x));
             return tetras;
         }
 
@@ -251,7 +326,7 @@ namespace Alunite
         /// of the given points are coplanar, the tetrahedra outputted will not be delaunay and might not even have a positive
         /// volume.
         /// </summary>
-        public static IArray<Tetrahedron<int>> DelaunayOrdered<A>(A Input)
+        public static TetrahedralMesh<int> DelaunayOrdered<A>(A Input)
             where A : IArray<Vector>
         {
             TetrahedralMesh<int> mesh = new TetrahedralMesh<int>();
@@ -275,7 +350,7 @@ namespace Alunite
 
                     // Add tetrahedrons to exterior of convex hull
                     List<Tetrahedron<int>> newtetras = new List<Tetrahedron<int>>();
-                    foreach (KeyValuePair<Triangle<int>, Tetrahedron<int>> kvp in mesh.Boundaries)
+                    foreach (KeyValuePair<Triangle<int>, Tetrahedron<int>> kvp in mesh.TetrahedraBoundaries)
                     {
                         Triangle<int> bound = kvp.Key;
                         if (Triangle.Front(v, new Triangle<Vector>(Input.Lookup(bound.A), Input.Lookup(bound.B), Input.Lookup(bound.C))))
@@ -372,7 +447,7 @@ namespace Alunite
                     
                 }
             }
-            return new StandardArray<Tetrahedron<int>>(mesh.Tetrahedra, mesh.Size);
+            return mesh;
         }
 
         /// <summary>

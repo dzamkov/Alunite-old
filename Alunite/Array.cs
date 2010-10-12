@@ -455,6 +455,15 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates a standard array from a set.
+        /// </summary>
+        public static StandardArray<T> CreateStandard<T>(ISet<T> Source)
+            where T : IEquatable<T>
+        {
+            return new StandardArray<T>(Source.Items, Source.Size);
+        }
+
+        /// <summary>
         /// Creates a mapped array from a source array.
         /// </summary>
         public static MapArray<T, F> Map<T, F>(IArray<T> Source, Func<T, F> Mapping)
