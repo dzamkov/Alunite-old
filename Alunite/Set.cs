@@ -58,6 +58,13 @@ namespace Alunite
     /// </summary>
     public static class Set
     {
-
+        /// <summary>
+        /// Creates a shallow set from an array of items.
+        /// </summary>
+        public static SimpleSet<T> Create<T>(T[] Items)
+            where T : IEquatable<T>
+        {
+            return new SimpleSet<T>(Items, Items.Length);
+        }
     }
 }

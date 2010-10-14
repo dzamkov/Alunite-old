@@ -447,6 +447,14 @@ namespace Alunite
     public static class Data
     {
         /// <summary>
+        /// Creates anarray from a source array.
+        /// </summary>
+        public static StandardArray<T> Create<T>(T[] Source)
+        {
+            return new StandardArray<T>(Source);
+        }
+
+        /// <summary>
         /// Creates a standard array from a source array.
         /// </summary>
         public static StandardArray<T> CreateStandard<T>(IArray<T> Source)

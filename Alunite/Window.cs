@@ -45,7 +45,9 @@ namespace Alunite
             // Shape
             IArray<Vector> verts;
             IArray<Triangle<int>> tris;
-            Model.LoadObj(models["Test.obj"], out verts, out tris);
+            Primitive cube = Primitive.Cube(0.5);
+            verts = cube.Vertices;
+            tris = Data.CreateStandard(Tetrahedralize.Boundary(cube.Tetrahedra));
             IArray<Vector> norms = Model.ComputeNormals(verts, tris, true);
 
             // Make a vbo

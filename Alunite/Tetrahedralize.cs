@@ -454,7 +454,7 @@ namespace Alunite
         /// Gets the boundary triangles (triangles which are one the face of exactly one tetrahedron) of the specified 
         /// tetrahedral mesh. 
         /// </summary>
-        public static IArray<Triangle<int>> Boundary(IArray<Tetrahedron<int>> Mesh)
+        public static ISet<Triangle<int>> Boundary(ISet<Tetrahedron<int>> Mesh)
         {
             // Since lookups and modifications on hashsets are in constant time, this function runs in linear time.
             HashSet<Triangle<int>> cur = new HashSet<Triangle<int>>();
@@ -468,7 +468,7 @@ namespace Alunite
                     }
                 }
             }
-            return new StandardArray<Triangle<int>>(cur, cur.Count);
+            return new SimpleSet<Triangle<int>>(cur, cur.Count);
         }
     }
 }
