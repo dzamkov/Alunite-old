@@ -66,10 +66,10 @@ namespace Alunite
         /// <summary>
         /// Computes the normals for the specified set of vertices and triangles. The indices for the normals are aligned with vertices.
         /// </summary>
-        public static IArray<Vector> ComputeNormals(IArray<Vector> Vertices, IArray<Triangle<int>> Triangles, bool Normalize)
+        public static StandardArray<Vector> ComputeNormals(IArray<Vector> Vertices, IEnumerable<Triangle<int>> Triangles, bool Normalize)
         {
             Vector[] normals = new Vector[Vertices.Size];
-            foreach (Triangle<int> tri in Triangles.Items)
+            foreach (Triangle<int> tri in Triangles)
             {
                 Triangle<Vector> vectri = new Triangle<Vector>(Vertices.Lookup(tri.A), Vertices.Lookup(tri.B), Vertices.Lookup(tri.C));
                 Vector norm = Triangle.Normal(vectri);

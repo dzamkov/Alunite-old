@@ -213,14 +213,15 @@ namespace Alunite
             this._Model = Model;
             this._Count = IndiceSource.Size;
             this._ArrayBuffer = _WriteArrayBuffer(Model, VerticeSource);
-            this._ElementArrayBuffer = _WriteElementArrayBuffer(IndiceSource);
+            this._ElementArrayBuffer = _WriteElementArrayBuffer(IndiceSource.Items, this._Count);
         }
 
-        public VBO(M Model, IArray<V> VerticeSource, IArray<Triangle<int>> TriangleSource)
-            : this(Model, VerticeSource, Data.Expand<Triangle<int>, int>(
-                TriangleSource, 3, x => x.Points))
+        public VBO(M Model, IArray<V> VerticeSource, ISet<Triangle<int>> TriangleSource)
         {
-
+            this._Model = Model;
+            this._Count = TriangleSource.Size * 3;
+            this._ArrayBuffer = _WriteArrayBuffer(Model, VerticeSource);
+            this._ElementArrayBuffer = _WriteElementArrayBuffer(_Indices(TriangleSource.Items), this._Count);
         }
 
         private static unsafe uint _WriteArrayBuffer(M Model, IArray<V> Source)
@@ -240,20 +241,33 @@ namespace Alunite
             return ab;
         }
 
-        private static unsafe uint _WriteElementArrayBuffer(IArray<int> Source)
+        private static unsafe uint _WriteElementArrayBuffer(IEnumerable<int> Source, int Size)
         {
             uint eab;
             GL.GenBuffers(1, out eab);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, eab);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(Source.Size * sizeof(uint)), IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(Size * sizeof(uint)), IntPtr.Zero, BufferUsageHint.StaticDraw);
             uint* buffer = (uint*)GL.MapBuffer(BufferTarget.ElementArrayBuffer, BufferAccess.WriteOnly).ToPointer();
-            foreach (int indice in Source.Items)
+            foreach (int indice in Source)
             {
                 *buffer = (uint)indice;
                 buffer++;
             }
             GL.UnmapBuffer(BufferTarget.ElementArrayBuffer);
             return eab;
+        }
+
+        /// <summary>
+        /// Creates indices from a finite collection of triangles.
+        /// </summary>
+        private static IEnumerable<int> _Indices(IEnumerable<Triangle<int>> Triangles)
+        {
+            foreach (Triangle<int> tri in Triangles)
+            {
+                yield return tri.A;
+                yield return tri.B;
+                yield return tri.C;
+            }
         }
 
         /// <summary>

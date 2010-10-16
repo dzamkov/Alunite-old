@@ -43,7 +43,8 @@
   <ItemGroup>
     <Compile Include="Array.cs" />
     <Compile Include="Color.cs" />
-    <Compile Include="Edge.cs" />
+    <Compile Include="Segment.cs" />
+    <Compile Include="Grid.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Primitive.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="VBO.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="Window.cs" />
+    <Compile Include="World.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="OpenTK, Version=1.0.0.201, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL" />

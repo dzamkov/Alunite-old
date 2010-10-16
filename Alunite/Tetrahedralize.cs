@@ -399,11 +399,11 @@ namespace Alunite
                                     transform = false;
 
                                     // The triangle pair is concave, find the missing piece
-                                    foreach (KeyValuePair<int, Edge<int>> edge in new KeyValuePair<int, Edge<int>>[]
+                                    foreach (KeyValuePair<int, Segment<int>> edge in new KeyValuePair<int, Segment<int>>[]
                                         {
-                                            new KeyValuePair<int, Edge<int>>(bound.C, new Edge<int>(bound.A, bound.B)),
-                                            new KeyValuePair<int, Edge<int>>(bound.A, new Edge<int>(bound.B, bound.C)),
-                                            new KeyValuePair<int, Edge<int>>(bound.B, new Edge<int>(bound.C, bound.A))
+                                            new KeyValuePair<int, Segment<int>>(bound.C, new Segment<int>(bound.A, bound.B)),
+                                            new KeyValuePair<int, Segment<int>>(bound.A, new Segment<int>(bound.B, bound.C)),
+                                            new KeyValuePair<int, Segment<int>>(bound.B, new Segment<int>(bound.C, bound.A))
                                         })
                                     {
                                         Tetrahedron<int> other = new Tetrahedron<int>(hulla.Vertex, hullb.Vertex, edge.Value.A, edge.Value.B);

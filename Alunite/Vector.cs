@@ -16,7 +16,7 @@ namespace Alunite
             this.Z = Z;
         }
 
-        public Vector(IVector Source)
+        public Vector(LVector Source)
         {
             this.X = Source.X;
             this.Y = Source.Y;
@@ -126,7 +126,7 @@ namespace Alunite
         /// <summary>
         /// Multiplies each component of the vectors with the other's corresponding component.
         /// </summary>
-        public static Vector Scale(Vector A, IVector B)
+        public static Vector Scale(Vector A, LVector B)
         {
             return new Vector(A.X * B.X, A.Y * B.Y, A.Z * B.Z);
         }
@@ -189,9 +189,9 @@ namespace Alunite
     /// <summary>
     /// A vector of ints.
     /// </summary>
-    public struct IVector : IEquatable<IVector>
+    public struct LVector : IEquatable<LVector>
     {
-        public IVector(int X, int Y, int Z)
+        public LVector(int X, int Y, int Z)
         {
             this.X = X;
             this.Y = Y;
@@ -210,14 +210,14 @@ namespace Alunite
             return h;
         }
 
-        public bool Equals(IVector other)
+        public bool Equals(LVector other)
         {
             return this == other;
         }
 
         public override bool Equals(object obj)
         {
-            IVector? v = obj as IVector?;
+            LVector? v = obj as LVector?;
             if (v.HasValue)
             {
                 return this == v.Value;
@@ -225,24 +225,24 @@ namespace Alunite
             return false;
         }
 
-        public static bool operator ==(IVector A, IVector B)
+        public static bool operator ==(LVector A, LVector B)
         {
             return A.X == B.X && A.Y == B.Y && A.Z == B.Z;
         }
 
-        public static bool operator !=(IVector A, IVector B)
+        public static bool operator !=(LVector A, LVector B)
         {
             return A.X != B.X || A.Y != B.Y || A.Z != B.Z;
         }
 
-        public static IVector operator +(IVector A, IVector B)
+        public static LVector operator +(LVector A, LVector B)
         {
-            return new IVector(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
+            return new LVector(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
         }
 
-        public static IVector operator -(IVector A, IVector B)
+        public static LVector operator -(LVector A, LVector B)
         {
-            return new IVector(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
+            return new LVector(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
         }
 
         public int X;

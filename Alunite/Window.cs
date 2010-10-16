@@ -42,22 +42,9 @@ namespace Alunite
             Path textures = resources["Textures"];
             Path models = resources["Models"];
 
-            // Shape
-            IArray<Vector> verts;
-            IArray<Triangle<int>> tris;
-            Primitive cube = Primitive.Cube(0.5);
-            verts = cube.Vertices;
-            tris = Data.CreateStandard(Tetrahedralize.Boundary(cube.Tetrahedra));
-            IArray<Vector> norms = Model.ComputeNormals(verts, tris, true);
-
-            // Make a vbo
-            this._VBO = new NVVBO(NormalVertex.Model.Singleton,
-                Data.Map<Tuple<Vector, Vector>, NormalVertex>(
-                    Data.Zip(verts, norms),
-                    delegate(Tuple<Vector, Vector> PosNorm)
-                    {
-                        return new NormalVertex(PosNorm.A, PosNorm.B);
-                    }), tris);
+            // World
+            this._World = new World();
+            this._VBO = this._World.CreateVBO();
 
             // Shader test
             int vshade = GL.CreateShader(ShaderType.VertexShader);
@@ -97,7 +84,7 @@ namespace Alunite
             Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(0.7, (double)this.Width / (double)this.Height, 0.01, 50.0);
             GL.LoadMatrix(ref proj);
             Matrix4d view = Matrix4d.LookAt(
-                new Vector3d(Math.Sin(this._Rot), Math.Cos(this._Rot), 1.1),
+                new Vector3d(Math.Sin(this._Rot) * 3, Math.Cos(this._Rot) * 3, 3.1),
                 new Vector3d(0.0, 0.0, 0.0),
                 new Vector3d(0.0, 0.0, 1.0));
             GL.MultMatrix(ref view);
@@ -118,6 +105,7 @@ namespace Alunite
         }
 
         private double _Rot;
+        private World _World;
         private NVVBO _VBO;
     }
 }

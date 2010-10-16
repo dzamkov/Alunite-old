@@ -6,23 +6,23 @@ namespace Alunite
     /// <summary>
     /// A group of two homogenous items arranged to form a line segment.
     /// </summary>
-    public struct Edge<T> : IEquatable<Edge<T>>
+    public struct Segment<T> : IEquatable<Segment<T>>
         where T : IEquatable<T>
     {
-        public Edge(T A, T B)
+        public Segment(T A, T B)
         {
             this.A = A;
             this.B = B;
         }
 
-        public bool Equals(Edge<T> Edge)
+        public bool Equals(Segment<T> Segment)
         {
-            return this == Edge;
+            return this == Segment;
         }
 
         public override bool Equals(object obj)
         {
-            Edge<T>? edge = obj as Edge<T>?;
+            Segment<T>? edge = obj as Segment<T>?;
             if (edge != null)
             {
                 return edge.Value == this;
@@ -44,12 +44,12 @@ namespace Alunite
             }
         }
 
-        public static bool operator ==(Edge<T> A, Edge<T> B)
+        public static bool operator ==(Segment<T> A, Segment<T> B)
         {
             return A.A.Equals(B.A) && A.B.Equals(B.B);
         }
 
-        public static bool operator !=(Edge<T> A, Edge<T> B)
+        public static bool operator !=(Segment<T> A, Segment<T> B)
         {
             return !(A == B);
         }
@@ -72,11 +72,11 @@ namespace Alunite
         /// <summary>
         /// Creates a flipped form of the triangle (same points, different order).
         /// </summary>
-        public Edge<T> Flip
+        public Segment<T> Flip
         {
             get
             {
-                return new Edge<T>(this.B, this.A);
+                return new Segment<T>(this.B, this.A);
             }
         }
 
@@ -85,10 +85,16 @@ namespace Alunite
     }
 
     /// <summary>
-    /// Edge (1-simplex) related functions.
+    /// Segment (1-simplex) related functions.
     /// </summary>
-    public static class Edge
+    public static class Segment
     {
-
+        /// <summary>
+        /// Gets the midpoint of the specified segment.
+        /// </summary>
+        public static Vector Midpoint(Segment<Vector> Segment)
+        {
+            return (Segment.B + Segment.A) * 0.5;
+        }
     }
 }

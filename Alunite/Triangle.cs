@@ -17,7 +17,7 @@ namespace Alunite
             this.C = C;
         }
 
-        public Triangle(T Vertex, Edge<T> Base)
+        public Triangle(T Vertex, Segment<T> Base)
         {
             this.A = Vertex;
             this.B = Base.A;
@@ -96,15 +96,15 @@ namespace Alunite
         /// <summary>
         /// Gets the edges of the triangle.
         /// </summary>
-        public Edge<T>[] Edges
+        public Segment<T>[] Segments
         {
             get
             {
-                return new Edge<T>[]
+                return new Segment<T>[]
                 {
-                    new Edge<T>(this.A, this.B),
-                    new Edge<T>(this.B, this.C),
-                    new Edge<T>(this.C, this.A)
+                    new Segment<T>(this.A, this.B),
+                    new Segment<T>(this.B, this.C),
+                    new Segment<T>(this.C, this.A)
                 };
             }
         }
@@ -123,11 +123,11 @@ namespace Alunite
         /// <summary>
         /// Gets the primary base of the triangle (B, C).
         /// </summary>
-        public Edge<T> Base
+        public Segment<T> Base
         {
             get
             {
-                return new Edge<T>(this.B, this.C);
+                return new Segment<T>(this.B, this.C);
             }
         }
 
@@ -166,21 +166,41 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the center of the circumsphere encompassing the triangle.
+        /// </summary>
+        public static Vector Circumcenter(Triangle<Vector> Triangle)
+        {
+            // From http://www.ics.uci.edu/~eppstein/junkyard/circumcenter.html
+            Vector ba = Triangle.B - Triangle.A;
+            Vector ca = Triangle.C - Triangle.A;
+            double balen = ba.SquareLength;
+            double calen = ca.SquareLength;
+            Vector crossbc = Vector.Cross(ba, ca);
+
+            double denominator = 0.5 / crossbc.SquareLength;
+
+            return new Vector(
+                ((balen * ca.Y - calen * ba.Y) * crossbc.Z - (balen * ca.Z - calen * ba.Z) * crossbc.Y) * denominator,
+                ((balen * ca.Z - calen * ba.Z) * crossbc.X - (balen * ca.X - calen * ba.X) * crossbc.Z) * denominator,
+                ((balen * ca.X - calen * ba.X) * crossbc.Y - (balen * ca.Y - calen * ba.Y) * crossbc.X) * denominator) + Triangle.A;
+        }
+
+        /// <summary>
         /// Aligns the base (B, C) of the source triangle so that it equals the base. Returns
         /// null if the triangle does not include the specified base.
         /// </summary>
-        public static Triangle<T>? Align<T>(Triangle<T> Source, Edge<T> Base)
+        public static Triangle<T>? Align<T>(Triangle<T> Source, Segment<T> Base)
             where T : IEquatable<T>
         {
-            if (new Edge<T>(Source.A, Source.B) == Base)
+            if (new Segment<T>(Source.A, Source.B) == Base)
             {
                 return new Triangle<T>(Source.C, Base);
             }
-            if (new Edge<T>(Source.B, Source.C) == Base)
+            if (new Segment<T>(Source.B, Source.C) == Base)
             {
                 return new Triangle<T>(Source.A, Base);
             }
-            if (new Edge<T>(Source.C, Source.A) == Base)
+            if (new Segment<T>(Source.C, Source.A) == Base)
             {
                 return new Triangle<T>(Source.B, Base);
             }

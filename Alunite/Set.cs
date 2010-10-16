@@ -59,12 +59,30 @@ namespace Alunite
     public static class Set
     {
         /// <summary>
-        /// Creates a shallow set from an array of items.
+        /// Creates a set with the specified size and items.
+        /// </summary>
+        public static SimpleSet<T> Create<T>(IEnumerable<T> Items, int Size)
+            where T : IEquatable<T>
+        {
+            return new SimpleSet<T>(Items, Size);
+        }
+
+        /// <summary>
+        /// Creates a shallow set from an array of items guaranteed to be distinct.
         /// </summary>
         public static SimpleSet<T> Create<T>(T[] Items)
             where T : IEquatable<T>
         {
             return new SimpleSet<T>(Items, Items.Length);
+        }
+
+        /// <summary>
+        /// Creates a set from a hashset provided the hashset doesn't change.
+        /// </summary>
+        public static SimpleSet<T> Create<T>(HashSet<T> Items)
+            where T : IEquatable<T>
+        {
+            return new SimpleSet<T>(Items, Items.Count);
         }
     }
 }
