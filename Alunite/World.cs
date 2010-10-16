@@ -33,18 +33,21 @@ namespace Alunite
             this._Faces = new Dictionary<Triangle<int>, Tetrahedron<int>>();
 
             // Create a rectangular slab with an area of air above it.
-            this._Vertices = new List<Vector>(Grid.Points(new Vector(-1.5, -1.5, -1.5), new Vector(1.0, 1.0, 1.0), new LVector(4, 4, 4)).Items);
+            this._Vertices = new List<Vector>(Grid.Points(new Vector(-4, -4, -4), new Vector(1.0, 1.0, 1.0), new LVector(9, 9, 9)).Items);
 
-            // Dirt
-            foreach (Tetrahedron<int> tetra in Grid.Tesselate(new LVector(4, 4, 4), new LVector(0, 0, 0), new LVector(3, 3, 1)).Items)
+            for (int x = 0; x < 8; x++)
             {
-                this._AddTetrahedron(tetra, true);
-            }
-
-            // Air
-            foreach (Tetrahedron<int> tetra in Grid.Tesselate(new LVector(4, 4, 4), new LVector(0, 0, 1), new LVector(3, 3, 2)).Items)
-            {
-                this._AddTetrahedron(tetra, false);
+                for (int y = 0; y < 8; y++)
+                {
+                    for (int z = 0; z < 8; z++)
+                    {
+                        bool filled = z < 1;
+                        foreach (Tetrahedron<int> tetra in Grid.Tesselate(new LVector(9, 9, 9), new LVector(x, y, z), new LVector(1, 1, 1)).Items)
+                        {
+                            this._AddTetrahedron(tetra, filled);
+                        }
+                    }
+                }
             }
         }
 
@@ -164,13 +167,13 @@ namespace Alunite
         {
             ListArray<Vector> verts = new ListArray<Vector>(this._Vertices);
             StandardArray<Vector> norms = Model.ComputeNormals(verts, this.Boundary.Items, true);
-           return new VBO<NormalVertex, NormalVertex.Model>(NormalVertex.Model.Singleton,
-                Data.Map<Tuple<Vector, Vector>, NormalVertex>(
-                    Data.Zip(verts, norms),
-                    delegate(Tuple<Vector, Vector> PosNorm)
-                    {
-                        return new NormalVertex(PosNorm.A, PosNorm.B);
-                    }), this.Boundary);
+            return new VBO<NormalVertex, NormalVertex.Model>(NormalVertex.Model.Singleton,
+                 Data.Map<Tuple<Vector, Vector>, NormalVertex>(
+                     Data.Zip(verts, norms),
+                     delegate(Tuple<Vector, Vector> PosNorm)
+                     {
+                         return new NormalVertex(PosNorm.A, PosNorm.B);
+                     }), this.Boundary);
         }
 
         /// <summary>

@@ -20,7 +20,7 @@ float blendtex(float val, float cmpa, float cmpb, float smooth)
 
 void main()
 {
-	vec3 texcoord = Position * 4;
+	vec3 texcoord = vec3(-Position.x, Position.y, Position.z);
 	
 	vec3 texstrength;
 	texstrength.x = abs(Normal.x);
