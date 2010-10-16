@@ -94,6 +94,8 @@ namespace Alunite
             this._VBO.Render(BeginMode.Triangles);
             GL.UseProgram(0);
 
+            System.Threading.Thread.Sleep(1);
+
             this.SwapBuffers();
         }
 
@@ -150,10 +152,7 @@ namespace Alunite
                 double fricmult = Math.Pow(Math.Pow(0.02, 0.1), e.Time * 10);
                 this._PlayerVelocity = Vector.Scale(this._PlayerVelocity, new Vector(fricmult, fricmult, 1));
 
-                // But he can't fall
-                this._PlayerVelocity.Z = Math.Max(0.0, this._PlayerVelocity.Z);
-
-                // Lucky he can control his movements
+                // Luckily he can control his movements
                 Vector side = Vector.Cross(new Vector(0.0, 0.0, 1.0), this.LookDir);
                 if (this.Keyboard[Key.Space])
                 {
@@ -175,6 +174,9 @@ namespace Alunite
                 {
                     this._PlayerVelocity -= side * 30.0 * e.Time;
                 }
+
+                // And he can't fall
+                this._PlayerVelocity.Z = Math.Max(0.0, this._PlayerVelocity.Z);
             }
 
             // Now apply velocity forces and collision
