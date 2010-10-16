@@ -174,6 +174,27 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Determines where the specified segment intersects world geometry.
+        /// </summary>
+        public bool Trace(Segment<Vector> Segment, out double HitLength, out Vector HitPos, out Vector HitNormal)
+        {
+            // Very slow
+            foreach (Triangle<int> tri in this._ContentBoundary)
+            {
+                Triangle<Vector> acttri = this.Dereference(tri);
+                if (Triangle.Intersect(acttri, Segment, out HitLength, out HitPos))
+                {
+                    HitNormal = Triangle.Normal(acttri);
+                    return true;
+                }
+            }
+            HitLength = 0;
+            HitPos = new Vector();
+            HitNormal = new Vector();
+            return false;
+        }
+
+        /// <summary>
         /// Adds a tetrahedron to the world and updates the boundaries.
         /// </summary>
         private void _AddTetrahedron(Tetrahedron<int> Tetrahedron, bool Filled)

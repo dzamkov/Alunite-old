@@ -390,7 +390,7 @@ namespace Alunite
                                 bool transform = true;
 
                                 // Tetrahedra are convex with no coplanar points
-                                if (Triangle.Intersect(boundver, hullbver, hullaver, out doubledummy, out vectordummy))
+                                if (Triangle.Intersect(boundver, new Segment<Vector>(hullbver, hullaver), out doubledummy, out vectordummy))
                                 {
                                     transform = mesh.SplitPentahedron(hulla, hullb);
                                 }

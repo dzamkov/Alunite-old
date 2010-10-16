@@ -233,11 +233,11 @@ namespace Alunite
         /// the segment the hit is at and the actual position of the hit. This will only check for a hit on the front side of
         /// the triangle.
         /// </summary>
-        public static bool Intersect(Triangle<Vector> Triangle, Vector Start, Vector End, out double Length, out Vector Position)
+        public static bool Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position)
         {
             double u;
             double v;
-            Intersect(Triangle, Start, End, out Length, out Position, out u, out v);
+            Intersect(Triangle, Segment, out Length, out Position, out u, out v);
             if(Length >= 0.0 && Length <= 1.0)
             {
                 if (u >= 0.0 && u <= 1.0)
@@ -255,21 +255,21 @@ namespace Alunite
         /// Finds where the segment intersects the plane and ouputs the point where the intersection
         /// is made, the length along the segment the intersection is at, and the uv coordinates relative to the triangle the intersection is at.
         /// </summary>
-        public static void Intersect(Triangle<Vector> Triangle, Vector Start, Vector End, out double Length, out Vector Position, out double U, out double V)
+        public static void Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position, out double U, out double V)
         {
             Vector u = Triangle.B - Triangle.A;
             Vector v = Triangle.C - Triangle.A;
             Vector n = Vector.Cross(u, v);
 
             // Test intersection of segment and triangle plane.
-            Vector raydir = End - Start;
-            Vector rayw = Start - Triangle.A;
+            Vector raydir = Segment.B - Segment.A;
+            Vector rayw = Segment.A - Triangle.A;
             double a = -Vector.Dot(n, rayw);
             double b = Vector.Dot(n, raydir);
             double r = a / b;
 
             Length = r;
-            Position = Start + (raydir * r);
+            Position = Segment.A + (raydir * r);
 
             // Check if point is in triangle.
             Vector w = Position - Triangle.A;

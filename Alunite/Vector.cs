@@ -116,6 +116,15 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the outgoing ray of an object hitting a plane with the specified normal at the
+        /// specified incoming ray.
+        /// </summary>
+        public static Vector Reflect(Vector Incoming, Vector Normal)
+        {
+            return Incoming - Normal * (2 * Vector.Dot(Incoming, Normal) / Normal.SquareLength);
+        }
+
+        /// <summary>
         /// Multiplies each component of the vectors with the other's corresponding component.
         /// </summary>
         public static Vector Scale(Vector A, Vector B)

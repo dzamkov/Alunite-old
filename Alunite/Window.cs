@@ -23,16 +23,7 @@ namespace Alunite
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
 
-            GL.Enable(EnableCap.Lighting);
-            GL.Enable(EnableCap.Light0);
-
-            GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.2, 0.2, 0.2));
-            GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.6, 0.6, 0.6));
-            GL.Light(LightName.Light0, LightParameter.Specular, Color.RGB(1.0, 0.6, 0.6));
-            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(2.0f, 5.0f, -7.8f, 0.0f));
-
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
             Random r = new Random();
 
@@ -53,11 +44,10 @@ namespace Alunite
             GL.ShaderSource(fshade, Path.ReadText(shaders["TestFS.glsl"]));
             GL.CompileShader(vshade);
             GL.CompileShader(fshade);
-            int prog = GL.CreateProgram();
+            int prog = this._ShaderProgram = GL.CreateProgram();
             GL.AttachShader(prog, vshade);
             GL.AttachShader(prog, fshade);
             GL.LinkProgram(prog);
-            GL.UseProgram(prog);
 
             // Textures
             Texture test = Texture.Load(textures["Test.png"]);
@@ -84,12 +74,41 @@ namespace Alunite
             Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(0.7, (double)this.Width / (double)this.Height, 0.01, 50.0);
             GL.LoadMatrix(ref proj);
             Matrix4d view = Matrix4d.LookAt(
-                new Vector3d(Math.Sin(this._Rot) * 3, Math.Cos(this._Rot) * 3, 3.1),
+                new Vector3d(Math.Sin(this._Rot) * 2, Math.Cos(this._Rot) * 2, 2.1),
                 new Vector3d(0.0, 0.0, 0.0),
                 new Vector3d(0.0, 0.0, 1.0));
             GL.MultMatrix(ref view);
 
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            GL.UseProgram(this._ShaderProgram);
             this._VBO.Render(BeginMode.Triangles);
+            GL.UseProgram(0);
+            
+            // Test tracing
+            GL.LineWidth(3.0f);
+            Vector tracestart = new Vector(0.9, 0.9, 0.2);
+            Vector traceend = new Vector(-0.4, -0.3, -1.5);
+            GL.Begin(BeginMode.Lines);
+            GL.Color4(Color.RGB(1.0, 0.0, 0.0));
+            GL.Vertex3(tracestart);
+            GL.Vertex3(traceend);
+            GL.End();
+            Vector hitpos;
+            Vector hitnorm;
+            double hitlen;
+            if (this._World.Trace(new Segment<Vector>(tracestart, traceend), out hitlen, out hitpos, out hitnorm))
+            {
+                Vector incoming = (traceend - tracestart) * (1.0 - hitlen);
+                Vector outgoing = Vector.Reflect(incoming, hitnorm);
+                GL.Begin(BeginMode.Lines);
+                GL.Color4(Color.RGB(0.0, 0.0, 1.0));
+                GL.Vertex3(hitpos);
+                GL.Vertex3(hitpos + hitnorm * 0.2);
+                GL.Color4(Color.RGB(0.0, 1.0, 0.0));
+                GL.Vertex3(hitpos);
+                GL.Vertex3(hitpos + outgoing);
+                GL.End();
+            }
 
             this.SwapBuffers();
         }
@@ -105,6 +124,7 @@ namespace Alunite
         }
 
         private double _Rot;
+        private int _ShaderProgram;
         private World _World;
         private NVVBO _VBO;
     }
