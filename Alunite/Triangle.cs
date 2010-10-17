@@ -237,14 +237,16 @@ namespace Alunite
         {
             double u;
             double v;
-            Intersect(Triangle, Segment, out Length, out Position, out u, out v);
-            if(Length >= 0.0 && Length <= 1.0)
+            if (Intersect(Triangle, Segment, out Length, out Position, out u, out v))
             {
-                if (u >= 0.0 && u <= 1.0)
+                if (Length >= 0.0 && Length <= 1.0)
                 {
-                    if (v >= 0.0 && (v + u) <= 1.0)
+                    if (u >= 0.0 && u <= 1.0)
                     {
-                        return true;
+                        if (v >= 0.0 && (v + u) <= 1.0)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
@@ -253,9 +255,10 @@ namespace Alunite
 
         /// <summary>
         /// Finds where the segment intersects the plane and ouputs the point where the intersection
-        /// is made, the length along the segment the intersection is at, and the uv coordinates relative to the triangle the intersection is at.
+        /// is made, the length along the segment the intersection is at, and the uv coordinates relative to the triangle the intersection is at. Returns
+        /// if the segment hit the triangle on its front face.
         /// </summary>
-        public static void Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position, out double U, out double V)
+        public static bool Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position, out double U, out double V)
         {
             Vector u = Triangle.B - Triangle.A;
             Vector v = Triangle.C - Triangle.A;
@@ -281,6 +284,8 @@ namespace Alunite
             double d = (uv * uv) - (uu * vv);
             U = ((uv * wv) - (vv * wu)) / d;
             V = ((uv * wu) - (uu * wv)) / d;
+
+            return b < 0.0;
         }
     }
 }

@@ -240,12 +240,12 @@ namespace Alunite
             // Now apply velocity forces and collision
             Vector movement = this._PlayerVelocity * e.Time;
             bool hit = true;
-            while (hit)
+            while (hit && movement.SquareLength > 0)
             {
                 hit = this._World.Trace(new Segment<Vector>(this._PlayerPos, this._PlayerPos + movement), out hitlen, out hitpos, out hitnorm);
                 if (hit)
                 {
-                    this._PlayerPos = hitpos + hitnorm * 0.000001;
+                    this._PlayerPos = hitpos;
                     movement = Vector.Reflect(movement * (1.0 - hitlen), hitnorm);
                     this._PlayerVelocity = Vector.Reflect(this._PlayerVelocity, hitnorm) * 0.9;
                 }
