@@ -41,12 +41,31 @@ namespace Alunite
             Path shaders = resources["Shaders"];
             Path textures = resources["Textures"];
             Path models = resources["Models"];
+            Path skyboxes = resources["Skyboxes"];
 
             // World
             this._World = new World();
             this._VBO = this._World.CreateVBO();
 
-            // Shader test
+            // Skybox
+            Path testskybox = skyboxes["Test"];
+            this._SunDir = Vector.Normalize(new Vector(-1.0, 0.0, 0.5));
+            this._Skybox = new Texture[6];
+            this._Skybox[0] = Texture.Load(testskybox["Front.jpg"]);
+            this._Skybox[1] = Texture.Load(testskybox["Left.jpg"]);
+            this._Skybox[2] = Texture.Load(testskybox["Back.jpg"]);
+            this._Skybox[3] = Texture.Load(testskybox["Right.jpg"]);
+            this._Skybox[4] = Texture.Load(testskybox["Top.jpg"]);
+            foreach (Texture t in this._Skybox)
+            {
+                if (t != null)
+                {
+                    t.SetInterpolation(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+                    t.SetWrap(TextureWrapMode.Clamp, TextureWrapMode.Clamp);
+                }
+            }
+
+            // Shader
             int vshade = GL.CreateShader(ShaderType.VertexShader);
             int fshade = GL.CreateShader(ShaderType.FragmentShader);
             GL.ShaderSource(vshade, Path.ReadText(shaders["TestVS.glsl"]));
@@ -57,12 +76,10 @@ namespace Alunite
             GL.AttachShader(prog, vshade);
             GL.AttachShader(prog, fshade);
             GL.LinkProgram(prog);
+            
 
             // Textures
-            Texture test = Texture.Load(textures["Test.png"]);
-            GL.ActiveTexture(TextureUnit.Texture0);
-            test.Bind();
-            GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
+            this._Dirt = Texture.Load(textures["Test.png"]);
 
             this.Mouse.ButtonDown += delegate(object sender, MouseButtonEventArgs e)
             {
@@ -98,24 +115,38 @@ namespace Alunite
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            GL.MatrixMode(MatrixMode.Projection);
-            Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(0.7, (double)this.Width / (double)this.Height, 0.01, 50.0);
-            GL.LoadMatrix(ref proj);
             Vector eyepos = this._PlayerPos + EyeOffset;
+
+            GL.MatrixMode(MatrixMode.Projection);
+            Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(1.2, (double)this.Width / (double)this.Height, 0.01, 50.0);
+            GL.LoadMatrix(ref proj);
             Matrix4d view = Matrix4d.LookAt(
-                eyepos,
-                eyepos + this.LookDir,
+                new Vector3d(0.0, 0.0, 0.0),
+                this.LookDir,
                 new Vector3d(0.0, 0.0, 1.0));
             GL.MultMatrix(ref view);
 
+            // Skybox
+            GL.Disable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Texture2D);
+            Model.RenderSkybox(this._Skybox);
+
+            // World
+            GL.Translate(-eyepos);
             GL.Enable(EnableCap.DepthTest);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.UseProgram(this._ShaderProgram);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            this._Dirt.Bind();
+            GL.Uniform1(GL.GetUniformLocation(this._ShaderProgram, "MaterialDiffuse"), 0);
+            GL.Uniform3(GL.GetUniformLocation(this._ShaderProgram, "SunDirection"), (Vector3)this._SunDir);
             this._VBO.Render(BeginMode.Triangles);
             GL.UseProgram(0);
 
+            // Cursor
             if (this._LookTarget != null)
             {
+                GL.Disable(EnableCap.Texture2D);
                 GL.Disable(EnableCap.DepthTest);
                 GL.PointSize(6.0f);
                 GL.Begin(BeginMode.Points);
@@ -123,6 +154,29 @@ namespace Alunite
                 GL.Vertex3(this._LookTarget.Value);
                 GL.End();
             }
+
+            // Sun flare
+            GL.PushMatrix();
+            GL.LoadIdentity();
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.Texture2D);
+            double flare = Vector.Dot(this.LookDir, this._SunDir);
+            flare *= flare * flare;
+            flare /= 2;
+            if (flare > 0.0)
+            {
+                GL.Begin(BeginMode.Quads);
+                GL.Color4(Color.RGBA(1.0, 1.0, 1.0, flare));
+                GL.Vertex2(-1.0f, -1.0f);
+                GL.Vertex2(1.0f, -1.0f);
+                GL.Vertex2(1.0f, 1.0f);
+                GL.Vertex2(-1.0f, 1.0f);
+                GL.End();
+            }
+            GL.Disable(EnableCap.Blend);
+            GL.PopMatrix();
 
             System.Threading.Thread.Sleep(1);
 
@@ -272,11 +326,16 @@ namespace Alunite
 
         public static readonly Vector EyeOffset = new Vector(0.0, 0.0, 1.4);
 
+        private Vector _SunDir;
+
         private double _CamZ;
         private double _CamX;
         private Vector _PlayerPos;
         private Vector _PlayerVelocity;
         private Vector? _LookTarget;
+
+        private Texture[] _Skybox;
+        private Texture _Dirt;
 
         private int _ShaderProgram;
         private World _World;

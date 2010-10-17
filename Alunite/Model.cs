@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 
+using OpenTK;
+using OpenTK.Graphics.OpenGL;
+
 namespace Alunite
 {
     /// <summary>
@@ -85,6 +88,72 @@ namespace Alunite
                 }
             }
             return new StandardArray<Vector>(normals);
+        }
+
+        /// <summary>
+        /// Renders the specified textures a skybox. The textures should be given in order
+        /// Front, Left, Back, Right, Top, Bottom. If a texture is null, that portion of the skybox is
+        /// not rendered.
+        /// </summary>
+        public static void RenderSkybox(Texture[] Skybox)
+        {
+            if (Skybox[0] != null)
+            {
+                Skybox[0].Bind();
+                GL.Begin(BeginMode.Quads);
+                GL.TexCoord2(0, 0); GL.Vertex3(-0.5f, -0.5f, 0.5f);
+                GL.TexCoord2(0, 1); GL.Vertex3(-0.5f, -0.5f, -0.5f);
+                GL.TexCoord2(1, 1); GL.Vertex3(-0.5f, 0.5f, -0.5f);
+                GL.TexCoord2(1, 0); GL.Vertex3(-0.5f, 0.5f, 0.5f);
+                GL.End();
+            }
+            if (Skybox[1] != null)
+            {
+                Skybox[1].Bind();
+                GL.Begin(BeginMode.Quads);
+                GL.TexCoord2(0, 0); GL.Vertex3(0.5f, -0.5f, 0.5f);
+                GL.TexCoord2(0, 1); GL.Vertex3(0.5f, -0.5f, -0.5f);
+                GL.TexCoord2(1, 1); GL.Vertex3(-0.5f, -0.5f, -0.5f);
+                GL.TexCoord2(1, 0); GL.Vertex3(-0.5f, -0.5f, 0.5f);
+                GL.End();
+
+            }
+            if (Skybox[2] != null)
+            {
+                Skybox[2].Bind();
+                GL.Begin(BeginMode.Quads);
+                GL.TexCoord2(1, 1); GL.Vertex3(0.5f, -0.5f, -0.5f);
+                GL.TexCoord2(1, 0); GL.Vertex3(0.5f, -0.5f, 0.5f);
+                GL.TexCoord2(0, 0); GL.Vertex3(0.5f, 0.5f, 0.5f);
+                GL.TexCoord2(0, 1); GL.Vertex3(0.5f, 0.5f, -0.5f);
+                GL.End();
+            }
+            if (Skybox[3] != null)
+            {
+                Skybox[3].Bind();
+                GL.Begin(BeginMode.Quads);
+                GL.TexCoord2(1, 0); GL.Vertex3(0.5f, 0.5f, 0.5f);
+                GL.TexCoord2(0, 0); GL.Vertex3(-0.5f, 0.5f, 0.5f);
+                GL.TexCoord2(0, 1); GL.Vertex3(-0.5f, 0.5f, -0.5f);
+                GL.TexCoord2(1, 1); GL.Vertex3(0.5f, 0.5f, -0.5f);
+                GL.End();
+            }
+            if (Skybox[4] != null)
+            {
+                Skybox[4].Bind();
+                GL.Begin(BeginMode.Quads);
+                GL.TexCoord2(0, 1); GL.Vertex3(-0.5f, -0.5f, 0.5f);
+                GL.TexCoord2(1, 1); GL.Vertex3(-0.5f, 0.5f, 0.5f);
+                GL.TexCoord2(1, 0); GL.Vertex3(0.5f, 0.5f, 0.5f);
+                GL.TexCoord2(0, 0); GL.Vertex3(0.5f, -0.5f, 0.5f);
+                GL.End();
+            }
+            if (Skybox[5] != null)
+            {
+                // Untested
+                Skybox[5].Bind();
+                
+            }
         }
     }
 }

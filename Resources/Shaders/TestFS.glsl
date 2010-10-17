@@ -1,6 +1,7 @@
 #version 120
 
 uniform sampler2D MaterialDiffuse;
+uniform vec3 SunDirection;
 
 varying vec3 Position;
 varying vec3 Normal;
@@ -50,7 +51,8 @@ void main()
 		diffuse = diffuse + texture2D(MaterialDiffuse, texcoord.xy).rgb * blendstrength.z;
 	}
 	
-	float light = max(dot(Normal, vec3(1.0, 1.0, 1.0)), 0.0);
+	float light = max(dot(Normal, SunDirection), 0.0);
+	light = smoothstep(0.0, 0.8, light);
 	
 	gl_FragColor = vec4(diffuse * (light * 0.8 + 0.2), 1.0);
 }

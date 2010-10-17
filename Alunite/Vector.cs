@@ -28,6 +28,11 @@ namespace Alunite
             return new Vector3d(Vector.X, Vector.Y, Vector.Z);
         }
 
+        public static explicit operator Vector3(Vector Vector)
+        {
+            return new Vector3((float)Vector.X, (float)Vector.Y, (float)Vector.Z);
+        }
+
         public static bool operator ==(Vector A, Vector B)
         {
             return A.X == B.X && A.Y == B.Y && A.Z == B.Z;
@@ -51,6 +56,11 @@ namespace Alunite
         public static Vector operator *(Vector A, double Magnitude)
         {
             return new Vector(A.X * Magnitude, A.Y * Magnitude, A.Z * Magnitude);
+        }
+
+        public static Vector operator -(Vector A)
+        {
+            return new Vector(-A.X, -A.Y, -A.Z);
         }
 
         public bool Equals(Vector other)

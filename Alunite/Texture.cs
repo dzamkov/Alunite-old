@@ -30,17 +30,14 @@ namespace Alunite
             GL.TexEnv(TextureEnvTarget.TextureEnv,
                 TextureEnvParameter.TextureEnvMode,
                 (float)TextureEnvMode.Modulate);
-            GL.TexParameter(TextureTarget.Texture2D,
-                TextureParameterName.TextureMinFilter,
-                (float)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D,
-                TextureParameterName.TextureMagFilter,
-                (float)TextureMagFilter.Linear);
 
             GL.TexImage2D(TextureTarget.Texture2D,
                 0, PixelInternalFormat.Rgba,
                 bd.Width, bd.Height, 0,
                 OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bd.Scan0);
+
+            this.SetInterpolation(TextureMinFilter.Linear, TextureMagFilter.Linear);
+            this.SetWrap(TextureWrapMode.Repeat, TextureWrapMode.Repeat);
 
             Source.UnlockBits(bd);
         }
@@ -62,6 +59,26 @@ namespace Alunite
         public void Bind()
         {
             GL.BindTexture(TextureTarget.Texture2D, this._TextureID);
+        }
+
+        /// <summary>
+        /// Sets the interpolation used by the texture.
+        /// </summary>
+        public void SetInterpolation(TextureMinFilter Min, TextureMagFilter Mag)
+        {
+            this.Bind();
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)Min);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)Mag);
+        }
+
+        /// <summary>
+        /// Sets the type of wrapping used by the texture.
+        /// </summary>
+        public void SetWrap(TextureWrapMode S, TextureWrapMode T)
+        {
+            this.Bind();
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)S);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)T); 
         }
 
         /// <summary>
