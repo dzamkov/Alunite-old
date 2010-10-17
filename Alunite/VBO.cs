@@ -197,7 +197,7 @@ namespace Alunite
     /// Represents an array/element vertex buffer stored on the graphics device. Vertices must be
     /// completely self-contained to be used in this VBO.
     /// </summary>
-    public class VBO<V, M>
+    public class VBO<V, M> : IDisposable
         where V : struct, IVertex
         where M : IVertexModel<V>
     {
@@ -283,6 +283,15 @@ namespace Alunite
             else
             {
                 GL.DrawArrays(Mode, 0, this._Count);
+            }
+        }
+
+        public void Dispose()
+        {
+            GL.DeleteBuffers(1, ref this._ArrayBuffer);
+            if (this._ElementArrayBuffer > 0)
+            {
+                GL.DeleteBuffers(1, ref this._ElementArrayBuffer);
             }
         }
 

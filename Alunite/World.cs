@@ -198,6 +198,46 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Builds at the specified area.
+        /// </summary>
+        public void Build(Vector Location)
+        {
+            this._FillSphere(Location, true, 1.0);
+        }
+
+        /// <summary>
+        /// Digs at the specified area.
+        /// </summary>
+        public void Dig(Vector Location)
+        {
+            this._FillSphere(Location, false, 1.0);
+        }
+
+        /// <summary>
+        /// Fills the sphere at the specified location.
+        /// </summary>
+        private void _FillSphere(Vector Location, bool Filled, double Radius)
+        {
+            LinkedList<Tetrahedron<int>> tochange = new LinkedList<Tetrahedron<int>>();
+
+            // Figure out which tetrahedron need to be changed
+            foreach (Tetrahedron<int> tetra in this._Tetras.Keys)
+            {
+                Tetrahedron<Vector> atetra = this.Dereference(tetra);
+                if ((Tetrahedron.Midpoint(atetra) - Location).Length < Radius)
+                {
+                    tochange.AddLast(tetra);
+                }
+            }
+
+            // Do changes
+            foreach (Tetrahedron<int> tetra in tochange)
+            {
+                this._ChangeTetrahedron(tetra, Filled);
+            }
+        }
+
+        /// <summary>
         /// Adds a tetrahedron to the world and updates the boundaries.
         /// </summary>
         private void _AddTetrahedron(Tetrahedron<int> Tetrahedron, bool Filled)
@@ -226,6 +266,38 @@ namespace Alunite
                 else
                 {
                     this._WorldBoundary.Add(face);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Changes a preexisting tetrahedron's state.
+        /// </summary>
+        private void _ChangeTetrahedron(Tetrahedron<int> Tetrahedron, bool Filled)
+        {
+            if (this._Tetras[Tetrahedron] != Filled)
+            {
+                this._Tetras[Tetrahedron] = Filled;
+                foreach (Triangle<int> face in Tetrahedron.Faces)
+                {
+                    Triangle<int> flipped = face.Flip;
+                    if (!this._WorldBoundary.Contains(face))
+                    {
+                        if (Filled)
+                        {
+                            if (!this._ContentBoundary.Remove(flipped))
+                            {
+                                this._ContentBoundary.Add(face);
+                            }
+                        }
+                        else
+                        {
+                            if (!this._ContentBoundary.Remove(face))
+                            {
+                                this._ContentBoundary.Add(flipped);
+                            }
+                        }
+                    }
                 }
             }
         }

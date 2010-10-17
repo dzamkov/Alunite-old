@@ -59,10 +59,29 @@ namespace Alunite
             GL.LinkProgram(prog);
 
             // Textures
-            Texture test = Texture.Load(textures["Dirt.png"]);
+            Texture test = Texture.Load(textures["Test.png"]);
             GL.ActiveTexture(TextureUnit.Texture0);
             test.Bind();
             GL.Uniform1(GL.GetUniformLocation(prog, "MaterialDiffuse"), 0);
+
+            this.Mouse.ButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (this._LookTarget != null)
+                {
+                    if (e.Button == MouseButton.Left)
+                    {
+                        this._World.Dig(this._LookTarget.Value);
+                        this._VBO.Dispose();
+                        this._VBO = this._World.CreateVBO();
+                    }
+                    if (e.Button == MouseButton.Right)
+                    {
+                        this._World.Build(this._LookTarget.Value);
+                        this._VBO.Dispose();
+                        this._VBO = this._World.CreateVBO();
+                    }
+                }
+            };
         }
 
         /// <summary>
@@ -82,17 +101,28 @@ namespace Alunite
             GL.MatrixMode(MatrixMode.Projection);
             Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(0.7, (double)this.Width / (double)this.Height, 0.01, 50.0);
             GL.LoadMatrix(ref proj);
-            Vector eyepos = this._PlayerPos + new Vector(0.0, 0.0, 1.3);
+            Vector eyepos = this._PlayerPos + EyeOffset;
             Matrix4d view = Matrix4d.LookAt(
                 eyepos,
                 eyepos + this.LookDir,
                 new Vector3d(0.0, 0.0, 1.0));
             GL.MultMatrix(ref view);
 
+            GL.Enable(EnableCap.DepthTest);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.UseProgram(this._ShaderProgram);
             this._VBO.Render(BeginMode.Triangles);
             GL.UseProgram(0);
+
+            if (this._LookTarget != null)
+            {
+                GL.Disable(EnableCap.DepthTest);
+                GL.PointSize(6.0f);
+                GL.Begin(BeginMode.Points);
+                GL.Color4(Color.RGB(1.0, 1.0, 1.0));
+                GL.Vertex3(this._LookTarget.Value);
+                GL.End();
+            }
 
             System.Threading.Thread.Sleep(1);
 
@@ -107,7 +137,14 @@ namespace Alunite
             }
             if (this.Keyboard[Key.N])
             {
-                this.WindowState = WindowState.Fullscreen;
+                if (this.WindowState == WindowState.Fullscreen)
+                {
+                    this.WindowState = WindowState.Maximized;
+                }
+                else
+                {
+                    this.WindowState = WindowState.Fullscreen;
+                }
             }
             if (this.Keyboard[Key.Escape])
             {
@@ -135,13 +172,24 @@ namespace Alunite
                 Cursor.Show();
             }
 
+            // What is being looked at?
+            Vector hitpos;
+            Vector hitnorm;
+            double hitlen;
+            Vector eyepos = this._PlayerPos + EyeOffset;
+            if (this._World.Trace(new Segment<Vector>(eyepos, eyepos + this.LookDir * 4), out hitlen, out hitpos, out hitnorm))
+            {
+                this._LookTarget = hitpos;
+            }
+            else
+            {
+                this._LookTarget = null;
+            }
+
             // Gravity affects everything
             this._PlayerVelocity.Z -= 9.8 * e.Time;
 
             // Determine if the player is on ground
-            Vector hitpos;
-            Vector hitnorm;
-            double hitlen;
             bool onground = this._World.Trace(new Segment<Vector>(
                 this._PlayerPos + new Vector(0.0, 0.0, 0.1), 
                 this._PlayerPos - new Vector(0.0, 0.0, 0.1)), out hitlen, out hitpos, out hitnorm);
@@ -154,25 +202,35 @@ namespace Alunite
 
                 // Luckily he can control his movements
                 Vector side = Vector.Cross(new Vector(0.0, 0.0, 1.0), this.LookDir);
-                if (this.Keyboard[Key.Space])
-                {
-                    this._PlayerVelocity.Z = 5.0; // Slightly strong jump
-                }
+                Vector move = new Vector();
                 if (this.Keyboard[Key.W])
                 {
-                    this._PlayerVelocity += this.LookDir * 30.0 * e.Time;
+                    move += this.LookDir;
                 }
                 if (this.Keyboard[Key.S])
                 {
-                    this._PlayerVelocity -= this.LookDir * 30.0 * e.Time;
+                    move -= this.LookDir;
                 }
                 if (this.Keyboard[Key.A])
                 {
-                    this._PlayerVelocity += side * 30.0 * e.Time;
+                    move += side;
                 }
                 if (this.Keyboard[Key.D])
                 {
-                    this._PlayerVelocity -= side * 30.0 * e.Time;
+                    move -= side;
+                }
+                double moveamount = move.Length;
+                if (moveamount > 0.0)
+                {
+                    move *= (1.0 / moveamount);
+                    move.Z = 0.0;
+                    move *= 30.0 * e.Time;
+                    this._PlayerVelocity += move;
+                }
+
+                if (this.Keyboard[Key.Space])
+                {
+                    this._PlayerVelocity.Z = 5.0; // Slightly strong jump
                 }
 
                 // And he can't fall
@@ -184,12 +242,12 @@ namespace Alunite
             bool hit = true;
             while (hit)
             {
-                hit = this._World.Trace(new Segment<Vector>(this._PlayerPos, this._PlayerPos + movement), out hitlen, out hitpos, out hitnorm) && hitlen > 0.0 && hitlen < 1.0;
+                hit = this._World.Trace(new Segment<Vector>(this._PlayerPos, this._PlayerPos + movement), out hitlen, out hitpos, out hitnorm);
                 if (hit)
                 {
-                    this._PlayerPos = hitpos;
+                    this._PlayerPos = hitpos + hitnorm * 0.000001;
                     movement = Vector.Reflect(movement * (1.0 - hitlen), hitnorm);
-                    this._PlayerVelocity = Vector.Reflect(this._PlayerVelocity, hitnorm) * 0.5;
+                    this._PlayerVelocity = Vector.Reflect(this._PlayerVelocity, hitnorm) * 0.9;
                 }
             }
             this._PlayerPos += movement;
@@ -212,10 +270,13 @@ namespace Alunite
             }
         }
 
+        public static readonly Vector EyeOffset = new Vector(0.0, 0.0, 1.4);
+
         private double _CamZ;
         private double _CamX;
         private Vector _PlayerPos;
         private Vector _PlayerVelocity;
+        private Vector? _LookTarget;
 
         private int _ShaderProgram;
         private World _World;
