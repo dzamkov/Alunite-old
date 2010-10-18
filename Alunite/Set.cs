@@ -84,5 +84,20 @@ namespace Alunite
         {
             return new SimpleSet<T>(Items, Items.Count);
         }
+
+        /// <summary>
+        /// Joins two collections of items into one.
+        /// </summary>
+        public static IEnumerable<T> Join<T>(IEnumerable<T> A, IEnumerable<T> B)
+        {
+            foreach (T a in A)
+            {
+                yield return a;
+            }
+            foreach (T b in B)
+            {
+                yield return b;
+            }
+        }
     }
 }

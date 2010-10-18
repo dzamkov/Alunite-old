@@ -27,10 +27,8 @@ namespace Alunite
         public World()
         {
             // Initialize some things
-            this._Tetras = new Dictionary<Tetrahedron<int>, bool>();
-            this._ContentBoundary = new HashSet<Triangle<int>>();
-            this._WorldBoundary = new HashSet<Triangle<int>>();
-            this._Faces = new Dictionary<Triangle<int>, Tetrahedron<int>>();
+            this._UnfilledMesh = new TetrahedralMesh<int>();
+            this._FilledMesh = new TetrahedralMesh<int>();
 
             // Create a rectangular slab with an area of air above it.
             this._Vertices = new List<Vector>(Grid.Points(new Vector(-4, -4, -4), new Vector(1.0, 1.0, 1.0), new LVector(9, 9, 9)).Items);
@@ -63,13 +61,13 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the triangles in the boundary of the filled area to the unfilled area.
+        /// Gets the triangles in the boundary of the filled area.
         /// </summary>
         public ISet<Triangle<int>> Boundary
         {
             get
             {
-                return Set.Create(this._ContentBoundary);
+                return this._FilledMesh.Boundary;
             }
         }
 
@@ -182,7 +180,7 @@ namespace Alunite
         public bool Trace(Segment<Vector> Segment, out double HitLength, out Vector HitPos, out Vector HitNormal)
         {
             // Very slow
-            foreach (Triangle<int> tri in this._ContentBoundary)
+            foreach (Triangle<int> tri in this.Boundary.Items)
             {
                 Triangle<Vector> acttri = this.Dereference(tri);
                 if (Triangle.Intersect(acttri, Segment, out HitLength, out HitPos))
@@ -221,7 +219,7 @@ namespace Alunite
             LinkedList<Tetrahedron<int>> tochange = new LinkedList<Tetrahedron<int>>();
 
             // Figure out which tetrahedron need to be changed
-            foreach (Tetrahedron<int> tetra in this._Tetras.Keys)
+            foreach (Tetrahedron<int> tetra in Set.Join(this._FilledMesh.Tetrahedra.Items, this._UnfilledMesh.Tetrahedra.Items))
             {
                 Tetrahedron<Vector> atetra = this.Dereference(tetra);
                 if ((Tetrahedron.Midpoint(atetra) - Location).Length < Radius)
@@ -242,31 +240,13 @@ namespace Alunite
         /// </summary>
         private void _AddTetrahedron(Tetrahedron<int> Tetrahedron, bool Filled)
         {
-            this._Tetras.Add(Tetrahedron, Filled);
-
-            // Update faces and boundaries
-            foreach (Triangle<int> face in Tetrahedron.Faces)
+            if (Filled)
             {
-                this._Faces.Add(face, Tetrahedron);
-                Triangle<int> flipped = face.Flip;
-                if (this._WorldBoundary.Contains(flipped))
-                {
-                    this._WorldBoundary.Remove(flipped);
-                    Tetrahedron<int> border = this._Faces[flipped];
-                    bool borderfilled = this._Tetras[border];
-                    if (Filled && !borderfilled)
-                    {
-                        this._ContentBoundary.Add(face);
-                    }
-                    if (!Filled && borderfilled)
-                    {
-                        this._ContentBoundary.Add(flipped);
-                    }
-                }
-                else
-                {
-                    this._WorldBoundary.Add(face);
-                }
+                this._FilledMesh.Add(Tetrahedron);
+            }
+            else
+            {
+                this._UnfilledMesh.Add(Tetrahedron);
             }
         }
 
@@ -275,37 +255,24 @@ namespace Alunite
         /// </summary>
         private void _ChangeTetrahedron(Tetrahedron<int> Tetrahedron, bool Filled)
         {
-            if (this._Tetras[Tetrahedron] != Filled)
+            if (Filled)
             {
-                this._Tetras[Tetrahedron] = Filled;
-                foreach (Triangle<int> face in Tetrahedron.Faces)
+                if (this._UnfilledMesh.Remove(Tetrahedron))
                 {
-                    Triangle<int> flipped = face.Flip;
-                    if (!this._WorldBoundary.Contains(face))
-                    {
-                        if (Filled)
-                        {
-                            if (!this._ContentBoundary.Remove(flipped))
-                            {
-                                this._ContentBoundary.Add(face);
-                            }
-                        }
-                        else
-                        {
-                            if (!this._ContentBoundary.Remove(face))
-                            {
-                                this._ContentBoundary.Add(flipped);
-                            }
-                        }
-                    }
+                    this._FilledMesh.Add(Tetrahedron);
+                }
+            }
+            else
+            {
+                if (this._FilledMesh.Remove(Tetrahedron))
+                {
+                    this._UnfilledMesh.Add(Tetrahedron);
                 }
             }
         }
 
         private List<Vector> _Vertices;
-        private Dictionary<Tetrahedron<int>, bool> _Tetras;
-        private HashSet<Triangle<int>> _ContentBoundary;
-        private HashSet<Triangle<int>> _WorldBoundary;
-        private Dictionary<Triangle<int>, Tetrahedron<int>> _Faces;
+        private TetrahedralMesh<int> _FilledMesh;
+        private TetrahedralMesh<int> _UnfilledMesh;
     }
 }
