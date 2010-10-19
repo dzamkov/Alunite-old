@@ -256,7 +256,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Aligns the base (D, C, B) of the source tetrahedron so that it equals the base. Returns
+        /// Aligns the base (D, C, B) of the source tetrahedron so that it equals the given base. Returns
         /// null if the tetrahedron does not include the specified base.
         /// </summary>
         public static Tetrahedron<T>? Align<T>(Tetrahedron<T> Source, Triangle<T> Base)
@@ -277,6 +277,32 @@ namespace Alunite
             if (new Triangle<T>(Source.D, Source.C, Source.B) == Base)
             {
                 return new Tetrahedron<T>(Source.A, Base);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Aligns the vertex of the source tetrahedron so that is equals the given base. Returns null
+        /// if the tetrahedron does not include the specified vertex.
+        /// </summary>
+        public static Tetrahedron<T>? Align<T>(Tetrahedron<T> Source, T Vertex)
+            where T : IEquatable<T>
+        {
+            if (Source.A.Equals(Vertex))
+            {
+                return Source;
+            }
+            if (Source.B.Equals(Vertex))
+            {
+                return new Tetrahedron<T>(Vertex, Source.A, Source.D, Source.C);
+            }
+            if (Source.C.Equals(Vertex))
+            {
+                return new Tetrahedron<T>(Vertex, Source.D, Source.A, Source.B);
+            }
+            if (Source.D.Equals(Vertex))
+            {
+                return new Tetrahedron<T>(Vertex, Source.C, Source.B, Source.A);
             }
             return null;
         }

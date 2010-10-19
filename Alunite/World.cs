@@ -14,6 +14,14 @@ namespace Alunite
             this.Center = Center;
         }
 
+        /// <summary>
+        /// Gets if the specified point is in the sphere.
+        /// </summary>
+        public bool In(Vector Point)
+        {
+            return (Point - this.Center).Length < this.Radius;
+        }
+
         public double Radius;
         public Vector Center;
     }
@@ -232,6 +240,44 @@ namespace Alunite
             foreach (Tetrahedron<int> tetra in tochange)
             {
                 this._ChangeTetrahedron(tetra, Filled);
+            }
+        }
+
+        /// <summary>
+        /// Adds a point to either the filled or unfilled portions of the mesh.
+        /// </summary>
+        private void _AddPoint(bool Filled, Vector Point)
+        {
+            int ind = this._Vertices.Count;
+            this._Vertices.Add(Point);
+            
+            // Keep track of new bounds and tetrahedra removed as a result
+            List<Tetrahedron<int>> removed = new List<Tetrahedron<int>>();
+            HashSet<Triangle<int>> delbounds = new HashSet<Triangle<int>>();
+            TetrahedralMesh<int> mesh = Filled ? this._FilledMesh : this._UnfilledMesh;
+            foreach (Tetrahedron<int> tetra in mesh.Tetrahedra.Items)
+            {
+                if (this.Circumsphere(tetra).In(Point))
+                {
+                    removed.Add(tetra);
+                    foreach (Triangle<int> face in tetra.Faces)
+                    {
+                        if (!delbounds.Remove(face))
+                        {
+                            delbounds.Add(face.Flip);
+                        }
+                    }
+                }
+            }
+
+            // Remove old tetrahedra and add new ones
+            foreach (Tetrahedron<int> remove in removed)
+            {
+                mesh.Remove(remove);
+            }
+            foreach (Triangle<int> bound in delbounds)
+            {
+                mesh.AddUnchecked(new Tetrahedron<int>(ind, bound.Flip));
             }
         }
 

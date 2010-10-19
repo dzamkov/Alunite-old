@@ -9,14 +9,19 @@ namespace Alunite
     /// <typeparam name="Tetrahedron">A reference to a tetrahedron.</typeparam>
     /// <typeparam name="Vertex">A reference to a vertex.</typeparam>
     public interface ITetrahedralMesh<Tetrahedron, Vertex>
-        where Tetrahedron : IEquatable<Tetrahedron>
-        where Vertex : IEquatable<Vertex>
+        where Tetrahedron : struct, IEquatable<Tetrahedron>
+        where Vertex : struct, IEquatable<Vertex>
     {
         /// <summary>
         /// Looks up the tetrahedron with the specified reference and returns the vertices it
         /// uses as tetrahedron data.
         /// </summary>
         Tetrahedron<Vertex> Lookup(Tetrahedron Tetrahedron);
+
+        /// <summary>
+        /// Gets a reference to the tetrahedron with the specified vertices, if it is in the mesh.
+        /// </summary>
+        Tetrahedron? Lookup(Tetrahedron<Vertex> Tetrahedron);
 
         /// <summary>
         /// Gets the set of tetrahedra in the mesh.
@@ -29,7 +34,7 @@ namespace Alunite
     /// </summary>
     /// <typeparam name="T">Type that represents a point.</typeparam>
     public class TetrahedralMesh<T> : ITetrahedralMesh<Tetrahedron<T>, T>
-        where T : IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         public TetrahedralMesh()
         {
@@ -53,7 +58,7 @@ namespace Alunite
         /// that the mapping function is one to one.
         /// </summary>
         public TetrahedralMesh<F> Map<F>(Func<T, F> Mapping)
-            where F : IEquatable<F>
+            where F : struct, IEquatable<F>
         {
             HashSet<Tetrahedron<F>> newtetras = new HashSet<Tetrahedron<F>>();
             Dictionary<Triangle<F>, Tetrahedron<F>> newbounds = new Dictionary<Triangle<F>, Tetrahedron<F>>();
@@ -268,6 +273,18 @@ namespace Alunite
         public Tetrahedron<T> Lookup(Tetrahedron<T> Tetrahedron)
         {
             return Tetrahedron;
+        }
+
+        Tetrahedron<T>? ITetrahedralMesh<Tetrahedron<T>, T>.Lookup(Tetrahedron<T> Tetrahedron)
+        {
+            if (this._Tetrahedra.Contains(Tetrahedron))
+            {
+                return Tetrahedron;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public ISet<Tetrahedron<T>> Tetrahedra
