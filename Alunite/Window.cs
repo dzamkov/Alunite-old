@@ -129,6 +129,7 @@ namespace Alunite
             // Skybox
             GL.Disable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Texture2D);
+            GL.Color4(Color.RGB(1.0, 1.0, 1.0));
             Model.RenderSkybox(this._Skybox);
 
             // World
@@ -177,6 +178,43 @@ namespace Alunite
             }
             GL.Disable(EnableCap.Blend);
             GL.PopMatrix();
+
+            // Test csg
+            List<Vector> testverts = new List<Vector>();
+            testverts.Add(new Vector(-1.5, -1.0, -1.5));
+            testverts.Add(new Vector(-0.5, -1.0, -1.5));
+            testverts.Add(new Vector(-1.0, -0.5, -2.5));
+            testverts.Add(new Vector(-1.0, -1.5, -2.5));
+            testverts.Add(new Vector(-1.0, -1.5, -1.7));
+            testverts.Add(new Vector(-1.0, -0.5, -1.7));
+            testverts.Add(new Vector(-0.5, -1.0, -0.7));
+            testverts.Add(new Vector(-1.5, -1.0, -0.7));
+            Tetrahedron<int> tetraa = new Tetrahedron<int>(0, 1, 2, 3);
+            Tetrahedron<int> tetrab = new Tetrahedron<int>(4, 5, 6, 7);
+
+
+            GL.LineWidth(4.0f);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Begin(BeginMode.Lines);
+            GL.Color4(Color.RGB(1.0, 0.0, 0.0));
+            foreach (UnorderedSegment<int> seg in CSG.Collapse(CSG.Segments(tetraa.Faces).Keys))
+            {
+                GL.Vertex3(testverts[seg.Source.A]);
+                GL.Vertex3(testverts[seg.Source.B]);
+            }
+            GL.Color4(Color.RGB(0.0, 1.0, 0.0));
+            foreach (UnorderedSegment<int> seg in CSG.Collapse(CSG.Segments(tetrab.Faces).Keys))
+            {
+                GL.Vertex3(testverts[seg.Source.A]);
+                GL.Vertex3(testverts[seg.Source.B]);
+            }
+            GL.Color4(Color.RGB(0.0, 0.0, 1.0));
+            foreach (UnorderedSegment<int> seg in CSG.SurfaceIntersection(tetraa.Faces, tetrab.Faces, testverts))
+            {
+                GL.Vertex3(testverts[seg.Source.A]);
+                GL.Vertex3(testverts[seg.Source.B]);
+            }
+            GL.End();
 
             System.Threading.Thread.Sleep(1);
 

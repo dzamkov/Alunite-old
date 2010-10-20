@@ -85,6 +85,58 @@ namespace Alunite
     }
 
     /// <summary>
+    /// A segment where point order is irrelevant. The only functional difference between this and a normal segment is the implementation
+    /// of Equals and GetHashCode.
+    /// </summary>
+    public struct UnorderedSegment<T> : IEquatable<UnorderedSegment<T>>
+        where T : IEquatable<T>
+    {
+        public UnorderedSegment(Segment<T> Source)
+        {
+            this.Source = Source;
+        }
+
+        public UnorderedSegment(T A, T B)
+        {
+            this.Source = new Segment<T>(A, B);
+        }
+
+        public bool Equals(UnorderedSegment<T> Segment)
+        {
+            return this == Segment;
+        }
+
+        public override bool Equals(object obj)
+        {
+            UnorderedSegment<T>? segment = obj as UnorderedSegment<T>?;
+            if (segment != null)
+            {
+                return segment.Value == this;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            int a = this.Source.A.GetHashCode();
+            int b = this.Source.B.GetHashCode();
+            return a ^ b;
+        }
+
+        public static bool operator ==(UnorderedSegment<T> A, UnorderedSegment<T> B)
+        {
+            return A.Source == B.Source || A.Source.Flip == B.Source;
+        }
+
+        public static bool operator !=(UnorderedSegment<T> A, UnorderedSegment<T> B)
+        {
+            return !(A == B);
+        }
+
+        public Segment<T> Source;
+    }
+
+    /// <summary>
     /// Segment (1-simplex) related functions.
     /// </summary>
     public static class Segment
