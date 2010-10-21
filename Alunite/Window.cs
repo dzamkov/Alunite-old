@@ -185,10 +185,10 @@ namespace Alunite
             testverts.Add(new Vector(-0.5, -1.0, -1.5));
             testverts.Add(new Vector(-1.0, -0.5, -2.5));
             testverts.Add(new Vector(-1.0, -1.5, -2.5));
-            testverts.Add(new Vector(-1.0, -1.5, -1.7));
-            testverts.Add(new Vector(-1.0, -0.5, -1.7));
-            testverts.Add(new Vector(-0.5, -1.0, -0.7));
-            testverts.Add(new Vector(-1.5, -1.0, -0.7));
+            testverts.Add(new Vector(-1.0, -1.5, -2.0));
+            testverts.Add(new Vector(-1.0, -0.5, -2.0));
+            testverts.Add(new Vector(-0.5, -1.0, -1.0));
+            testverts.Add(new Vector(-1.5, -1.0, -1.0));
             Tetrahedron<int> tetraa = new Tetrahedron<int>(0, 1, 2, 3);
             Tetrahedron<int> tetrab = new Tetrahedron<int>(4, 5, 6, 7);
 

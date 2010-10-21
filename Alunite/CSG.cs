@@ -115,12 +115,12 @@ namespace Alunite
         /// <summary>
         /// Creates the intersections between a collection of triangles and segments.
         /// </summary>
-        public static Dictionary<Segment<int>, Dictionary<Triangle<int>, Intersection>> SurfaceSegmentIntersection(
+        public static Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> SurfaceSegmentIntersection(
             IEnumerable<Triangle<int>> Triangles, 
             IEnumerable<Segment<int>> Segments, 
             List<Vector> Vertices)
         {
-            var intersections = new Dictionary<Segment<int>, Dictionary<Triangle<int>, Intersection>>();
+            var intersections = new Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>>();
             foreach (Triangle<int> tri in Triangles)
             {
                 Triangle<Vector> vectri = new Triangle<Vector>(Vertices[tri.A], Vertices[tri.B], Vertices[tri.C]);
@@ -134,9 +134,9 @@ namespace Alunite
                         int ind = Vertices.Count;
                         Vertices.Add(hitpos);
                         Dictionary<Triangle<int>, Intersection> subdict = new Dictionary<Triangle<int>, Intersection>();
-                        if (!intersections.TryGetValue(seg, out subdict))
+                        if (!intersections.TryGetValue(Segment.Unorder(seg), out subdict))
                         {
-                            intersections.Add(seg, subdict = new Dictionary<Triangle<int>, Intersection>());
+                            intersections.Add(Segment.Unorder(seg), subdict = new Dictionary<Triangle<int>, Intersection>());
                         }
                         subdict.Add(tri, new Intersection() { NewVertex = ind });
                     }
@@ -150,13 +150,13 @@ namespace Alunite
         /// keys of the resulting dictionary.
         /// </summary>
         public static Dictionary<Triangle<int>, HashSet<Triangle<int>>> Conflicting(
-            Dictionary<Segment<int>, Dictionary<Triangle<int>, Intersection>> Intersections,
+            Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> Intersections,
             Dictionary<Segment<int>, Triangle<int>> Segments)
         {
             Dictionary<Triangle<int>, HashSet<Triangle<int>>> res = new Dictionary<Triangle<int>, HashSet<Triangle<int>>>();
             foreach (var segints in Intersections)
             {
-                Segment<int> seg = segints.Key;
+                UnorderedSegment<int> seg = segints.Key;
                 foreach (var triints in segints.Value)
                 {
                     Triangle<int> tri = triints.Key;
@@ -164,8 +164,8 @@ namespace Alunite
 
                     foreach (Triangle<int> penetrating in new Triangle<int>[] 
                         { 
-                            Segments[seg],
-                            Segments[seg.Flip] 
+                            Segments[seg.Source],
+                            Segments[seg.Source.Flip] 
                         })
                     {
                         HashSet<Triangle<int>> triset;
@@ -186,15 +186,15 @@ namespace Alunite
         public static UnorderedSegment<int> TriangleIntersection(
             Triangle<int> Penetrating,
             Triangle<int> Other,
-            Dictionary<Segment<int>, Dictionary<Triangle<int>, Intersection>> AIntersections,
-            Dictionary<Segment<int>, Dictionary<Triangle<int>, Intersection>> BIntersections)
+            Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> AIntersections,
+            Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> BIntersections)
         {
             // Case 1 : Penetrating and Other both intersect each other
 
             foreach (Segment<int> penseg in Penetrating.Segments)
             {
                 Dictionary<Triangle<int>, Intersection> pensegints;
-                if (AIntersections.TryGetValue(penseg, out pensegints))
+                if (AIntersections.TryGetValue(Segment.Unorder(penseg), out pensegints))
                 {
                     Intersection penint;
                     if (pensegints.TryGetValue(Other, out penint))
@@ -202,7 +202,7 @@ namespace Alunite
                         foreach (Segment<int> oseg in Other.Segments)
                         {
                             Dictionary<Triangle<int>, Intersection> osegints;
-                            if (BIntersections.TryGetValue(oseg, out osegints))
+                            if (BIntersections.TryGetValue(Segment.Unorder(oseg), out osegints))
                             {
                                 Intersection oint;
                                 if (osegints.TryGetValue(Penetrating, out oint))

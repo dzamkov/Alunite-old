@@ -148,5 +148,14 @@ namespace Alunite
         {
             return (Segment.B + Segment.A) * 0.5;
         }
+
+        /// <summary>
+        /// Creates an unordered form of the specified segment.
+        /// </summary>
+        public static UnorderedSegment<T> Unorder<T>(Segment<T> Source)
+            where T : IEquatable<T>
+        {
+            return new UnorderedSegment<T>(Source);
+        }
     }
 }
