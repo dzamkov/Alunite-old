@@ -127,6 +127,7 @@ namespace Alunite
             GL.MultMatrix(ref view);
 
             // Skybox
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.Disable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Texture2D);
             GL.Color4(Color.RGB(1.0, 1.0, 1.0));
@@ -135,7 +136,6 @@ namespace Alunite
             // World
             GL.Translate(-eyepos);
             GL.Enable(EnableCap.DepthTest);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.UseProgram(this._ShaderProgram);
             GL.ActiveTexture(TextureUnit.Texture0);
             this._Dirt.Bind();
@@ -195,24 +195,14 @@ namespace Alunite
 
             GL.LineWidth(4.0f);
             GL.Enable(EnableCap.DepthTest);
-            GL.Begin(BeginMode.Lines);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            GL.Begin(BeginMode.Triangles);
             GL.Color4(Color.RGB(1.0, 0.0, 0.0));
-            foreach (UnorderedSegment<int> seg in CSG.Collapse(CSG.Segments(tetraa.Faces).Keys))
+            foreach (Triangle<int> tri in CSG.MeshUnion(tetraa.Faces, tetrab.Faces, testverts))
             {
-                GL.Vertex3(testverts[seg.Source.A]);
-                GL.Vertex3(testverts[seg.Source.B]);
-            }
-            GL.Color4(Color.RGB(0.0, 1.0, 0.0));
-            foreach (UnorderedSegment<int> seg in CSG.Collapse(CSG.Segments(tetrab.Faces).Keys))
-            {
-                GL.Vertex3(testverts[seg.Source.A]);
-                GL.Vertex3(testverts[seg.Source.B]);
-            }
-            GL.Color4(Color.RGB(0.0, 0.0, 1.0));
-            foreach (UnorderedSegment<int> seg in CSG.SurfaceIntersection(tetraa.Faces, tetrab.Faces, testverts))
-            {
-                GL.Vertex3(testverts[seg.Source.A]);
-                GL.Vertex3(testverts[seg.Source.B]);
+                GL.Vertex3(testverts[tri.A]);
+                GL.Vertex3(testverts[tri.B]);
+                GL.Vertex3(testverts[tri.C]);
             }
             GL.End();
 
@@ -248,9 +238,9 @@ namespace Alunite
             {
                 Cursor.Hide();
 
-                Point curpoint = Cursor.Position;
+                var curpoint = Cursor.Position;
                 Size screensize = Screen.PrimaryScreen.WorkingArea.Size;
-                Point center = new Point(screensize.Width / 2, screensize.Height / 2);
+                var center = new System.Drawing.Point(screensize.Width / 2, screensize.Height / 2);
                 Cursor.Position = center;
 
                 this._CamZ += (double)(curpoint.X - center.X) / 100.0;

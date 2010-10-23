@@ -28,55 +28,30 @@ namespace Alunite
     public static class CSG
     {
         /// <summary>
-        /// Gets the intersection between two triangular surfaces in three dimensional space. The intersection is likely to involve
-        /// a set of loops. This function may add vertices.
+        /// Gets the segments (indicating triangle borders) in a mesh.
         /// </summary>
-        public static HashSet<UnorderedSegment<int>> SurfaceIntersection(
-            IEnumerable<Triangle<int>> SurfaceA, 
-            IEnumerable<Triangle<int>> SurfaceB, 
-            List<Vector> Vertices)
+        public static HashSet<UnorderedSegment<T>> Segments<T>(IEnumerable<Triangle<T>> Mesh)
+            where T : IEquatable<T>
         {
-            // Compute segments and their triangular owners
-            var asegs = Segments(SurfaceA);
-            var bsegs = Segments(SurfaceB);
-
-            // Compute intersections
-            var aints = SurfaceSegmentIntersection(SurfaceA, bsegs.Keys, Vertices);
-            var bints = SurfaceSegmentIntersection(SurfaceB, asegs.Keys, Vertices);
-
-            // Find conflicts
-            var aconflicts = Conflicting(aints, bsegs);
-            var bconflicts = Conflicting(bints, asegs);
-
-            HashSet<UnorderedSegment<int>> finalsegs = new HashSet<UnorderedSegment<int>>();
-
-            // Resolve conflicts
-            foreach (var aconflict in aconflicts)
+            HashSet<UnorderedSegment<T>> segs = new HashSet<UnorderedSegment<T>>();
+            foreach (Triangle<T> tri in Mesh)
             {
-                foreach (var other in aconflict.Value)
+                foreach (Segment<T> seg in tri.Segments)
                 {
-                    finalsegs.Add(TriangleIntersection(aconflict.Key, other, aints, bints));
+                    segs.Add(Segment.Unorder(seg));
                 }
             }
-            foreach (var bconflict in bconflicts)
-            {
-                foreach (var other in bconflict.Value)
-                {
-                    finalsegs.Add(TriangleIntersection(bconflict.Key, other, bints, aints));
-                }
-            }
-
-            return finalsegs;
+            return segs;
         }
 
         /// <summary>
-        /// Maps the ordered segments, to the triangles that produce them, in a triangular surface.
+        /// Gets the ordered segments and the triangles that produce them in a mesh.
         /// </summary>
-        public static Dictionary<Segment<T>, Triangle<T>> Segments<T>(IEnumerable<Triangle<T>> Surface)
+        public static Dictionary<Segment<T>, Triangle<T>> TriangleSegments<T>(IEnumerable<Triangle<T>> Mesh)
             where T : IEquatable<T>
         {
             Dictionary<Segment<T>, Triangle<T>> segs = new Dictionary<Segment<T>, Triangle<T>>();
-            foreach (Triangle<T> tri in Surface)
+            foreach (Triangle<T> tri in Mesh)
             {
                 foreach (Segment<T> seg in tri.Segments)
                 {
@@ -87,58 +62,220 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a set of unordered segments from a set of ordered segments (any segment that appears 
-        /// will be unordered, any excess segments are removed).
+        /// A set of intersections between a collection of triangles and segments.
         /// </summary>
-        public static HashSet<UnorderedSegment<T>> Collapse<T>(IEnumerable<Segment<T>> Segments)
-            where T : IEquatable<T>
+        public class IntersectionSet
         {
-            HashSet<UnorderedSegment<T>> segs = new HashSet<UnorderedSegment<T>>();
-            foreach (Segment<T> segment in Segments)
+            public IntersectionSet()
             {
-                segs.Add(new UnorderedSegment<T>(segment));
+                this._Intersections = new Dictionary<Segment<int>, LinkedList<SegmentIntersection>>();
+                this._VertexIntersections = new Dictionary<int, Intersection>();
             }
-            return segs;
+
+            /// <summary>
+            /// Gets the intersections in this set.
+            /// </summary>
+            public IEnumerable<Intersection> Intersections
+            {
+                get
+                {
+                    return this._VertexIntersections.Values;
+                }
+            }
+
+            /// <summary>
+            /// Gets all the intersections a segment makes, in order of length along the segment.
+            /// </summary>
+            public IEnumerable<SegmentIntersection> SegmentIntersections(Segment<int> Segment)
+            {
+                LinkedList<SegmentIntersection> li;
+                if (this._Intersections.TryGetValue(Segment, out li))
+                {
+                    return li;
+                }
+                else
+                {
+                    return new SegmentIntersection[0];
+                }
+            }
+
+            /// <summary>
+            /// Adds an intersection to the set.
+            /// </summary>
+            public void AddIntersection(Segment<int> Segment, SegmentIntersection Info)
+            {
+                LinkedList<SegmentIntersection> curlist;
+                if (!this._Intersections.TryGetValue(Segment, out curlist))
+                {
+                    this._Intersections[Segment] = curlist = new LinkedList<SegmentIntersection>();
+                }
+
+                // Find the correct insertion point (ordered by length).
+                LinkedListNode<SegmentIntersection> curnode = curlist.First;
+                while (true)
+                {
+                    if (curnode == null)
+                    {
+                        curlist.AddLast(Info);
+                        break;
+                    }
+                    if (curnode.Value.TriangleIntersection.Length > Info.TriangleIntersection.Length)
+                    {
+                        curlist.AddBefore(curnode, Info);
+                        break;
+                    }
+                    curnode = curnode.Next;
+                }
+
+                // Add to vertex intersections
+                this._VertexIntersections.Add(Info.TriangleIntersection.Position, new Intersection() 
+                { 
+                    Segment = Segment, 
+                    Triangle = Info.Triangle, 
+                    SegmentTriangleIntersection = Info.TriangleIntersection 
+                });
+            }
+
+            /// <summary>
+            /// Gets the intersection between a segment and a triangle, if any exists.
+            /// </summary>
+            public SegmentTriangleIntersection? SegmentTriangleIntersection(Segment<int> Segment, Triangle<int> Triangle)
+            {
+                LinkedList<SegmentIntersection> segints;
+                if (this._Intersections.TryGetValue(Segment, out segints))
+                {
+                    foreach (SegmentIntersection segint in segints)
+                    {
+                        if (segint.Triangle == Triangle)
+                        {
+                            return segint.TriangleIntersection;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            /// <summary>
+            /// Gets an intersection by the vertex it produced.
+            /// </summary>
+            public Intersection? VertexIntersection(int NewVertex)
+            {
+                Intersection i;
+                if (this._VertexIntersections.TryGetValue(NewVertex, out i))
+                {
+                    return i;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            /// <summary>
+            /// Mapping of segments to the sorted list of intersections they make (by length).
+            /// </summary>
+            private Dictionary<Segment<int>, LinkedList<SegmentIntersection>> _Intersections;
+
+            private Dictionary<int, Intersection> _VertexIntersections;
         }
 
         /// <summary>
-        /// Represents the intersection between a triangle and a segment.
+        /// Represents a segment triangle intersection.
         /// </summary>
         public struct Intersection
         {
             /// <summary>
-            /// The new vertex produced as a result of the intersection.
+            /// The triangle that was hit.
             /// </summary>
-            public int NewVertex;
+            public Triangle<int> Triangle;
+
+            /// <summary>
+            /// The segment that was hit.
+            /// </summary>
+            public Segment<int> Segment;
+
+            /// <summary>
+            /// More intersection information between the triangle and segment.
+            /// </summary>
+            public SegmentTriangleIntersection SegmentTriangleIntersection;
+        }
+        
+        /// <summary>
+        /// Represents a segment triangle intersection where the segment is known.
+        /// </summary>
+        public struct SegmentIntersection
+        {
+            /// <summary>
+            /// The triangle that was hit.
+            /// </summary>
+            public Triangle<int> Triangle;
+
+            /// <summary>
+            /// More intersection information with the triangle.
+            /// </summary>
+            public SegmentTriangleIntersection TriangleIntersection;
         }
 
         /// <summary>
-        /// Creates the intersections between a collection of triangles and segments.
+        /// Represents a segment triangle intersection where both the segment and triangle are known.
         /// </summary>
-        public static Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> SurfaceSegmentIntersection(
-            IEnumerable<Triangle<int>> Triangles, 
-            IEnumerable<Segment<int>> Segments, 
+        public struct SegmentTriangleIntersection
+        {
+            /// <summary>
+            /// Length along the segment the intersection is at.
+            /// </summary>
+            public double Length;
+
+            /// <summary>
+            /// The uv coordinates, relative to the triangle, the hit is at.
+            /// </summary>
+            public Point UV;
+
+            /// <summary>
+            /// The vertex representing the point of intersection.
+            /// </summary>
+            public int Position;
+        }
+
+        /// <summary>
+        /// Creates a set of intersections between a collection of triangles and segments. Vertices for each
+        /// intersection are added to the vertices list and are their indices are retrievable from the resulting set.
+        /// </summary>
+        public static IntersectionSet MeshSegmentIntersect(
+            IEnumerable<Triangle<int>> Triangles,
+            IEnumerable<UnorderedSegment<int>> Segments,
             List<Vector> Vertices)
         {
-            var intersections = new Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>>();
+            IntersectionSet intersections = new IntersectionSet();
             foreach (Triangle<int> tri in Triangles)
             {
                 Triangle<Vector> vectri = new Triangle<Vector>(Vertices[tri.A], Vertices[tri.B], Vertices[tri.C]);
-                foreach (Segment<int> seg in Segments)
+
+                // A more efficent version of this algorithim would save each triangles plane and
+                // uv parameters for much faster intersections.
+                foreach (UnorderedSegment<int> seg in Segments)
                 {
-                    Segment<Vector> vecseg = new Segment<Vector>(Vertices[seg.A], Vertices[seg.B]);
+                    Segment<Vector> vecseg = new Segment<Vector>(Vertices[seg.Source.A], Vertices[seg.Source.B]);
+        
                     double hitlen;
                     Vector hitpos;
-                    if (Triangle.Intersect(vectri, vecseg, out hitlen, out hitpos))
+                    Point hituv;
+
+                    bool hitface = Triangle.Intersect(vectri, vecseg, out hitlen, out hitpos, out hituv);
+                    if (hitlen > 0.0 && hitlen < 1.0 && hituv.X > 0.0 && hituv.X < 1.0 && hituv.Y > 0.0 && (hituv.X + hituv.Y) < 1.0)
                     {
                         int ind = Vertices.Count;
                         Vertices.Add(hitpos);
-                        Dictionary<Triangle<int>, Intersection> subdict = new Dictionary<Triangle<int>, Intersection>();
-                        if (!intersections.TryGetValue(Segment.Unorder(seg), out subdict))
+                        intersections.AddIntersection(hitface ? seg.Source : seg.Source.Flip, new SegmentIntersection()
                         {
-                            intersections.Add(Segment.Unorder(seg), subdict = new Dictionary<Triangle<int>, Intersection>());
-                        }
-                        subdict.Add(tri, new Intersection() { NewVertex = ind });
+                            Triangle = tri,
+                            TriangleIntersection = new SegmentTriangleIntersection()
+                            {
+                                Length = hitlen,
+                                UV = hituv,
+                                Position = ind
+                            }
+                        });
                     }
                 }
             }
@@ -146,80 +283,140 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the conflicting triangles in a mapped collection of intersections. The penetrating triangles are the
-        /// keys of the resulting dictionary.
+        /// Given loop, a mapping of the new vertices of intersections and the next intersection
+        /// in a loop, this function will add new values based on the triangle triangle intersections
+        /// it finds in the specified data sets. An additional reverse argument is supplied to indicate
+        /// the direction the loop is made in.
         /// </summary>
-        public static Dictionary<Triangle<int>, HashSet<Triangle<int>>> Conflicting(
-            Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> Intersections,
-            Dictionary<Segment<int>, Triangle<int>> Segments)
+        /// <param name="NewVertexOffset">The first vertex index that is included in either set of intersections.</param>
+        /// <param name="Loop">An array with an element for each intersection in both sets.</param>
+        public static void IntersectionLoop(
+            Dictionary<Segment<int>, Triangle<int>> TriangleSegments,
+            IntersectionSet IntersectionSet,
+            IntersectionSet ReverseIntersectionSet,
+            int NewVertexOffset,
+            int[] Loop,
+            bool Reverse)
         {
-            Dictionary<Triangle<int>, HashSet<Triangle<int>>> res = new Dictionary<Triangle<int>, HashSet<Triangle<int>>>();
-            foreach (var segints in Intersections)
+            foreach (Intersection i in IntersectionSet.Intersections)
             {
-                UnorderedSegment<int> seg = segints.Key;
-                foreach (var triints in segints.Value)
-                {
-                    Triangle<int> tri = triints.Key;
-                    Intersection intersection = triints.Value;
+                Segment<int> iseg = Reverse ? i.Segment.Flip : i.Segment;
+                Triangle<int> penetratingtri = Triangle.Align(TriangleSegments[iseg], iseg).Value;
+                Triangle<int> hittri = i.Triangle;
 
-                    foreach (Triangle<int> penetrating in new Triangle<int>[] 
-                        { 
-                            Segments[seg.Source],
-                            Segments[seg.Source.Flip] 
-                        })
+                // Check for mutal intersection.
+                foreach (Segment<int> hitseg in hittri.Segments)
+                {
+                    SegmentTriangleIntersection? sti = ReverseIntersectionSet.SegmentTriangleIntersection(Reverse ? hitseg.Flip : hitseg, penetratingtri);
+                    if (sti != null)
                     {
-                        HashSet<Triangle<int>> triset;
-                        if (!res.TryGetValue(penetrating, out triset))
-                        {
-                            res[penetrating] = triset = new HashSet<Triangle<int>>();
-                        }
-                        triset.Add(tri);
+                        Loop[i.SegmentTriangleIntersection.Position - NewVertexOffset] = sti.Value.Position - NewVertexOffset;
                     }
                 }
             }
-            return res;
         }
 
         /// <summary>
-        /// Finds the common area (as an unordered segment) between two intersecting triangles.
+        /// Finds the polygons representing the surface at the boundary of a CSG operation.
         /// </summary>
-        public static UnorderedSegment<int> TriangleIntersection(
-            Triangle<int> Penetrating,
-            Triangle<int> Other,
-            Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> AIntersections,
-            Dictionary<UnorderedSegment<int>, Dictionary<Triangle<int>, Intersection>> BIntersections)
+        /// <param name="NewVertexOffset">The amount values and indices in loop are offset by.</param>
+        /// <param name="Loop">A loop of vertices representing the boundary region.</param>
+        /// <param name="Reverse">Should the loop be interpreted in reverse?</param>
+        /// <param name="ExcludedSegments">A set where segments that belong to boundary triangles are stuffed.</param>
+        /// <param name="Polygons">A set where boundary polygons are stuffed.</param>
+        /// <param name="IntersectionSet">Intersection set containing the intersections of the boundary triangles onto the other triangles.</param>
+        /// <param name="ReverseIntersectionSet">Intersection set containing the intersections of the other triangles onto the boundary triangles.</param>
+        public static void TrimBoundary(
+            int NewVertexOffset,
+            int[] Loop,
+            bool Reverse,
+            HashSet<Segment<int>> ExcludedSegments,
+            List<LinkedList<int>> Polygons,
+            Dictionary<Segment<int>, Triangle<int>> TriangleSegments,
+            IntersectionSet IntersectionSet,
+            IntersectionSet ReverseIntersectionSet)
         {
-            // Case 1 : Penetrating and Other both intersect each other
+            // Mark parts of loop already accounted for
+            bool[] completedloop = new bool[Loop.Length];
 
-            foreach (Segment<int> penseg in Penetrating.Segments)
+            for (int t = 0; t < Loop.Length; t++)
             {
-                Dictionary<Triangle<int>, Intersection> pensegints;
-                if (AIntersections.TryGetValue(Segment.Unorder(penseg), out pensegints))
+                if (!completedloop[t])
                 {
-                    Intersection penint;
-                    if (pensegints.TryGetValue(Other, out penint))
+                    Intersection? firsti = IntersectionSet.VertexIntersection(t + NewVertexOffset);
+                    if (firsti != null)
                     {
-                        foreach (Segment<int> oseg in Other.Segments)
+                        // Begin a polygon
+                        LinkedList<int> curpoly = new LinkedList<int>();
+                        Triangle<int> tri = TriangleSegments[firsti.Value.Segment];
+
+                        // Circle around the triangle this vertex is in.
+                        int d = t;
+                        do // Do whiles are nasty things, but make sense in this case
                         {
-                            Dictionary<Triangle<int>, Intersection> osegints;
-                            if (BIntersections.TryGetValue(Segment.Unorder(oseg), out osegints))
+                            // Add to polygon, mark as checked
+                            completedloop[d] = true;
+                            curpoly.AddLast(d + NewVertexOffset);
+
+                            Intersection? pi = IntersectionSet.VertexIntersection(d + NewVertexOffset);
+                            if (pi != null)
                             {
-                                Intersection oint;
-                                if (osegints.TryGetValue(Penetrating, out oint))
+                                Intersection vpi = pi.Value;
+                                Triangle<int>? otri = Triangle.Align(tri, vpi.Segment.Flip);
+                                if (otri != null)
                                 {
-                                    return new UnorderedSegment<int>(penint.NewVertex, oint.NewVertex);
+                                    // Entering the triangles segments
+                                    throw new NotImplementedException();
+                                }
+                                else
+                                {
+                                    // Next
+                                    d = Loop[d];
                                 }
                             }
-                        }
+                            else
+                            {
+                                d = Loop[d];
+                            }
+                        } while (d != t);
+
+                        // Add polygon
+                        Polygons.Add(curpoly);
                     }
                 }
             }
+        }
 
-            // Case 2 : Penetrating intersects Other twice
+        /// <summary>
+        /// Gets the union of two triangular meshes. More interesting effects can be created by inverting either of the meshes. New vertices may
+        /// be added in order to form the final triangles.
+        /// </summary>
+        public static HashSet<Triangle<int>> MeshUnion(IEnumerable<Triangle<int>> MeshA, IEnumerable<Triangle<int>> MeshB, List<Vector> Vertices)
+        {
+            // Find segments of both meshes
+            var segsa = Segments(MeshA); var trisegsa = TriangleSegments(MeshA);
+            var segsb = Segments(MeshB); var trisegsb = TriangleSegments(MeshB);
 
-            // Not done yet
+            // Find intersections
+            int oldvertamount = Vertices.Count;
+            var intsa = MeshSegmentIntersect(MeshB, segsa, Vertices);
+            var intsb = MeshSegmentIntersect(MeshA, segsb, Vertices);
+            int intamount = Vertices.Count - oldvertamount;
 
-            return new UnorderedSegment<int>();
+            // Create intersection loop
+            int[] loop = new int[intamount];
+            IntersectionLoop(trisegsa, intsa, intsb, oldvertamount, loop, false);
+            IntersectionLoop(trisegsb, intsb, intsa, oldvertamount, loop, true);
+
+            // Create boundary region
+            List<LinkedList<int>> polygons = new List<LinkedList<int>>();
+            HashSet<Segment<int>> excludedsegments = new HashSet<Segment<int>>();
+            TrimBoundary(oldvertamount, loop, false, excludedsegments, polygons, trisegsa, intsa, intsb);
+
+            HashSet<Triangle<int>> tris = new HashSet<Triangle<int>>();
+            tris.UnionWith(MeshA);
+            tris.UnionWith(MeshB);
+            return tris;
         }
     }
 }

@@ -4,6 +4,26 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
+    /// A point's relation to a boundary.
+    /// </summary>
+    public enum BoundaryRelation
+    {
+        Front,
+        On,
+        Back
+    }
+
+    /// <summary>
+    /// A point's relation to an area.
+    /// </summary>
+    public enum AreaRelation
+    {
+        Inside,
+        On,
+        Outside
+    }
+
+    /// <summary>
     /// A group of three homogenous items arranged to form a triangle. Triangles are equal to
     /// all other triangles with the same values that are arranged in the same direction.
     /// </summary>
@@ -166,6 +186,56 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the order of the specified triangle. Swapping any two points in the triangle negates the order. A triangle
+        /// with a positive order has all segments pointing outward.
+        /// </summary>
+        public static bool Order(Triangle<Point> Triangle)
+        {
+            return !Segment.Front(Triangle.Vertex, Triangle.Base);
+        }
+
+        /// <summary>
+        /// Gets the relation a point has to the plane defined by the triangle.
+        /// </summary>
+        public static BoundaryRelation Relation(Vector Point, Triangle<Vector> Triangle)
+        {
+            Vector norm = Vector.Cross(Triangle.B - Triangle.A, Triangle.C - Triangle.A);
+            double dota = Vector.Dot(Point - Triangle.A, norm);
+            if (dota > 0.0)
+            {
+                return BoundaryRelation.Front;
+            }
+            if (dota < 0.0)
+            {
+                return BoundaryRelation.Back;
+            }
+            return BoundaryRelation.On;
+        }
+
+        /// <summary>
+        /// Gets the relation a point has to a triangle.
+        /// </summary>
+        public static AreaRelation Relation(Point Point, Triangle<Point> Triangle)
+        {
+            Point ra = new Point();
+            Point rb = Triangle.B - Triangle.A;
+            Point rc = Triangle.C - Triangle.A;
+            Point rp = Point - Triangle.A;
+            BoundaryRelation ab = Segment.Relation(rp, new Segment<Point>(ra, rb));
+            BoundaryRelation bc = Segment.Relation(rp, new Segment<Point>(rb, rc));
+            BoundaryRelation ca = Segment.Relation(rp, new Segment<Point>(rc, ra));
+            if (ab == BoundaryRelation.Back && bc == BoundaryRelation.Back && ca == BoundaryRelation.Back)
+            {
+                return AreaRelation.Inside;
+            }
+            if (ab == BoundaryRelation.On || bc == BoundaryRelation.On || ca == BoundaryRelation.On)
+            {
+                return AreaRelation.On;
+            }
+            return AreaRelation.Outside;
+        }
+
+        /// <summary>
         /// Gets the center of the circumsphere encompassing the triangle.
         /// </summary>
         public static Vector Circumcenter(Triangle<Vector> Triangle)
@@ -235,15 +305,14 @@ namespace Alunite
         /// </summary>
         public static bool Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position)
         {
-            double u;
-            double v;
-            if (Intersect(Triangle, Segment, out Length, out Position, out u, out v))
+            Point uv;
+            if (Intersect(Triangle, Segment, out Length, out Position, out uv))
             {
                 if (Length >= 0.0 && Length <= 1.0)
                 {
-                    if (u >= 0.0 && u <= 1.0)
+                    if (uv.X >= 0.0 && uv.X <= 1.0)
                     {
-                        if (v >= 0.0 && (v + u) <= 1.0)
+                        if (uv.Y >= 0.0 && (uv.Y + uv.X) <= 1.0)
                         {
                             return true;
                         }
@@ -258,7 +327,7 @@ namespace Alunite
         /// is made, the length along the segment the intersection is at, and the uv coordinates relative to the triangle the intersection is at. Returns
         /// if the segment hit the triangle on its front face.
         /// </summary>
-        public static bool Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position, out double U, out double V)
+        public static bool Intersect(Triangle<Vector> Triangle, Segment<Vector> Segment, out double Length, out Vector Position, out Point UV)
         {
             Vector u = Triangle.B - Triangle.A;
             Vector v = Triangle.C - Triangle.A;
@@ -282,8 +351,7 @@ namespace Alunite
             double wu = Vector.Dot(w, u);
             double wv = Vector.Dot(w, v);
             double d = (uv * uv) - (uu * vv);
-            U = ((uv * wv) - (vv * wu)) / d;
-            V = ((uv * wu) - (uu * wv)) / d;
+            UV = new Point(((uv * wv) - (vv * wu)) / d, ((uv * wu) - (uu * wv)) / d);
 
             return b < 0.0;
         }

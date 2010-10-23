@@ -44,6 +44,8 @@
     <Compile Include="Array.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="CSG.cs" />
+    <Compile Include="Point.cs" />
+    <Compile Include="Shape.cs" />
     <Compile Include="Segment.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="Model.cs" />

@@ -317,8 +317,8 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the order of the specified tetrahedron. Swapping any two points in the tetrahedron negates the order. The tetrahedron
-        /// has the same order as all of its triangles.
+        /// Gets the order of the specified tetrahedron. Swapping any two points in the tetrahedron negates the order. A tetrahedron
+        /// with a positive order has all faces pointing outward.
         /// </summary>
         public static bool Order(Tetrahedron<Vector> Tetrahedron)
         {

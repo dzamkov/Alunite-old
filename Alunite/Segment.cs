@@ -54,6 +54,11 @@ namespace Alunite
             return !(A == B);
         }
 
+        public override string ToString()
+        {
+            return this.A.ToString() + ", " + this.B.ToString();
+        }
+
         /// <summary>
         /// Gets the points (hopefully 2) in the edge.
         /// </summary>
@@ -123,6 +128,11 @@ namespace Alunite
             return a ^ b;
         }
 
+        public override string ToString()
+        {
+            return this.Source.A.ToString() + ", " + this.Source.B.ToString();
+        }
+
         public static bool operator ==(UnorderedSegment<T> A, UnorderedSegment<T> B)
         {
             return A.Source == B.Source || A.Source.Flip == B.Source;
@@ -141,6 +151,34 @@ namespace Alunite
     /// </summary>
     public static class Segment
     {
+        /// <summary>
+        /// Gets the relation a point has to the plane defined by the segment.
+        /// </summary>
+        public static BoundaryRelation Relation(Point Point, Segment<Point> Segment)
+        {
+            Point norm = Point.Cross(Segment.B - Segment.A);
+            double dota = Point.Dot(Point - Segment.A, norm);
+            if (dota > 0.0)
+            {
+                return BoundaryRelation.Front;
+            }
+            if (dota < 0.0)
+            {
+                return BoundaryRelation.Back;
+            }
+            return BoundaryRelation.On;
+        }
+
+        /// <summary>
+        /// Gets if the specified point is on the front side of the line defined by the segment.
+        /// </summary>
+        public static bool Front(Point A, Segment<Point> Segment)
+        {
+            Point norm = Point.Cross(Segment.B - Segment.A);
+            double dota = Point.Dot(A - Segment.A, norm);
+            return (dota > 0.0);
+        }
+
         /// <summary>
         /// Gets the midpoint of the specified segment.
         /// </summary>
