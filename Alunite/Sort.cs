@@ -14,6 +14,7 @@ namespace Alunite
         /// the same, any result is acceptable.
         /// </summary>
         public static void InPlace<A, T>(A Data, Func<Tuple<T, T>, bool> Comparison)
+            where T : IEquatable<T>
             where A : IArray<T>, IMutableArray<T>
         {
             InPlace(Data, Comparison, 0, Data.Size);

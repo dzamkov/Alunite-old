@@ -228,7 +228,13 @@ namespace Alunite
             {
                 return AreaRelation.Inside;
             }
-            if (ab == BoundaryRelation.On || bc == BoundaryRelation.On || ca == BoundaryRelation.On)
+            bool abonorinside = ab == BoundaryRelation.On || ab == BoundaryRelation.Back;
+            bool bconorinside = bc == BoundaryRelation.On || bc == BoundaryRelation.Back;
+            bool caonorinside = ca == BoundaryRelation.On || ca == BoundaryRelation.Back;
+            if (
+                (ab == BoundaryRelation.On && bconorinside && caonorinside) || 
+                (bc == BoundaryRelation.On && caonorinside && abonorinside) ||
+                (ca == BoundaryRelation.On && abonorinside && bconorinside))
             {
                 return AreaRelation.On;
             }

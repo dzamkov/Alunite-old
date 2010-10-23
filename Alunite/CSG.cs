@@ -317,72 +317,156 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Finds the polygons representing the surface at the boundary of a CSG operation.
+        /// Gets the triangles intersecting, or getting intersected by the other intersection set.
         /// </summary>
-        /// <param name="NewVertexOffset">The amount values and indices in loop are offset by.</param>
-        /// <param name="Loop">A loop of vertices representing the boundary region.</param>
-        /// <param name="Reverse">Should the loop be interpreted in reverse?</param>
-        /// <param name="ExcludedSegments">A set where segments that belong to boundary triangles are stuffed.</param>
-        /// <param name="Polygons">A set where boundary polygons are stuffed.</param>
-        /// <param name="IntersectionSet">Intersection set containing the intersections of the boundary triangles onto the other triangles.</param>
-        /// <param name="ReverseIntersectionSet">Intersection set containing the intersections of the other triangles onto the boundary triangles.</param>
-        public static void TrimBoundary(
-            int NewVertexOffset,
-            int[] Loop,
-            bool Reverse,
-            HashSet<Segment<int>> ExcludedSegments,
-            List<LinkedList<int>> Polygons,
+        public static HashSet<Triangle<int>> PartialTriangles(
             Dictionary<Segment<int>, Triangle<int>> TriangleSegments,
-            IntersectionSet IntersectionSet,
+            IntersectionSet IntersectionSet, 
             IntersectionSet ReverseIntersectionSet)
         {
-            // Mark parts of loop already accounted for
-            bool[] completedloop = new bool[Loop.Length];
-
-            for (int t = 0; t < Loop.Length; t++)
+            HashSet<Triangle<int>> res = new HashSet<Triangle<int>>();
+            foreach (Intersection i in IntersectionSet.Intersections)
             {
-                if (!completedloop[t])
+                res.Add(TriangleSegments[i.Segment]);
+                res.Add(TriangleSegments[i.Segment.Flip]);
+            }
+            foreach (Intersection i in ReverseIntersectionSet.Intersections)
+            {
+                res.Add(i.Triangle);
+            }
+            return res;
+        }
+
+        /// <summary>
+        /// Creates a list of polygons to replace the partial triangles that were
+        /// intersected during a CSG operation. Segments that are fully removed are
+        /// are added to excluded segments.
+        /// </summary>
+        public static List<LinkedList<TriPoint>> Modify(
+            IEnumerable<Triangle<int>> Triangles,
+            HashSet<Segment<int>> ExcludedSegments,
+            IntersectionSet IntersectionSet,
+            IntersectionSet ReverseIntersectionSet,
+            int NewVertexOffset,
+            int[] Loop,
+            bool Reverse)
+        {
+            var res = new List<LinkedList<TriPoint>>();
+            foreach (Triangle<int> tri in Triangles)
+            {
+                var poly = new LinkedList<TriPoint>();
+                Segment<int>[] segs = tri.Segments;
+                Point[] seguvs = new Point[] { new Point(1.0, 0.0), new Point(0.0, 1.0), new Point(0.0, 0.0) };
+                int iseg = 0;
+
+                while (iseg < segs.Length)
                 {
-                    Intersection? firsti = IntersectionSet.VertexIntersection(t + NewVertexOffset);
-                    if (firsti != null)
+                    Segment<int> endseg = segs[iseg];
+                    foreach (var i in IntersectionSet.SegmentIntersections(endseg))
                     {
-                        // Begin a polygon
-                        LinkedList<int> curpoly = new LinkedList<int>();
-                        Triangle<int> tri = TriangleSegments[firsti.Value.Segment];
-
-                        // Circle around the triangle this vertex is in.
-                        int d = t;
-                        do // Do whiles are nasty things, but make sense in this case
+                        int c = i.TriangleIntersection.Position - NewVertexOffset;
+                        poly.AddLast(new TriPoint(c + NewVertexOffset, UV(tri, endseg, i.TriangleIntersection.Length)));
+                        Intersection? pint = null;
+                        while (pint == null)
                         {
-                            // Add to polygon, mark as checked
-                            completedloop[d] = true;
-                            curpoly.AddLast(d + NewVertexOffset);
-
-                            Intersection? pi = IntersectionSet.VertexIntersection(d + NewVertexOffset);
-                            if (pi != null)
+                            c = Loop[c];
+                            pint = IntersectionSet.VertexIntersection(c + NewVertexOffset);
+                            if (pint == null)
                             {
-                                Intersection vpi = pi.Value;
-                                Triangle<int>? otri = Triangle.Align(tri, vpi.Segment.Flip);
-                                if (otri != null)
-                                {
-                                    // Entering the triangles segments
-                                    throw new NotImplementedException();
-                                }
-                                else
-                                {
-                                    // Next
-                                    d = Loop[d];
-                                }
+                                Intersection rint = ReverseIntersectionSet.VertexIntersection(c + NewVertexOffset).Value;
+                                poly.AddLast(new TriPoint(c + NewVertexOffset, rint.SegmentTriangleIntersection.UV));
                             }
-                            else
-                            {
-                                d = Loop[d];
-                            }
-                        } while (d != t);
-
-                        // Add polygon
-                        Polygons.Add(curpoly);
+                        }
+                        var pintdata = pint.Value;
+                        poly.AddLast(new TriPoint(c + NewVertexOffset, UV(tri, pintdata.Segment.Flip, pintdata.SegmentTriangleIntersection.Length)));
+                        endseg = pint.Value.Segment.Flip;
                     }
+
+                    while(segs[iseg] != endseg)
+                    {
+                        ExcludedSegments.Add(segs[iseg]);
+                        iseg++;
+                    }
+
+                    poly.AddLast(new TriPoint(segs[iseg].B, seguvs[iseg]));
+                    iseg++;
+                }
+
+                res.Add(poly);
+            }
+            return res;
+        }
+
+        public struct TriPoint : IEquatable<TriPoint>
+        {
+            public TriPoint(int Vert, Point UV)
+            {
+                this.Vert = Vert;
+                this.UV = UV;
+            }
+
+            public bool Equals(TriPoint other)
+            {
+                return this.Vert == other.Vert && this.UV == other.UV;
+            }
+
+            public int Vert;
+            public Point UV;
+        }
+
+        /// <summary>
+        /// Gets the uv coordinate for a point on a segment defined by the segments length.
+        /// </summary>
+        public static Point UV<T>(Triangle<T> Triangle, Segment<T> Segment, double SegmentLength)
+            where T : IEquatable<T>
+        {
+            if (Segment == new Segment<T>(Triangle.A, Triangle.B))
+            {
+                return new Point(SegmentLength, 0.0);
+            }
+            if (Segment == new Segment<T>(Triangle.B, Triangle.C))
+            {
+                return new Point(1.0 - SegmentLength, SegmentLength);
+            }
+            if (Segment == new Segment<T>(Triangle.C, Triangle.A))
+            {
+                return new Point(0.0, 1.0 - SegmentLength);
+            }
+            return new Point();
+        }
+
+        /// <summary>
+        /// Forms the final triangles from the output of Modify.
+        /// </summary>
+        public static void Form(
+            Dictionary<Segment<int>, Triangle<int>> TriangleSegments,
+            HashSet<Segment<int>> Excluded,
+            List<LinkedList<TriPoint>> Polygons,
+            HashSet<Triangle<int>> Output)
+        {
+            foreach (var poly in Polygons)
+            {
+                foreach(var tri in Polygon.Triangulate<TriPoint>(poly, delegate(Triangle<TriPoint> tri)
+                    {
+                        Triangle<Point> uvtri = new Triangle<Point>(tri.A.UV, tri.B.UV, tri.C.UV);
+                        if (Triangle.Order(uvtri))
+                        {
+                            foreach (var opoint in poly)
+                            {
+                                if (opoint.Vert != tri.A.Vert && opoint.Vert != tri.B.Vert && opoint.Vert != tri.C.Vert)
+                                {
+                                    if (Triangle.Relation(opoint.UV, uvtri) != AreaRelation.Outside)
+                                    {
+                                        return false;
+                                    }
+                                }
+                            }
+                            return true;
+                        }
+                        return false;
+                    }))
+                {
+                    Output.Add(new Triangle<int>(tri.A.Vert, tri.B.Vert, tri.C.Vert));
                 }
             }
         }
@@ -407,15 +491,17 @@ namespace Alunite
             int[] loop = new int[intamount];
             IntersectionLoop(trisegsa, intsa, intsb, oldvertamount, loop, false);
             IntersectionLoop(trisegsb, intsb, intsa, oldvertamount, loop, true);
+            
+            // Get partial triangles
+            var partiala = PartialTriangles(trisegsa, intsa, intsb);
+            var partialb = PartialTriangles(trisegsb, intsb, intsa);
 
-            // Create boundary region
-            List<LinkedList<int>> polygons = new List<LinkedList<int>>();
-            HashSet<Segment<int>> excludedsegments = new HashSet<Segment<int>>();
-            TrimBoundary(oldvertamount, loop, false, excludedsegments, polygons, trisegsa, intsa, intsb);
-
+            // Get modified triangles
             HashSet<Triangle<int>> tris = new HashSet<Triangle<int>>();
-            tris.UnionWith(MeshA);
-            tris.UnionWith(MeshB);
+            HashSet<Segment<int>> excluded = new HashSet<Segment<int>>();
+            var modifieda = Modify(partiala, excluded, intsa, intsb, oldvertamount, loop, false);
+            Form(trisegsa, excluded, modifieda, tris);
+
             return tris;
         }
     }
