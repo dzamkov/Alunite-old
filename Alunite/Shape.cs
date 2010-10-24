@@ -172,31 +172,45 @@ namespace Alunite
                     {
                         // Split!
                         _Sweep<Vertex> splitsweep = splitleft.Value;
-                        _Sweep<Vertex> nlow = splitsweep;
-                        _Sweep<Vertex> nhigh = new _Sweep<Vertex>(); sweeps.AddAfter(splitleft, nhigh);
-                        nhigh.PrevHighChain = nlow.PrevHighChain;
-                        nhigh.NextHighChain = nlow.NextHighChain;
-                        nhigh.PrevLowChain = vert;
-                        nhigh.NextLowChain = nextvert;
-                        nlow.PrevHighChain = vert;
-                        nlow.NextHighChain = prevvert;
+                        _Sweep<Vertex> splitted = splitsweep;
+                        Vertex last = splitted.ReflexChain.Peek();
+                        if (last.Equals(splitted.PrevHighChain))
+                        {
+                            _Sweep<Vertex> created = new _Sweep<Vertex>(vert, nextvert, last, Polygon);
+                            created.ProcessNextHigh(splitted.PrevHighChain, splitted.NextHighChain);
+                            sweeps.AddAfter(splitleft, created);
+                            foreach (Triangle<Vertex> tri in splitted.ProcessNextHigh(vert, prevvert))
+                            {
+                                yield return tri;
+                            }
+                        }
+                        else
+                        {
+                            _Sweep<Vertex> created = new _Sweep<Vertex>(vert, last, prevvert, Polygon);
+                            created.ProcessNextLow(splitted.PrevLowChain, splitted.NextLowChain);
+                            sweeps.AddBefore(splitleft, created);
+                            foreach (Triangle<Vertex> tri in splitted.ProcessNextLow(vert, nextvert))
+                            {
+                                yield return tri;
+                            }
+                        }
                     }
                     else
                     {
                         // Not a split, add a new sweep
                         if (splitleft == null)
                         {
-                            sweeps.AddFirst(new _Sweep<Vertex>(vert, nextvert, prevvert));
+                            sweeps.AddFirst(new _Sweep<Vertex>(vert, nextvert, prevvert, Polygon));
                         }
                         else
                         {
                             if (splitright == null)
                             {
-                                sweeps.AddLast(new _Sweep<Vertex>(vert, nextvert, prevvert));
+                                sweeps.AddLast(new _Sweep<Vertex>(vert, nextvert, prevvert, Polygon));
                             }
                             else
                             {
-                                sweeps.AddAfter(splitleft, new _Sweep<Vertex>(vert, nextvert, prevvert));
+                                sweeps.AddAfter(splitleft, new _Sweep<Vertex>(vert, nextvert, prevvert, Polygon));
                             }
                         }
                     }
@@ -206,23 +220,26 @@ namespace Alunite
 
                 if (convergent)
                 {
-                    // AWW SNAP!!, some poor sweep is gonna get destroyed.
+                    // Some poor sweep is gonna get destroyed.
                     // Lets see who it is.
-
                     LinkedListNode<_Sweep<Vertex>> poorsweep = sweeps.First;
                     while (true)
                     {
                         _Sweep<Vertex> sweep = poorsweep.Value;
                         if (sweep.NextHighChain.Equals(vert) && sweep.NextLowChain.Equals(vert))
                         {
+                            foreach (Triangle<Vertex> tri in sweep.Finish(vert))
+                            {
+                                yield return tri;
+                            }
+
+                            // Good bye!
+                            sweeps.Remove(poorsweep);
+
                             break;
                         }
                         poorsweep = poorsweep.Next;
-                    }
-
-                    // Good bye!
-
-                    sweeps.Remove(poorsweep);
+                    }    
                 }
                 
 
@@ -231,19 +248,22 @@ namespace Alunite
                 {
                     if (sweep.NextLowChain.Equals(vert))
                     {
-                        sweep.PrevLowChain = vert;
-                        sweep.NextLowChain = nextvert;
+                        foreach (Triangle<Vertex> tri in sweep.ProcessNextLow(vert, nextvert))
+                        {
+                            yield return tri;
+                        }
+                        break;
                     }
                     if (sweep.NextHighChain.Equals(vert))
                     {
-                        sweep.PrevHighChain = vert;
-                        sweep.NextHighChain = prevvert;
+                        foreach (Triangle<Vertex> tri in sweep.ProcessNextHigh(vert, prevvert))
+                        {
+                            yield return tri;
+                        }
+                        break;
                     }
                 }
-
             }
-
-            return null;
         }
 
         /// <summary>
@@ -254,21 +274,120 @@ namespace Alunite
         {
             public _Sweep()
             {
-
+                this.ReflexChain = new Stack<Vertex>();
             }
 
-            public _Sweep(Vertex Vert, Vertex Next, Vertex Prev)
+            public _Sweep(Vertex Vert, Vertex Next, Vertex Prev, IOrderedPolygon<Vertex> Polygon)
             {
                 this.PrevHighChain = Vert;
                 this.PrevLowChain = Vert;
                 this.NextHighChain = Prev;
                 this.NextLowChain = Next;
+                this.ReflexChain = new Stack<Vertex>();
+                this.ReflexChain.Push(Vert);
+                this.Polygon = Polygon;
+            }
+
+            public IEnumerable<Triangle<Vertex>> ProcessNextHigh(Vertex Vertex, Vertex Prev)
+            {
+                this.NextHighChain = Prev;
+                this.PrevHighChain = Vertex;
+                if (this.ReflexChain.Count < 2)
+                {
+                    this.ReflexChain.Push(Vertex);
+                }
+                else
+                {
+                    return this.Form(this.PrevLowChain, Vertex, true);
+                }
+                return new Triangle<Vertex>[0];
+            }
+
+            public IEnumerable<Triangle<Vertex>> ProcessNextLow(Vertex Vertex, Vertex Next)
+            {
+                this.NextLowChain = Next;
+                this.PrevLowChain = Vertex;
+                if (this.ReflexChain.Count < 2)
+                {
+                    this.ReflexChain.Push(Vertex);
+                }
+                else
+                {
+                    return this.Form(this.PrevHighChain, Vertex, false);
+                }
+                return new Triangle<Vertex>[0];
+            }
+
+            public IEnumerable<Triangle<Vertex>> Form(Vertex PreviousOppositeChain, Vertex Cur, bool High)
+            {
+                Vertex top = this.ReflexChain.Pop();
+                if (top.Equals(PreviousOppositeChain))
+                {
+                    Vertex last = top;
+                    while (this.ReflexChain.Count > 0)
+                    {
+                        Vertex next = this.ReflexChain.Pop();
+                        if (High)
+                        {
+                            yield return new Triangle<Vertex>(Cur, next, last);
+                        }
+                        else
+                        {
+                            yield return new Triangle<Vertex>(Cur, last, next);
+                        }
+                        last = next;
+                    }
+                    this.ReflexChain.Push(top);
+                    this.ReflexChain.Push(Cur);
+                }
+                else
+                {
+                    Vertex last = top;
+                    while (this.ReflexChain.Count > 0)
+                    {
+                        Vertex next = this.ReflexChain.Pop();
+                        Triangle<Vertex> testtri = new Triangle<Vertex>(Cur, next, last);
+                        if (this.Polygon.Order(testtri))
+                        {
+                            yield return testtri;
+                            last = next;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    this.ReflexChain.Push(last);
+                    this.ReflexChain.Push(Cur);
+                }
+            }
+
+            public IEnumerable<Triangle<Vertex>> Finish(Vertex Last)
+            {
+                Vertex top = this.ReflexChain.Pop();
+                bool high = top.Equals(this.PrevHighChain);
+                Vertex last = top;
+                while (this.ReflexChain.Count > 0)
+                {
+                    Vertex next = this.ReflexChain.Pop();
+                    if (high)
+                    {
+                        yield return new Triangle<Vertex>(Last, last, next);
+                    }
+                    else
+                    {
+                        yield return new Triangle<Vertex>(Last, next, last);
+                    }
+                    last = next;
+                }
             }
 
             public Vertex PrevLowChain;
             public Vertex PrevHighChain;
             public Vertex NextLowChain;
             public Vertex NextHighChain;
+            public IOrderedPolygon<Vertex> Polygon;
+            public Stack<Vertex> ReflexChain;
         }
 
         /// <summary>

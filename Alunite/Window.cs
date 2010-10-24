@@ -189,15 +189,19 @@ namespace Alunite
             polyverts.Add(new Point(0.0, -0.2));
             polyverts.Add(new Point(0.0, 0.2));
             polyverts.Add(new Point(0.5, 0.2));
+            polyverts.Add(new Point(0.9, 0.0));
+            polyverts.Add(new Point(0.8, 0.3));
+            polyverts.Add(new Point(0.9, 0.5));
             polyverts.Add(new Point(0.5, 0.4));
             polyverts.Add(new Point(0.0, 0.5));
             polyverts.Add(new Point(-0.5, 0.4));
+            polyverts.Add(new Point(-1.0, 0.0));
 
             PointPolygon<int> poly = new PointPolygon<int>(x => polyverts[x], Polygon.Segments(polyverts.Count));
 
             GL.LineWidth(4.0f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-            GL.Begin(BeginMode.Lines);
+            GL.Begin(BeginMode.Triangles);
             GL.Color4(Color.RGB(1.0, 0.0, 0.0));
             foreach (Triangle<int> tri in Polygon.Triangulate(poly))
             {
