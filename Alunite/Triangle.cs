@@ -191,7 +191,7 @@ namespace Alunite
         /// </summary>
         public static bool Order(Triangle<Point> Triangle)
         {
-            return !Segment.Front(Triangle.Vertex, Triangle.Base);
+            return Segment.Relation(Triangle.Vertex, Triangle.Base) == BoundaryRelation.Back;
         }
 
         /// <summary>
