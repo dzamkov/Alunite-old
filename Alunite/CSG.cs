@@ -436,42 +436,6 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Forms the final triangles from the output of Modify.
-        /// </summary>
-        public static void Form(
-            Dictionary<Segment<int>, Triangle<int>> TriangleSegments,
-            HashSet<Segment<int>> Excluded,
-            List<LinkedList<TriPoint>> Polygons,
-            HashSet<Triangle<int>> Output)
-        {
-            foreach (var poly in Polygons)
-            {
-                foreach(var tri in Polygon.Triangulate<TriPoint>(poly, delegate(Triangle<TriPoint> tri)
-                    {
-                        Triangle<Point> uvtri = new Triangle<Point>(tri.A.UV, tri.B.UV, tri.C.UV);
-                        if (Triangle.Order(uvtri))
-                        {
-                            foreach (var opoint in poly)
-                            {
-                                if (opoint.Vert != tri.A.Vert && opoint.Vert != tri.B.Vert && opoint.Vert != tri.C.Vert)
-                                {
-                                    if (Triangle.Relation(opoint.UV, uvtri) != AreaRelation.Outside)
-                                    {
-                                        return false;
-                                    }
-                                }
-                            }
-                            return true;
-                        }
-                        return false;
-                    }))
-                {
-                    Output.Add(new Triangle<int>(tri.A.Vert, tri.B.Vert, tri.C.Vert));
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets the union of two triangular meshes. More interesting effects can be created by inverting either of the meshes. New vertices may
         /// be added in order to form the final triangles.
         /// </summary>
@@ -500,7 +464,6 @@ namespace Alunite
             HashSet<Triangle<int>> tris = new HashSet<Triangle<int>>();
             HashSet<Segment<int>> excluded = new HashSet<Segment<int>>();
             var modifieda = Modify(partiala, excluded, intsa, intsb, oldvertamount, loop, false);
-            Form(trisegsa, excluded, modifieda, tris);
 
             return tris;
         }

@@ -53,6 +53,20 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Compares two points lexographically.
+        /// </summary>
+        public static bool Compare(Point A, Point B)
+        {
+            if (A.X > B.X)
+                return true;
+            if (A.X < B.X)
+                return false;
+            if (A.Y > B.Y)
+                return true;
+            return false;
+        }
+
+        /// <summary>
         /// Gets the cross product of a point (Creates a perpendicular point).
         /// </summary>
         public static Point Cross(Point A)

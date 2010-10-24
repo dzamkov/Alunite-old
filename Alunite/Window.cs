@@ -179,30 +179,32 @@ namespace Alunite
             GL.Disable(EnableCap.Blend);
             GL.PopMatrix();
 
-            // Test csg
-            List<Vector> testverts = new List<Vector>();
-            testverts.Add(new Vector(-1.5, -1.0, -1.5));
-            testverts.Add(new Vector(-0.5, -1.0, -1.5));
-            testverts.Add(new Vector(-1.0, -0.5, -2.5));
-            testverts.Add(new Vector(-1.0, -1.5, -2.5));
-            testverts.Add(new Vector(-1.0, -1.5, -2.0));
-            testverts.Add(new Vector(-1.0, -0.5, -2.0));
-            testverts.Add(new Vector(-0.5, -1.0, -1.0));
-            testverts.Add(new Vector(-1.5, -1.0, -1.0));
-            Tetrahedron<int> tetraa = new Tetrahedron<int>(0, 1, 2, 3);
-            Tetrahedron<int> tetrab = new Tetrahedron<int>(4, 5, 6, 7);
+            // Test polygons
+            GL.Enable(EnableCap.DepthTest);
+            List<Point> polyverts = new List<Point>();
+            polyverts.Add(new Point(-0.5, -0.4));
+            polyverts.Add(new Point(0.0, -0.5));
+            polyverts.Add(new Point(0.5, -0.4));
+            polyverts.Add(new Point(0.5, -0.2));
+            polyverts.Add(new Point(0.0, -0.2));
+            polyverts.Add(new Point(0.0, 0.2));
+            polyverts.Add(new Point(0.5, 0.2));
+            polyverts.Add(new Point(0.5, 0.4));
+            polyverts.Add(new Point(0.0, 0.5));
+            polyverts.Add(new Point(-0.5, 0.4));
 
+            PointPolygon<int> poly = new PointPolygon<int>(x => polyverts[x], Polygon.Segments(polyverts.Count));
 
             GL.LineWidth(4.0f);
-            GL.Enable(EnableCap.DepthTest);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
-            GL.Begin(BeginMode.Triangles);
+            GL.Begin(BeginMode.Lines);
             GL.Color4(Color.RGB(1.0, 0.0, 0.0));
-            foreach (Triangle<int> tri in CSG.MeshUnion(tetraa.Faces, tetrab.Faces, testverts))
+            foreach (Triangle<int> tri in Polygon.Triangulate(poly))
             {
-                GL.Vertex3(testverts[tri.A]);
-                GL.Vertex3(testverts[tri.B]);
-                GL.Vertex3(testverts[tri.C]);
+                Triangle<Point> vectri = new Triangle<Point>(polyverts[tri.A], polyverts[tri.B], polyverts[tri.C]);
+                GL.Vertex3(vectri.A.X, vectri.A.Y, -2.0);
+                GL.Vertex3(vectri.B.X, vectri.B.Y, -2.0);
+                GL.Vertex3(vectri.C.X, vectri.C.Y, -2.0);
             }
             GL.End();
 
