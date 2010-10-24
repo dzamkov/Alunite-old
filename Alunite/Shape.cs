@@ -214,7 +214,6 @@ namespace Alunite
                             }
                         }
                     }
-
                     continue;
                 }
 
@@ -239,7 +238,8 @@ namespace Alunite
                             break;
                         }
                         poorsweep = poorsweep.Next;
-                    }    
+                    }
+                    continue;
                 }
                 
 
@@ -346,7 +346,7 @@ namespace Alunite
                     while (this.ReflexChain.Count > 0)
                     {
                         Vertex next = this.ReflexChain.Pop();
-                        Triangle<Vertex> testtri = new Triangle<Vertex>(Cur, next, last);
+                        Triangle<Vertex> testtri = High ? new Triangle<Vertex>(Cur, last, next) : new Triangle<Vertex>(Cur, next, last);
                         if (this.Polygon.Order(testtri))
                         {
                             yield return testtri;
