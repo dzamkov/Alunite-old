@@ -179,123 +179,22 @@ namespace Alunite
             GL.Disable(EnableCap.Blend);
             GL.PopMatrix();
 
-            // Test polygons
+            // Test polyhedrons
             GL.Enable(EnableCap.DepthTest);
-            List<Point> polyverts = new List<Point>();
-            polyverts.Add(new Point(-0.5, 0.4)); // 0
-            polyverts.Add(new Point(0.4, 0.4));
-            polyverts.Add(new Point(-0.5, 0.3));
-            polyverts.Add(new Point(0.4, 0.3));
-            polyverts.Add(new Point(-0.4, 0.2)); 
-            polyverts.Add(new Point(-0.3, 0.1));
-            polyverts.Add(new Point(-0.2, 0.2));
-            polyverts.Add(new Point(-0.1, 0.1));
-            polyverts.Add(new Point(-0.2, 0.0));
-            polyverts.Add(new Point(-0.1, -0.1));
-            polyverts.Add(new Point(-0.2, -0.2)); // 10
-            polyverts.Add(new Point(-0.3, -0.1));
-            polyverts.Add(new Point(-0.4, -0.2));
-            polyverts.Add(new Point(-0.5, -0.1));
-            polyverts.Add(new Point(-0.4, 0.0));
-            polyverts.Add(new Point(-0.5, 0.1));
-            polyverts.Add(new Point(0.0, 0.2));
-            polyverts.Add(new Point(0.4, 0.2));
-            polyverts.Add(new Point(0.4, -0.2));
-            polyverts.Add(new Point(0.0, -0.2));
-            polyverts.Add(new Point(0.1, 0.1)); // 20
-            polyverts.Add(new Point(0.3, 0.1));
-            polyverts.Add(new Point(0.3, -0.1));
-            polyverts.Add(new Point(0.1, -0.1));
-            polyverts.Add(new Point(-0.5, -0.3));
-            polyverts.Add(new Point(0.4, -0.3));
-            polyverts.Add(new Point(0.4, -0.5));
-            polyverts.Add(new Point(0.3, -0.5));
-            polyverts.Add(new Point(0.3, -0.4));
-            polyverts.Add(new Point(0.2, -0.4));
-            polyverts.Add(new Point(0.2, -0.5)); // 30
-            polyverts.Add(new Point(0.1, -0.5));
-            polyverts.Add(new Point(0.1, -0.4));
-            polyverts.Add(new Point(0.0, -0.4));
-            polyverts.Add(new Point(0.0, -0.5));
-            polyverts.Add(new Point(-0.1, -0.5));
-            polyverts.Add(new Point(-0.1, -0.4));
-            polyverts.Add(new Point(-0.2, -0.4));
-            polyverts.Add(new Point(-0.2, -0.5));
-            polyverts.Add(new Point(-0.3, -0.5));
-            polyverts.Add(new Point(-0.3, -0.4)); // 40
-            polyverts.Add(new Point(-0.4, -0.4));
-            polyverts.Add(new Point(-0.4, -0.5));
-            polyverts.Add(new Point(-0.5, -0.5));
 
-            List<Segment<int>> segs = new List<Segment<int>>();
-            segs.Add(new Segment<int>(2, 3));
-            segs.Add(new Segment<int>(3, 1));
-            segs.Add(new Segment<int>(1, 0));
-            segs.Add(new Segment<int>(0, 2));
-            segs.Add(new Segment<int>(11, 10));
-            segs.Add(new Segment<int>(10, 9));
-            segs.Add(new Segment<int>(9, 8));
-            segs.Add(new Segment<int>(8, 7));
-            segs.Add(new Segment<int>(7, 6));
-            segs.Add(new Segment<int>(6, 5));
-            segs.Add(new Segment<int>(5, 4));
-            segs.Add(new Segment<int>(4, 15));
-            segs.Add(new Segment<int>(15, 14));
-            segs.Add(new Segment<int>(14, 13));
-            segs.Add(new Segment<int>(13, 12));
-            segs.Add(new Segment<int>(12, 11));
-            segs.Add(new Segment<int>(16, 19));
-            segs.Add(new Segment<int>(19, 18));
-            segs.Add(new Segment<int>(18, 17));
-            segs.Add(new Segment<int>(17, 16));
-            segs.Add(new Segment<int>(20, 21));
-            segs.Add(new Segment<int>(21, 22));
-            segs.Add(new Segment<int>(22, 23));
-            segs.Add(new Segment<int>(23, 20));
-            segs.Add(new Segment<int>(25, 24));
-            segs.Add(new Segment<int>(24, 43));
-            segs.Add(new Segment<int>(43, 42));
-            segs.Add(new Segment<int>(42, 41));
-            segs.Add(new Segment<int>(41, 40));
-            segs.Add(new Segment<int>(40, 39));
-            segs.Add(new Segment<int>(39, 38));
-            segs.Add(new Segment<int>(38, 37));
-            segs.Add(new Segment<int>(37, 36));
-            segs.Add(new Segment<int>(36, 35));
-            segs.Add(new Segment<int>(35, 34));
-            segs.Add(new Segment<int>(34, 33));
-            segs.Add(new Segment<int>(33, 32));
-            segs.Add(new Segment<int>(32, 31));
-            segs.Add(new Segment<int>(31, 30));
-            segs.Add(new Segment<int>(30, 29));
-            segs.Add(new Segment<int>(29, 28));
-            segs.Add(new Segment<int>(28, 27));
-            segs.Add(new Segment<int>(27, 26));
-            segs.Add(new Segment<int>(26, 25));
-
-            PointPolygon<int> poly = new PointPolygon<int>(x => polyverts[x], segs);
-
+            VectorGeometry geo = new VectorGeometry();
+            var polyhedron = Polyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.0, 0.0, -2.0));
+           
             GL.LineWidth(2.0f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             GL.Begin(BeginMode.Triangles);
             GL.Color4(Color.RGB(1.0, 0.0, 0.0));
-            foreach (Triangle<int> tri in Polygon.Triangulate(poly))
+            foreach (Triangle<int> tri in Polyhedron.Triangluate(polyhedron))
             {
-                Triangle<Point> vectri = new Triangle<Point>(polyverts[tri.A], polyverts[tri.B], polyverts[tri.C]);
-                GL.Vertex3(vectri.A.X, vectri.A.Y, -2.0);
-                GL.Vertex3(vectri.B.X, vectri.B.Y, -2.0);
-                GL.Vertex3(vectri.C.X, vectri.C.Y, -2.0);
-            }
-            GL.End();
-
-            GL.LineWidth(8.0f);
-            GL.Begin(BeginMode.Lines);
-            GL.Color4(Color.RGB(0.0, 0.0, 1.0));
-            foreach (Segment<int> seg in segs)
-            {
-                Segment<Point> vecseg = new Segment<Point>(polyverts[seg.A], polyverts[seg.B]);
-                GL.Vertex3(vecseg.A.X, vecseg.A.Y, -2.0);
-                GL.Vertex3(vecseg.B.X, vecseg.B.Y, -2.0);
+                Triangle<Vector> vectri = new Triangle<Vector>(geo.Lookup(tri.A), geo.Lookup(tri.B), geo.Lookup(tri.C));
+                GL.Vertex3(vectri.A);
+                GL.Vertex3(vectri.B);
+                GL.Vertex3(vectri.C);
             }
             GL.End();
 
