@@ -164,48 +164,39 @@ namespace Alunite
     }
 
     /// <summary>
-    /// A general purpose polyhedron.
+    /// A general purpose polyhedron for use with a vector geometry.
     /// </summary>
-    public class Polyhedron<Plane, Point, Vertex> : IMutablePolyhedron<int, int, Plane, Point, Vertex>
-        where Point : IEquatable<Point>
-        where Vertex : IEquatable<Vertex>
+    public class VectorPolyhedron : IMutablePolyhedron<int, int, Triangle<int>, VectorPoint, int>
     {
-        public Polyhedron(IPolyhedronGeomerty<Plane, Point, Vertex> Geometry)
+        public VectorPolyhedron()
         {
             this._FreePolygon = 0;
-            this._Geometry = Geometry;
-            this._Faces = new Dictionary<int, PolyhedronFace<Plane, Point>>();
-            this._Segments = new Dictionary<Segment<Vertex>, FaceEdge<int, int>>();
+            this._Faces = new Dictionary<int, PolyhedronFace<Triangle<int>, VectorPoint>>();
+            this._Segments = new Dictionary<Segment<int>, FaceEdge<int, int>>();
         }
 
-        public int Add(IEnumerable<Segment<Point>> Segments, Plane Plane)
+        public int Add(IEnumerable<Segment<VectorPoint>> Segments, Triangle<int> Plane)
         {
             int poly = this._FreePolygon++;
-            List<Segment<Point>> segs = new List<Segment<Point>>();
+            List<Segment<VectorPoint>> segs = new List<Segment<VectorPoint>>();
             int e = 0;
-            foreach (Segment<Point> seg in Segments)
+            foreach (Segment<VectorPoint> seg in Segments)
             {
-                this._Segments.Add(
-                    new Segment<Vertex>(
-                        this._Geometry.Position(seg.A, Plane),
-                        this._Geometry.Position(seg.B, Plane)),
+                this._Segments.Add(new Segment<int>(seg.A.Vertex, seg.B.Vertex),
                     new FaceEdge<int, int>(poly, e));
                 segs.Add(seg);
                 e++;
             }
-            this._Faces.Add(poly, new PolyhedronFace<Plane, Point>(Plane, segs));
+            this._Faces.Add(poly, new PolyhedronFace<Triangle<int>, VectorPoint>(Plane, segs));
             return poly;
         }
 
         public void Remove(int Face)
         {
             var poly = this._Faces[Face];
-            foreach (Segment<Point> seg in poly.Segments)
+            foreach (Segment<VectorPoint> seg in poly.Segments)
             {
-                this._Segments.Remove(
-                    new Segment<Vertex>(
-                        this._Geometry.Position(seg.A, poly.Plane),
-                        this._Geometry.Position(seg.B, poly.Plane)));
+                this._Segments.Remove(new Segment<int>(seg.A.Vertex, seg.B.Vertex));
             }
             this._Faces.Remove(Face);
         }
@@ -218,12 +209,23 @@ namespace Alunite
             }
         }
 
-        public PolyhedronFace<Plane, Point> Lookup(int Face)
+        /// <summary>
+        /// Gets the data for the faces in the polyhedron.
+        /// </summary>
+        public IEnumerable<PolyhedronFace<Triangle<int>, VectorPoint>> FaceData
+        {
+            get
+            {
+                return this._Faces.Values;
+            }
+        }
+
+        public PolyhedronFace<Triangle<int>, VectorPoint> Lookup(int Face)
         {
             return this._Faces[Face];
         }
 
-        public FaceEdge<int, int>? SegmentFace(Segment<Vertex> Segment)
+        public FaceEdge<int, int>? SegmentFace(Segment<int> Segment)
         {
             FaceEdge<int, int> edge;
             if (this._Segments.TryGetValue(Segment, out edge))
@@ -233,23 +235,12 @@ namespace Alunite
             return null;
         }
 
-        private Dictionary<int, PolyhedronFace<Plane, Point>> _Faces;
-        private Dictionary<Segment<Vertex>, FaceEdge<int, int>> _Segments;
-        private IPolyhedronGeomerty<Plane, Point, Vertex> _Geometry;
-        private int _FreePolygon;
-    }
-
-    /// <summary>
-    /// Polyhedron related functions.
-    /// </summary>
-    public static class Polyhedron
-    {
         /// <summary>
         /// Creates a cubiod polyhedron in the specified vector geometry.
         /// </summary>
-        public static Polyhedron<Triangle<int>, VectorPoint, int> Cuboid(VectorGeometry Geometry, Vector Size, Vector Center)
+        public static VectorPolyhedron Cuboid(VectorGeometry Geometry, Vector Size, Vector Center)
         {
-            var poly = new Polyhedron<Triangle<int>, VectorPoint, int>(Geometry);
+            var poly = new VectorPolyhedron();
             int[] points = new int[8];
             int i = 0;
             for (int x = 0; x < 2; x++)
@@ -294,19 +285,22 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the triangles that make up a polyhedron.
+        /// Triangulates the polyhedron's faces.
         /// </summary>
-        public static IEnumerable<Triangle<int>> Triangluate(Polyhedron<Triangle<int>, VectorPoint, int> Polyhedron)
+        public IEnumerable<Triangle<int>> Triangulate(VectorGeometry Geometry)
         {
-            foreach (int poly in Polyhedron.Faces)
+            foreach (PolyhedronFace<Triangle<int>, VectorPoint> face in this._Faces.Values)
             {
-                var polyinfo = Polyhedron.Lookup(poly);
-                PointPolygon<VectorPoint> pp = new PointPolygon<VectorPoint>(x => x.UV, polyinfo.Segments);
-                foreach (Triangle<VectorPoint> tri in Polygon.Triangulate(pp))
+                var poly = new PointPolygon<VectorPoint>(x => x.UV, face.Segments);
+                foreach (Triangle<VectorPoint> tri in Polygon.Triangulate(poly))
                 {
                     yield return new Triangle<int>(tri.A.Vertex, tri.B.Vertex, tri.C.Vertex);
                 }
             }
         }
+
+        private Dictionary<int, PolyhedronFace<Triangle<int>, VectorPoint>> _Faces;
+        private Dictionary<Segment<int>, FaceEdge<int, int>> _Segments;
+        private int _FreePolygon;
     }
 }

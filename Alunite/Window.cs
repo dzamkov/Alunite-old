@@ -183,15 +183,15 @@ namespace Alunite
             GL.Enable(EnableCap.DepthTest);
 
             VectorGeometry geo = new VectorGeometry();
-            var polyhedrona = Polyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.0, 0.0, -2.0));
-            var polyhedronb = Polyhedron.Cuboid(geo, new Vector(0.5, 0.7, 0.5), new Vector(0.2, 0.2, -1.6));
-            CSG.Union(polyhedrona, polyhedronb, geo);
+            var polyhedrona = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.0, 0.0, -2.0));
+            var polyhedronb = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.7, 0.5), new Vector(0.2, 0.2, -1.6));
+            var polyhedronf = CSG.Union(geo, polyhedrona, polyhedronb);
 
             GL.LineWidth(2.0f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             GL.Begin(BeginMode.Triangles);
             GL.Color4(Color.RGB(1.0, 0.0, 0.0));
-            foreach (Triangle<int> tri in Polyhedron.Triangluate(polyhedrona))
+            foreach (Triangle<int> tri in polyhedronf.Triangulate(geo))
             {
                 Triangle<Vector> vectri = new Triangle<Vector>(geo.Lookup(tri.A), geo.Lookup(tri.B), geo.Lookup(tri.C));
                 GL.Vertex3(vectri.A);

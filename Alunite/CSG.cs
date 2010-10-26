@@ -32,20 +32,21 @@ namespace Alunite
         /// affects (such as difference) can be created by inverting one of the polyhedra. The first specified polyhedra
         /// will be changed to reflect the union (less changes are required if A is the most complex of the polyhedra).
         /// </summary>
-        public static void Union<Face, Edge, Plane, Point, Vertex>(
-            IMutablePolyhedron<Face, Edge, Plane, Point, Vertex> A,
-            IPolyhedron<Face, Edge, Plane, Point, Vertex> B,
-            IPolyhedronGeomerty<Plane, Point, Vertex> Geometry)
-            where Vertex : IEquatable<Vertex>
-            where Point : IEquatable<Point>
-            where Face : IEquatable<Face>
+        public static VectorPolyhedron Union(VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B)
         {
+            VectorPolyhedron res = new VectorPolyhedron();
+
             // Cheating
-            foreach (Face f in B.Faces)
+            foreach (var f in A.FaceData)
             {
-                var face = B.Lookup(f);
-                A.Add(face.Segments, face.Plane);
+                res.Add(f.Segments, f.Plane);
             }
+            foreach (var f in B.FaceData)
+            {
+                res.Add(f.Segments, f.Plane);
+            }
+
+            return res;
         }
     }
 }
