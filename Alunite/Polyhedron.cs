@@ -276,10 +276,10 @@ namespace Alunite
 
             for (int t = 0; t < inds.Length; t += 4)
             {
-                int a = inds[t + 0];
-                int b = inds[t + 1];
-                int c = inds[t + 2];
-                int d = inds[t + 3];
+                int a = points[inds[t + 0]];
+                int b = points[inds[t + 1]];
+                int c = points[inds[t + 2]];
+                int d = points[inds[t + 3]];
                 VectorPoint[] vps = new VectorPoint[]
                 {
                     new VectorPoint(new Point(0.0, 0.0), a),
