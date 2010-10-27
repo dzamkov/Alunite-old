@@ -35,18 +35,85 @@ namespace Alunite
         public static VectorPolyhedron Union(VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B)
         {
             VectorPolyhedron res = new VectorPolyhedron();
+            
+            // Segments
+            var asegs = A.Segments;
+            var bsegs = B.Segments;
 
-            // Cheating
-            foreach (var f in A.FaceData)
+            // Intersections
+            var aintsb = _Intersect(Geometry, B, A, asegs);
+            var bintsa = _Intersect(Geometry, A, B, bsegs);
+
+            foreach (var a in aintsb)
             {
-                res.Add(f.Segments, f.Plane);
-            }
-            foreach (var f in B.FaceData)
-            {
-                res.Add(f.Segments, f.Plane);
+
             }
 
             return res;
+        }
+
+        /// <summary>
+        /// Represents a face segment intersection.
+        /// </summary>
+        private struct _Intersection
+        {
+            /// <summary>
+            /// Vertex created as a result of the intersection.
+            /// </summary>
+            public int NewVertex;
+
+            /// <summary>
+            /// The face that was hit.
+            /// </summary>
+            public int TargetFace;
+
+            /// <summary>
+            /// The edge that acted as the segment in the intersection.
+            /// </summary>
+            public FaceEdge<int, int> Edge;
+        }
+
+        /// <summary>
+        /// Gets the intersections of the specified segments onto the target polyhedron.
+        /// </summary>
+        private static IEnumerable<_Intersection> _Intersect(
+            VectorGeometry Geometry, VectorPolyhedron Target, VectorPolyhedron Source, 
+            IEnumerable<UnorderedSegment<int>> Segments)
+        {
+            foreach (int face in Target.Faces)
+            {
+                PolyhedronFace<Triangle<int>, VectorPoint> facedata = Target.Lookup(face);
+                IEnumerable<Segment<Point>> polygon = _PolygonConvert(facedata.Segments);
+                Triangle<Vector> plane = Geometry.Dereference(facedata.Plane);
+                foreach (UnorderedSegment<int> seg in Segments)
+                {
+                    double len;
+                    Point uv;
+                    Vector pos;
+                    Segment<int> hitseg = Triangle.Intersect(plane, Geometry.Dereference(seg.Source), out len, out pos, out uv) ? seg.Source : seg.Source.Flip;
+                    if (Polygon.PointTest(uv, polygon).Relation == AreaRelation.Inside)
+                    {
+                        FaceEdge<int, int> edge = Source.SegmentFace(hitseg).Value;
+                        yield return new _Intersection()
+                        {
+                            NewVertex = Geometry.AddVertex(pos),
+                            Edge = edge,
+                            TargetFace = face
+                        };
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Converts a polygon of vector points to points.
+        /// </summary>
+        private static IEnumerable<Segment<Point>> _PolygonConvert(IEnumerable<Segment<VectorPoint>> Face)
+        {
+            foreach (Segment<VectorPoint> seg in Face)
+            {
+                yield return new Segment<Point>(seg.A.UV, seg.B.UV);
+            }
         }
     }
 }

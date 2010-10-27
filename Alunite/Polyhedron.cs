@@ -144,6 +144,27 @@ namespace Alunite
             return this._Vertices[Vertex];
         }
 
+        /// <summary>
+        /// Dereferences the vertices in a triangle to vectors.
+        /// </summary>
+        public Triangle<Vector> Dereference(Triangle<int> Triangle)
+        {
+            return new Triangle<Vector>(
+                this._Vertices[Triangle.A],
+                this._Vertices[Triangle.B],
+                this._Vertices[Triangle.C]);
+        }
+
+        /// <summary>
+        /// Dereferences the vertices in a segment to vectors.
+        /// </summary>
+        public Segment<Vector> Dereference(Segment<int> Segment)
+        {
+            return new Segment<Vector>(
+                this._Vertices[Segment.A],
+                this._Vertices[Segment.B]);
+        }
+
         private List<Vector> _Vertices;
     }
 
@@ -153,14 +174,14 @@ namespace Alunite
     public struct PolyhedronFace<TPlane, Point>
         where Point : IEquatable<Point>
     {
-        public PolyhedronFace(TPlane Plane, IEnumerable<Segment<Point>> Segments)
+        public PolyhedronFace(TPlane Plane, List<Segment<Point>> Segments)
         {
             this.Plane = Plane;
             this.Segments = Segments;
         }
 
         public TPlane Plane;
-        public IEnumerable<Segment<Point>> Segments;
+        public List<Segment<Point>> Segments;
     }
 
     /// <summary>
@@ -217,6 +238,22 @@ namespace Alunite
             get
             {
                 return this._Faces.Values;
+            }
+        }
+
+        /// <summary>
+        /// Gets all the segments in the polyhedron.
+        /// </summary>
+        public IEnumerable<UnorderedSegment<int>> Segments
+        {
+            get
+            {
+                HashSet<UnorderedSegment<int>> segs = new HashSet<UnorderedSegment<int>>();
+                foreach (Segment<int> seg in this._Segments.Keys)
+                {
+                    segs.Add(Segment.Unorder(seg));
+                }
+                return segs;
             }
         }
 

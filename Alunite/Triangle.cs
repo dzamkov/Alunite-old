@@ -361,5 +361,26 @@ namespace Alunite
 
             return b < 0.0;
         }
+
+        /// <summary>
+        /// Calculates the relative coordinates that result from the intersection of the plane of triangle A and the plane of triangle B. Returns
+        /// if the two triangles are not coplanar.
+        /// </summary>
+        /// <param name="ABLength">Length along (A.A, A.B) the plane of B is at.</param>
+        /// <param name="ACLength">Length along (A.A, A.C) the plane of B is at.</param>
+        /// <param name="ABHit">Place on B where (A.A, A.B) hit.</param>
+        /// <param name="ACHit">Place on B where (A.A, A.C) hit.</param>
+        /// <param name="ABUV">UV point on B where (A.A, A.B) hit.</param>
+        /// <param name="ACUV">UV point on B where (A.A, A.C) hit.</param>
+        public static bool Intersect(
+            Triangle<Vector> A, Triangle<Vector> B, 
+            out double ABLength, out double ACLength, 
+            out Vector ABHit, out Vector ACHit, 
+            out Point ABUV, out Point ACUV)
+        {
+            Intersect(B, new Segment<Vector>(A.A, A.B), out ABLength, out ABHit, out ABUV);
+            Intersect(B, new Segment<Vector>(A.A, A.C), out ACLength, out ACHit, out ACUV);
+            return !double.IsNaN(ABUV.X);
+        }
     }
 }

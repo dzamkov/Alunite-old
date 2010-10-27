@@ -433,5 +433,87 @@ namespace Alunite
             }
             yield return new Segment<int>(Amount - 1, 0);
         }
+
+        /// <summary>
+        /// Results of a point in polygon test.
+        /// </summary>
+        public struct Hit
+        {
+            /// <summary>
+            /// Relation of the point to the polygon.
+            /// </summary>
+            public AreaRelation Relation;
+
+            /// <summary>
+            /// If the hit is at a segment, this is the index of the segment that was hit.
+            /// </summary>
+            public int Segment;
+
+            /// <summary>
+            /// Length along the hit segment the point is at (if any segments were hit).
+            /// </summary>
+            public double Length;
+        }
+
+        /// <summary>
+        /// Gets the relation between a point and a polygon with the specified segments.
+        /// </summary>
+        public static Hit PointTest(Point Point, IEnumerable<Segment<Point>> Segments)
+        {
+            bool inpoly = false;
+            double lowy = double.PositiveInfinity;
+            int i = 0;
+            foreach (var seg in Segments)
+            {
+                double segxdelta = (seg.B.X - seg.A.X);
+                double segydelta = (seg.B.Y - seg.A.Y);
+                if (segxdelta == 0)
+                {
+                    if (Point.X == seg.A.X)
+                    {
+                        double len = (Point.Y - seg.A.Y) / segydelta;
+                        if (len >= 0.0 && len < 1.0)
+                        {
+                            return new Hit()
+                            {
+                                Relation = AreaRelation.On,
+                                Length = len,
+                                Segment = i
+                            };
+                        }
+                    }
+                }
+                else
+                {
+
+                    double segslope = segydelta / segxdelta;
+                    double len = (Point.X - seg.A.X) / segxdelta;
+                    if(len >= 0.0 && len < 1.0)
+                    {
+                        double ypos = segslope * (Point.X - seg.A.X);
+                        if (Point.Y == ypos)
+                        {
+                            return new Hit()
+                            {
+                                Relation = AreaRelation.On,
+                                Length = len,
+                                Segment = i
+                            };
+                        }
+                        if (ypos < lowy && Point.Y < ypos)
+                        {
+                            inpoly = segxdelta > 0;
+                            lowy = ypos;
+                        }
+                    }
+                }
+                i++;
+            }
+
+            return new Hit()
+            {
+                Relation = inpoly ? AreaRelation.Inside : AreaRelation.Outside
+            };
+        }
     }
 }
