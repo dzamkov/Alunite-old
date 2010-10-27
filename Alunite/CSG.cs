@@ -41,19 +41,24 @@ namespace Alunite
             var bsegs = B.Segments;
 
             // Intersections
-            var aintsb = _Intersect(Geometry, B, A, asegs);
-            var bintsa = _Intersect(Geometry, A, B, bsegs);
+            Dictionary<_FacePair, List<_Intersection>> intersections = new Dictionary<_FacePair, List<_Intersection>>();
+            _Intersect(Geometry, A, B, true, asegs, intersections);
+            _Intersect(Geometry, A, B, false, bsegs, intersections);
 
-            foreach (var a in aintsb)
+            foreach (PolyhedronFace<Triangle<int>, VectorPoint> poly in A.FaceData)
             {
-
+                res.Add(poly.Segments, poly.Plane);
+            }
+            foreach (PolyhedronFace<Triangle<int>, VectorPoint> poly in B.FaceData)
+            {
+                res.Add(poly.Segments, poly.Plane);
             }
 
             return res;
         }
 
         /// <summary>
-        /// Represents a face segment intersection.
+        /// Represents a face segment intersection when both intersecting faces of the intersection are known.
         /// </summary>
         private struct _Intersection
         {
@@ -63,46 +68,114 @@ namespace Alunite
             public int NewVertex;
 
             /// <summary>
-            /// The face that was hit.
-            /// </summary>
-            public int TargetFace;
-
-            /// <summary>
             /// The edge that acted as the segment in the intersection.
             /// </summary>
-            public FaceEdge<int, int> Edge;
+            public int Edge;
+
+            /// <summary>
+            /// True if the edge hit the face in the front-facing direction, false if the edge hit
+            /// the face in the back-facing direction.
+            /// </summary>
+            public bool Direction;
+
+            /// <summary>
+            /// True if A owns the segment that's part of the intersection.
+            /// </summary>
+            public bool ASegment;
         }
 
         /// <summary>
-        /// Gets the intersections of the specified segments onto the target polyhedron.
+        /// A pair of faces that intersect.
         /// </summary>
-        private static IEnumerable<_Intersection> _Intersect(
-            VectorGeometry Geometry, VectorPolyhedron Target, VectorPolyhedron Source, 
-            IEnumerable<UnorderedSegment<int>> Segments)
+        private struct _FacePair : IEquatable<_FacePair>
         {
-            foreach (int face in Target.Faces)
+            public _FacePair(int AFace, int BFace)
             {
-                PolyhedronFace<Triangle<int>, VectorPoint> facedata = Target.Lookup(face);
-                IEnumerable<Segment<Point>> polygon = _PolygonConvert(facedata.Segments);
+                this.AFace = AFace;
+                this.BFace = BFace;
+            }
+
+            public bool Equals(_FacePair other)
+            {
+                return this.AFace == other.AFace && this.BFace == other.BFace;
+            }
+
+            public override int GetHashCode()
+            {
+                return this.AFace.GetHashCode() ^ this.BFace.GetHashCode();
+            }
+
+            public int AFace;
+
+            public int BFace;
+        }
+
+        /// <summary>
+        /// Gets the intersections of the specified segments onto the target polyhedron and outputs them to the
+        /// intersection dictionary.
+        /// </summary>
+        private static void _Intersect(
+            VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B,
+            bool SegmentsAreA,
+            IEnumerable<UnorderedSegment<int>> Segments,
+            Dictionary<_FacePair, List<_Intersection>> Intersections)
+        {
+            var res = new Dictionary<_FacePair, List<_Intersection>>();
+            var segsource = SegmentsAreA ? A : B;
+            var facesource = SegmentsAreA ? B : A;
+            foreach (int face in facesource.Faces)
+            {
+                PolyhedronFace<Triangle<int>, VectorPoint> facedata = facesource.Lookup(face);
+                IEnumerable<Segment<Point>> poly = _PolygonConvert(facedata.Segments);
                 Triangle<Vector> plane = Geometry.Dereference(facedata.Plane);
-                foreach (UnorderedSegment<int> seg in Segments)
+                foreach (var seg in Segments)
                 {
+                    Segment<int> iseg = seg.Source;
+                    Segment<Vector> hitseg = Geometry.Dereference(iseg);
                     double len;
                     Point uv;
                     Vector pos;
-                    Segment<int> hitseg = Triangle.Intersect(plane, Geometry.Dereference(seg.Source), out len, out pos, out uv) ? seg.Source : seg.Source.Flip;
-                    if (Polygon.PointTest(uv, polygon).Relation == AreaRelation.Inside)
+                    if (!Triangle.Intersect(plane, hitseg, out len, out pos, out uv))
                     {
-                        FaceEdge<int, int> edge = Source.SegmentFace(hitseg).Value;
-                        yield return new _Intersection()
+                        iseg = iseg.Flip;
+                    }
+                    if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly).Relation == AreaRelation.Inside)
+                    {
+                        int nvert = Geometry.AddVertex(pos);
+                        FaceEdge<int, int> fer = segsource.SegmentFace(iseg).Value;
+                        FaceEdge<int, int> few = segsource.SegmentFace(iseg.Flip).Value;
+                        _FacePair ferpair = SegmentsAreA ? new _FacePair(fer.Face, face) : new _FacePair(face, fer.Face);
+                        _FacePair fewpair = SegmentsAreA ? new _FacePair(few.Face, face) : new _FacePair(face, few.Face);
+                        _Append(Intersections, ferpair, new _Intersection()
                         {
-                            NewVertex = Geometry.AddVertex(pos),
-                            Edge = edge,
-                            TargetFace = face
-                        };
+                            Direction = true,
+                            ASegment = SegmentsAreA,
+                            Edge = fer.Edge,
+                            NewVertex = nvert
+                        });
+                        _Append(Intersections, fewpair, new _Intersection()
+                        {
+                            Direction = false,
+                            ASegment = SegmentsAreA,
+                            Edge = few.Edge,
+                            NewVertex = nvert
+                        });
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds a value to a list dictionary. Creates a new entry and list if needed.
+        /// </summary>
+        private static void _Append<K, V>(Dictionary<K, List<V>> Dict, K Key, V Value)
+        {
+            List<V> vlist;
+            if (!Dict.TryGetValue(Key, out vlist))
+            {
+                Dict[Key] = vlist = new List<V>();
+            }
+            vlist.Add(Value);
         }
 
         /// <summary>

@@ -490,7 +490,7 @@ namespace Alunite
                     double len = (Point.X - seg.A.X) / segxdelta;
                     if(len >= 0.0 && len < 1.0)
                     {
-                        double ypos = segslope * (Point.X - seg.A.X);
+                        double ypos = segslope * (Point.X - seg.A.X) + seg.A.Y;
                         if (Point.Y == ypos)
                         {
                             return new Hit()
@@ -502,7 +502,7 @@ namespace Alunite
                         }
                         if (ypos < lowy && Point.Y < ypos)
                         {
-                            inpoly = segxdelta > 0;
+                            inpoly = segxdelta < 0;
                             lowy = ypos;
                         }
                     }

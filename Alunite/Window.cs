@@ -184,7 +184,7 @@ namespace Alunite
 
             VectorGeometry geo = new VectorGeometry();
             var polyhedrona = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.0, 0.0, -2.0));
-            var polyhedronb = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.7, 0.5), new Vector(0.2, 0.2, -1.6));
+            var polyhedronb = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.2, 0.2, -1.6));
             var polyhedronf = CSG.Union(geo, polyhedrona, polyhedronb);
 
             GL.LineWidth(2.0f);
