@@ -44,6 +44,10 @@ namespace Alunite
             Dictionary<_FacePair, List<_Intersection>> intersections = new Dictionary<_FacePair, List<_Intersection>>();
             _Intersect(Geometry, A, B, true, asegs, intersections);
             _Intersect(Geometry, A, B, false, bsegs, intersections);
+            foreach (List<_Intersection> ilist in intersections.Values)
+            {
+                _SortPlanarIntersections(Geometry, ilist);
+            }
 
             foreach (PolyhedronFace<Triangle<int>, VectorPoint> poly in A.FaceData)
             {
@@ -71,6 +75,11 @@ namespace Alunite
             /// The edge that acted as the segment in the intersection.
             /// </summary>
             public int Edge;
+
+            /// <summary>
+            /// Length along the edge the hit is at.
+            /// </summary>
+            public double Length;
 
             /// <summary>
             /// True if the edge hit the face in the front-facing direction, false if the edge hit
@@ -137,6 +146,7 @@ namespace Alunite
                     Vector pos;
                     if (!Triangle.Intersect(plane, hitseg, out len, out pos, out uv))
                     {
+                        len = 1.0 - len;
                         iseg = iseg.Flip;
                     }
                     if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly).Relation == AreaRelation.Inside)
@@ -149,6 +159,7 @@ namespace Alunite
                         _Append(Intersections, ferpair, new _Intersection()
                         {
                             Direction = true,
+                            Length = len,
                             ASegment = SegmentsAreA,
                             Edge = fer.Edge,
                             NewVertex = nvert
@@ -156,6 +167,7 @@ namespace Alunite
                         _Append(Intersections, fewpair, new _Intersection()
                         {
                             Direction = false,
+                            Length = 1.0 - len,
                             ASegment = SegmentsAreA,
                             Edge = few.Edge,
                             NewVertex = nvert
@@ -187,6 +199,104 @@ namespace Alunite
             {
                 yield return new Segment<Point>(seg.A.UV, seg.B.UV);
             }
+        }
+
+        /// <summary>
+        /// Sorts the provided list of intersections (all lying on the intersection of two planes) to be consistent with loop
+        /// direction. The intersections are sorted to ascend left when looking into both front planes on their front face.
+        /// </summary>
+        private static void _SortPlanarIntersections(VectorGeometry Geometry, List<_Intersection> Intersections)
+        {
+            // Get if the first two intersections are in the right direction
+            _Intersection first = Intersections[0];
+            _Intersection second = Intersections[1];
+            bool swap = false;
+            if (first.ASegment == second.ASegment)
+            {
+                if (first.Direction == second.Direction)
+                {
+                    // Rare case when the direction can not be identified by these points alone. Luckily, it can be
+                    // guarnteed another intersection exists.
+                    for (int i = 2; i < Intersections.Count; i++)
+                    {
+                        _Intersection next = Intersections[i];
+                        if (next.ASegment == second.ASegment && next.Direction != first.Direction)
+                        {
+                            Intersections[1] = next;
+                            Intersections[i] = second;
+                            second = next;
+                            break;
+                        }
+                    } 
+                }
+                swap = first.Direction ^ first.ASegment;
+            }
+            else
+            {
+                if (first.ASegment)
+                {
+                    swap = !first.Direction;
+                }
+                else
+                {
+                    swap = second.Direction;
+                }
+            }
+
+
+            if (Intersections.Count > 2)
+            {
+                // Compute distances
+                Vector va = Geometry.Lookup(first.NewVertex);
+                Vector vb = Geometry.Lookup(second.NewVertex);
+                Vector d = vb - va;
+                var dists = new _IntersectionDistance[Intersections.Count];
+                dists[0] = new _IntersectionDistance(0, 0.0);
+                dists[1] = new _IntersectionDistance(1, 1.0);
+                for (int i = 2; i < Intersections.Count; i++)
+                {
+                    dists[i] = new _IntersectionDistance(i, Vector.Dot(Geometry.Lookup(Intersections[i].NewVertex) - va, d));
+                }
+
+                // Sort
+                Sort.InPlace<StandardArray<_IntersectionDistance>, _IntersectionDistance>(new StandardArray<_IntersectionDistance>(dists), x => (x.A.Dist > x.B.Dist ^ swap));
+                _Intersection[] temp = new _Intersection[Intersections.Count];
+                Intersections.CopyTo(temp);
+                for (int i = 0; i < dists.Length; i++)
+                {
+                    Intersections[i] = temp[dists[i].Ref];
+                }
+            }
+            else
+            {
+                if (swap)
+                {
+                    // Quick swap
+                    _Intersection temp = Intersections[0];
+                    Intersections[0] = Intersections[1];
+                    Intersections[1] = temp;
+                }
+            }
+        }
+
+        /// <summary>
+        /// For use by sort.
+        /// </summary>
+        private struct _IntersectionDistance : IEquatable<_IntersectionDistance>
+        {
+            public _IntersectionDistance(int Ref, double Dist)
+            {
+                this.Ref = Ref;
+                this.Dist = Dist;
+            }
+
+            public bool Equals(_IntersectionDistance other)
+            {
+                return this.Ref == other.Ref;
+            }
+
+            public int Ref;
+            public double Dist;
         }
     }
 }
