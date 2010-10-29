@@ -195,7 +195,7 @@ namespace Alunite
                         });
                         _AddFaceIntersectionPoint(FaceInfo, face, nvert, uv);
                         _AddFaceIntersectionEdge(SegmentInfo, fer.Face, nvert, fer.Edge, len, false);
-                        _AddFaceIntersectionEdge(SegmentInfo, few.Face, nvert, few.Edge, 1.0 - len, false);
+                        _AddFaceIntersectionEdge(SegmentInfo, few.Face, nvert, few.Edge, 1.0 - len, true);
                     }
                 }
             }
@@ -441,7 +441,8 @@ namespace Alunite
             {
                 int face = kvp.Key;
                 _FaceIntersection faceint = kvp.Value;
-                //List<Segment<VectorPoint>> facesegs = Input.Lookup(face).Segments;
+                var facedata = Input.Lookup(face);
+
 
             }
         }
