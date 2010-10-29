@@ -41,21 +41,38 @@ namespace Alunite
             var bsegs = B.Segments;
 
             // Intersections
-            Dictionary<_FacePair, List<_Intersection>> intersections = new Dictionary<_FacePair, List<_Intersection>>();
-            _Intersect(Geometry, A, B, true, asegs, intersections);
-            _Intersect(Geometry, A, B, false, bsegs, intersections);
-            foreach (List<_Intersection> ilist in intersections.Values)
+            Dictionary<_FacePair, List<_Intersection>> facepairs = new Dictionary<_FacePair, List<_Intersection>>();
+            Dictionary<int, _FaceIntersection> ainfo = new Dictionary<int, _FaceIntersection>();
+            Dictionary<int, _FaceIntersection> binfo = new Dictionary<int, _FaceIntersection>();
+            _Intersect(Geometry, A, B, true, asegs, facepairs, ainfo, binfo);
+            _Intersect(Geometry, A, B, false, bsegs, facepairs, binfo, ainfo);
+            
+
+            // Loops
+            foreach (List<_Intersection> ilist in facepairs.Values)
             {
                 _SortPlanarIntersections(Geometry, ilist);
             }
 
-            foreach (PolyhedronFace<Triangle<int>, VectorPoint> poly in A.FaceData)
+            Dictionary<int, int> nextinloop = new Dictionary<int, int>();
+            Dictionary<int, int> previnloop = new Dictionary<int, int>();
+            _CalculateLoops(facepairs, nextinloop, previnloop);
+
+            // Process intersection data
+            HashSet<Segment<int>> aexclude = new HashSet<Segment<int>>(); // Segments known not to be in the final result (from A)
+            HashSet<Segment<int>> ainclude = new HashSet<Segment<int>>(); // Segments known to be in the final result (from A)
+            HashSet<Segment<int>> bexclude = new HashSet<Segment<int>>();
+            HashSet<Segment<int>> binclude = new HashSet<Segment<int>>();
+            _ProcessFaces(ainfo, A, nextinloop, previnloop, aexclude, ainclude, res);
+            
+
+            foreach (PolyhedronFace<Triangle<int>, Point, int> poly in A.FaceData)
             {
-                res.Add(poly.Segments, poly.Plane);
+                res.Add(poly.Segments, poly.Points, poly.Plane);
             }
-            foreach (PolyhedronFace<Triangle<int>, VectorPoint> poly in B.FaceData)
+            foreach (PolyhedronFace<Triangle<int>, Point, int> poly in B.FaceData)
             {
-                res.Add(poly.Segments, poly.Plane);
+                res.Add(poly.Segments, poly.Points, poly.Plane);
             }
 
             return res;
@@ -121,21 +138,25 @@ namespace Alunite
 
         /// <summary>
         /// Gets the intersections of the specified segments onto the target polyhedron and outputs them to the
-        /// intersection dictionary.
+        /// intersection dictionary and face intersection info.
         /// </summary>
+        /// <remarks>If two intersecting faces are convex, they will have exactly two intersections. No face pair will have
+        /// less than two intersections.</remarks>
         private static void _Intersect(
             VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B,
             bool SegmentsAreA,
             IEnumerable<UnorderedSegment<int>> Segments,
-            Dictionary<_FacePair, List<_Intersection>> Intersections)
+            Dictionary<_FacePair, List<_Intersection>> Intersections,
+            Dictionary<int, _FaceIntersection> SegmentInfo,
+            Dictionary<int, _FaceIntersection> FaceInfo)
         {
             var res = new Dictionary<_FacePair, List<_Intersection>>();
             var segsource = SegmentsAreA ? A : B;
             var facesource = SegmentsAreA ? B : A;
             foreach (int face in facesource.Faces)
             {
-                PolyhedronFace<Triangle<int>, VectorPoint> facedata = facesource.Lookup(face);
-                IEnumerable<Segment<Point>> poly = _PolygonConvert(facedata.Segments);
+                PolyhedronFace<Triangle<int>, Point, int> facedata = facesource.Lookup(face);
+                IEnumerable<Segment<Point>> poly = _PolygonConvert(facedata);
                 Triangle<Vector> plane = Geometry.Dereference(facedata.Plane);
                 foreach (var seg in Segments)
                 {
@@ -172,6 +193,9 @@ namespace Alunite
                             Edge = few.Edge,
                             NewVertex = nvert
                         });
+                        _AddFaceIntersectionPoint(FaceInfo, face, nvert, uv);
+                        _AddFaceIntersectionEdge(SegmentInfo, fer.Face, nvert, fer.Edge, len, false);
+                        _AddFaceIntersectionEdge(SegmentInfo, few.Face, nvert, few.Edge, 1.0 - len, false);
                     }
                 }
             }
@@ -193,11 +217,35 @@ namespace Alunite
         /// <summary>
         /// Converts a polygon of vector points to points.
         /// </summary>
-        private static IEnumerable<Segment<Point>> _PolygonConvert(IEnumerable<Segment<VectorPoint>> Face)
+        private static IEnumerable<Segment<Point>> _PolygonConvert(PolyhedronFace<Triangle<int>, Point, int> Face)
         {
-            foreach (Segment<VectorPoint> seg in Face)
+            foreach (Segment<int> seg in Face.Segments)
             {
-                yield return new Segment<Point>(seg.A.UV, seg.B.UV);
+                yield return new Segment<Point>(Face.Points[seg.A].A, Face.Points[seg.B].A);
+            }
+        }
+
+        /// <summary>
+        /// Given the first and last (in any order) intersections between two faces, returns true if the loops
+        /// of the intersection go in a consistent direction with the segment formed from the first and last intersection.
+        /// </summary>
+        /// <remarks>Reversing the order of all face pair intersections will invert the result of this function.</remarks>
+        private static bool _LoopDirection(_Intersection First, _Intersection Last)
+        {
+            if (First.ASegment == Last.ASegment)
+            {
+                return !(First.Direction ^ First.ASegment);
+            }
+            else
+            {
+                if (First.ASegment)
+                {
+                    return First.Direction;
+                }
+                else
+                {
+                    return !(Last.Direction);
+                }
             }
         }
 
@@ -207,48 +255,13 @@ namespace Alunite
         /// </summary>
         private static void _SortPlanarIntersections(VectorGeometry Geometry, List<_Intersection> Intersections)
         {
-            // Get if the first two intersections are in the right direction
-            _Intersection first = Intersections[0];
-            _Intersection second = Intersections[1];
-            bool swap = false;
-            if (first.ASegment == second.ASegment)
-            {
-                if (first.Direction == second.Direction)
-                {
-                    // Rare case when the direction can not be identified by these points alone. Luckily, it can be
-                    // guarnteed another intersection exists.
-                    for (int i = 2; i < Intersections.Count; i++)
-                    {
-                        _Intersection next = Intersections[i];
-                        if (next.ASegment == second.ASegment && next.Direction != first.Direction)
-                        {
-                            Intersections[1] = next;
-                            Intersections[i] = second;
-                            second = next;
-                            break;
-                        }
-                    } 
-                }
-                swap = first.Direction ^ first.ASegment;
-            }
-            else
-            {
-                if (first.ASegment)
-                {
-                    swap = !first.Direction;
-                }
-                else
-                {
-                    swap = second.Direction;
-                }
-            }
-
-
+            _Intersection curfirst = Intersections[0];
+            _Intersection cursecond = Intersections[1];
             if (Intersections.Count > 2)
             {
                 // Compute distances
-                Vector va = Geometry.Lookup(first.NewVertex);
-                Vector vb = Geometry.Lookup(second.NewVertex);
+                Vector va = Geometry.Lookup(curfirst.NewVertex);
+                Vector vb = Geometry.Lookup(cursecond.NewVertex);
                 Vector d = vb - va;
                 var dists = new _IntersectionDistance[Intersections.Count];
                 dists[0] = new _IntersectionDistance(0, 0.0);
@@ -259,22 +272,37 @@ namespace Alunite
                 }
 
                 // Sort
-                Sort.InPlace<StandardArray<_IntersectionDistance>, _IntersectionDistance>(new StandardArray<_IntersectionDistance>(dists), x => (x.A.Dist > x.B.Dist ^ swap));
+                Sort.InPlace<StandardArray<_IntersectionDistance>, _IntersectionDistance>(new StandardArray<_IntersectionDistance>(dists), x => (x.A.Dist > x.B.Dist));
                 _Intersection[] temp = new _Intersection[Intersections.Count];
                 Intersections.CopyTo(temp);
-                for (int i = 0; i < dists.Length; i++)
+
+                // Determine direction
+                bool reverse = !_LoopDirection(temp[dists[0].Ref], temp[dists[dists.Length - 1].Ref]);
+                
+                // Put back in list in the correct order.
+                if (reverse)
                 {
-                    Intersections[i] = temp[dists[i].Ref];
+                    int declen = dists.Length - 1;
+                    for (int i = 0; i < dists.Length; i++)
+                    {
+                        Intersections[i] = temp[dists[declen - i].Ref];
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < dists.Length; i++)
+                    {
+                        Intersections[i] = temp[dists[i].Ref];
+                    }
                 }
             }
             else
             {
-                if (swap)
+                // Swap if needed
+                if (!_LoopDirection(curfirst, cursecond))
                 {
-                    // Quick swap
-                    _Intersection temp = Intersections[0];
-                    Intersections[0] = Intersections[1];
-                    Intersections[1] = temp;
+                    Intersections[0] = cursecond;
+                    Intersections[1] = curfirst;
                 }
             }
         }
@@ -297,6 +325,125 @@ namespace Alunite
 
             public int Ref;
             public double Dist;
+        }
+
+        /// <summary>
+        /// Information about a single intersecting face during a CSG operation.
+        /// </summary>
+        private struct _FaceIntersection
+        {
+            /// <summary>
+            /// Gets information about the new vertices created on the edges.
+            /// </summary>
+            public Dictionary<int, _EdgeIntersection> IntersectingEdges;
+
+            /// <summary>
+            /// Gets the UV coordinates of new vertices created on the surface of the Face.
+            /// </summary>
+            public Dictionary<int, Point> UV;
+        }
+
+        /// <summary>
+        /// Represents an intersection of a polygon's edge.
+        /// </summary>
+        private struct _EdgeIntersection
+        {
+            /// <summary>
+            /// The edge that was involved in the intersection.
+            /// </summary>
+            public int Edge;
+
+            /// <summary>
+            /// The length along the edge the intersection is at.
+            /// </summary>
+            public double Length;
+
+            /// <summary>
+            /// Did the intersection go in the reverse direction of the edge?
+            /// </summary>
+            public bool Reverse;
+        }
+
+        private static void _AddFaceIntersectionPoint(Dictionary<int, _FaceIntersection> Intersections, int Face, int Vertex, Point UV)
+        {
+            _FaceIntersection fi;
+            if (!Intersections.TryGetValue(Face, out fi))
+            {
+                Intersections[Face] = fi = new _FaceIntersection()
+                {
+                    IntersectingEdges = new Dictionary<int, _EdgeIntersection>(),
+                    UV = new Dictionary<int, Point>()
+                };
+            }
+            fi.UV.Add(Vertex, UV);
+        }
+
+        private static void _AddFaceIntersectionEdge(Dictionary<int, _FaceIntersection> Intersections, int Face, int Vertex, int Edge, double Length, bool Reverse)
+        {
+            _FaceIntersection fi;
+            if (!Intersections.TryGetValue(Face, out fi))
+            {
+                Intersections[Face] = fi = new _FaceIntersection()
+                {
+                    IntersectingEdges = new Dictionary<int, _EdgeIntersection>(),
+                    UV = new Dictionary<int, Point>()
+                };
+            }
+            fi.IntersectingEdges.Add(Vertex, new _EdgeIntersection()
+            {
+                Edge = Edge,
+                Length = Length,
+                Reverse = Reverse
+            });
+        }
+
+        /// <summary>
+        /// Calculates the "loops" as described by the csg algorithim, given the sorted intersections of
+        /// the face pairs.
+        /// </summary>
+        private static void _CalculateLoops(
+            Dictionary<_FacePair, List<_Intersection>> FacePairs,
+            Dictionary<int, int> Next,
+            Dictionary<int, int> Prev)
+        {
+            foreach (var faceints in FacePairs.Values)
+            {
+                bool on = false;
+                int prev = 0;
+                foreach (var i in faceints)
+                {
+                    int ne = i.NewVertex;
+                    if (on)
+                    {
+                        Prev.Add(ne, prev);
+                        Next.Add(prev, ne);
+                    }
+                    prev = ne;
+                    on = !on;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Processes face intersections, gets included and excluded segments that can be inferred from them  and
+        /// outputs faces for the specified polyhedron to the output.
+        /// </summary>
+        private static void _ProcessFaces(
+            Dictionary<int, _FaceIntersection> FaceIntersections,
+            VectorPolyhedron Input,
+            Dictionary<int, int> NextInLoop,
+            Dictionary<int, int> PrevInLoop,
+            HashSet<Segment<int>> Excluded,
+            HashSet<Segment<int>> Included,
+            VectorPolyhedron Output)
+        {
+            foreach (var kvp in FaceIntersections)
+            {
+                int face = kvp.Key;
+                _FaceIntersection faceint = kvp.Value;
+                //List<Segment<VectorPoint>> facesegs = Input.Lookup(face).Segments;
+
+            }
         }
     }
 }
