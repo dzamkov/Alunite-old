@@ -425,6 +425,190 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Represents an edge that has endpoints in a face-loop intersection.
+        /// </summary>
+        /// <typeparam name="TPoint">A point on the face.</typeparam>
+        public struct EndpointEdge<TPoint>
+        {
+            /// <summary>
+            /// Point A of the edge.
+            /// </summary>
+            public TPoint A;
+
+            /// <summary>
+            /// Point B of the edge.
+            /// </summary>
+            public TPoint B;
+
+            /// <summary>
+            /// An ordered collection (from A to B) of the endpoints contained on
+            /// this edge.
+            /// </summary>
+            public IEnumerable<TPoint> Endpoints;
+
+            /// <summary>
+            /// True if the first endpoint was created by edge A-B intersecting the opposing polygon
+            /// on its front face.
+            /// </summary>
+            public bool Direction;
+        }
+
+        /// <summary>
+        /// Input operations and data to ProcessFace
+        /// </summary>
+        /// <typeparam name="TPoint">A point on the face.</typeparam>
+        public interface IProcessFaceInput<TPoint>
+            where TPoint : struct, IEquatable<TPoint>
+        {
+            /// <summary>
+            /// Gets the point after the one specified, in the "loop". If the loop ends in that
+            /// direction, null is returned.
+            /// </summary>
+            TPoint? LoopNext(TPoint Point);
+
+            /// <summary>
+            /// Gets the point after the one specified in the face such that
+            /// any point and its next form an edge on the original polygon.
+            /// </summary>
+            TPoint FaceNext(TPoint Point);
+
+            /// <summary>
+            /// Gets and removes an endpoint edge, if one exists.
+            /// </summary>
+            EndpointEdge<TPoint>? PopEndpointEdge();
+
+            /// <summary>
+            /// Gets if the specified edge contains endpoints, and if so, removes and returns it.
+            /// </summary>
+            EndpointEdge<TPoint>? PopEndpointEdge(TPoint A, TPoint B);
+
+            /// <summary>
+            /// Adds an edge (present on the loop) to the final face.
+            /// </summary>
+            void AddLoopEdge(TPoint A, TPoint B);
+
+            /// <summary>
+            /// Adds an edge (to be included in the final face) that was part of an endpoint edge.
+            /// </summary>
+            void AddIncludedEndpointEdge(TPoint A, TPoint B);
+
+            /// <summary>
+            /// Signals that an edge that was part of an endpoint edge is excluded from the final face.
+            /// </summary>
+            void AddExcludedEndpointEdge(TPoint A, TPoint B);
+
+            /// <summary>
+            /// Marks the specified edge (present in the original face) as excluded (from final face), 
+            /// meaning it is inside the area defined by the loop.
+            /// </summary>
+            void ExcludeEdge(TPoint A, TPoint B);
+
+            /// <summary>
+            /// Marks the specified edge as included (to final face), outside the loop.
+            /// </summary>
+            void IncludeEdge(TPoint A, TPoint B);
+        }
+
+        /// <summary>
+        /// Given a face in the intermediate stages of CSG with intersections and loops known, calculates
+        /// the final edges of the face, and determines which original segments are included (present in the
+        /// final result) or excluded (not present in the final result).
+        /// </summary>
+        public static void ProcessFace<TInput, TPoint>(TInput Input)
+            where TPoint : struct, IEquatable<TPoint>
+            where TInput : IProcessFaceInput<TPoint>
+        {
+            // Maintain a set of points that act as endpoints of the loop onto the face that continue
+            // with LoopNext.
+            HashSet<TPoint> fowardendpoints = new HashSet<TPoint>();
+            
+            // Cycle through the edges starting at endpoints, determine wether these edges are included
+            // or excluded, and find which of the endpoints are foward.
+            EndpointEdge<TPoint>? eestartq;
+            while ((eestartq = Input.PopEndpointEdge()) != null)
+            {
+                EndpointEdge<TPoint> curedge /* lol */ = eestartq.Value;
+                TPoint startpoint = curedge.A;
+                bool finishedchain = false;
+                while(!finishedchain)
+                {
+                    TPoint last = curedge.A;
+                    bool addnext = curedge.Direction;
+                    foreach (TPoint edgepoint in curedge.Endpoints)
+                    {
+                        if (addnext)
+                        {
+                            Input.AddIncludedEndpointEdge(last, edgepoint);
+                            fowardendpoints.Add(edgepoint);
+                            addnext = false;
+                        }
+                        else
+                        {
+                            Input.AddExcludedEndpointEdge(last, edgepoint);
+                            addnext = true;
+                        }
+                        last = edgepoint;
+                    }
+                    if (addnext)
+                    {
+                        Input.AddIncludedEndpointEdge(last, curedge.B);
+                    }
+                    else
+                    {
+                        Input.AddExcludedEndpointEdge(last, curedge.A);
+                    }
+
+                    TPoint curpoint = curedge.B;
+                    while (true)
+                    {
+                        if (curpoint.Equals(startpoint))
+                        {
+                            finishedchain = true;
+                            break;
+                        }
+                        TPoint nextpoint = Input.FaceNext(curpoint);
+                        EndpointEdge<TPoint>? possiblee = Input.PopEndpointEdge(curpoint, nextpoint);
+                        if (possiblee != null)
+                        {
+                            curedge = possiblee.Value;
+                            break;
+                        }
+                        if (addnext)
+                        {
+                            Input.IncludeEdge(curpoint, nextpoint);
+                        }
+                        else
+                        {
+                            Input.ExcludeEdge(curpoint, nextpoint);
+                        }
+                    }
+                }
+            }
+
+            // Add loop parts to face
+            foreach (TPoint startpoint in fowardendpoints)
+            {
+                TPoint curpoint = startpoint;
+                TPoint nextpoint = Input.LoopNext(startpoint).Value;
+                while (true)
+                {
+                    Input.AddLoopEdge(curpoint, nextpoint);
+
+                    TPoint? possiblenextpoint = Input.LoopNext(startpoint);
+                    if (possiblenextpoint != null)
+                    {
+                        curpoint = nextpoint;
+                        nextpoint = possiblenextpoint.Value;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Processes face intersections, gets included and excluded segments that can be inferred from them  and
         /// outputs faces for the specified polyhedron to the output.
         /// </summary>
@@ -442,7 +626,13 @@ namespace Alunite
                 int face = kvp.Key;
                 _FaceIntersection faceint = kvp.Value;
                 var facedata = Input.Lookup(face);
-
+                var nextsegs = new Dictionary<int, int>();
+                var prevsegs = new Dictionary<int, int>();
+                foreach (Segment<int> seg in facedata.Segments)
+                {
+                    nextsegs[seg.A] = seg.B;
+                    prevsegs[seg.B] = seg.A;
+                }
 
             }
         }
