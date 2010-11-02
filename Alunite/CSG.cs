@@ -63,17 +63,8 @@ namespace Alunite
             HashSet<Segment<int>> ainclude = new HashSet<Segment<int>>(); // Segments known to be in the final result (from A)
             HashSet<Segment<int>> bexclude = new HashSet<Segment<int>>();
             HashSet<Segment<int>> binclude = new HashSet<Segment<int>>();
-            _ProcessFaces(ainfo, A, nextinloop, previnloop, aexclude, ainclude, res);
-            
-
-            foreach (PolyhedronFace<Triangle<int>, Point, int> poly in A.FaceData)
-            {
-                res.Add(poly.Segments, poly.Points, poly.Plane);
-            }
-            foreach (PolyhedronFace<Triangle<int>, Point, int> poly in B.FaceData)
-            {
-                res.Add(poly.Segments, poly.Points, poly.Plane);
-            }
+            _ProcessFaces(ainfo, A, nextinloop, aexclude, ainclude, res);
+            _ProcessFaces(binfo, B, previnloop, bexclude, binclude, res);
 
             return res;
         }
@@ -617,7 +608,6 @@ namespace Alunite
             Dictionary<int, _FaceIntersection> FaceIntersections,
             VectorPolyhedron Input,
             Dictionary<int, int> NextInLoop,
-            Dictionary<int, int> PrevInLoop,
             HashSet<Segment<int>> Excluded,
             HashSet<Segment<int>> Included,
             VectorPolyhedron Output)
@@ -780,7 +770,32 @@ namespace Alunite
             /// </summary>
             public PolyhedronFace<Triangle<int>, Point, int> BuildPolygon(Triangle<int> Plane)
             {
-                throw new NotImplementedException();
+                List<Segment<int>> finalsegs = new List<Segment<int>>();
+                Dictionary<int, int> finalpointmap = new Dictionary<int, int>();
+                Tuple<Point, int>[] finalpoints = new Tuple<Point,int>[this.FinalFace.Count];
+
+                int i = 0;
+                foreach (Segment<int> seg in this.FinalFace)
+                {
+                    Segment<int> finalseg = new Segment<int>();
+                    if (!finalpointmap.TryGetValue(seg.A, out finalseg.A))
+                    {
+                        finalseg.A = i;
+                        finalpointmap[seg.A] = i;
+                        finalpoints[i] = Tuple.Create(this.Points[seg.A], seg.A);
+                        i++;
+                    }
+                    if (!finalpointmap.TryGetValue(seg.B, out finalseg.B))
+                    {
+                        finalseg.B = i;
+                        finalpointmap[seg.B] = i;
+                        finalpoints[i] = Tuple.Create(this.Points[seg.B], seg.B);
+                        i++;
+                    }
+                    finalsegs.Add(finalseg);
+                }
+
+                return new PolyhedronFace<Triangle<int>, Point, int>(Plane, finalpoints, finalsegs);
             }
 
             public Dictionary<int, int> NextInLoop;
