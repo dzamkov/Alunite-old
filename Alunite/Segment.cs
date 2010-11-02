@@ -186,6 +186,14 @@ namespace Alunite
         {
             return (Segment.B + Segment.A) * 0.5;
         }
+        
+        /// <summary>
+        /// Gets the point along the segment at the specified relative distance.
+        /// </summary>
+        public static Point Along(Segment<Point> Segment, double Distance)
+        {
+            return Segment.A + (Segment.B - Segment.A) * Distance;
+        }
 
         /// <summary>
         /// Creates an unordered form of the specified segment.

@@ -272,7 +272,7 @@ namespace Alunite
                 }
 
                 // Sort
-                Sort.InPlace<StandardArray<_IntersectionDistance>, _IntersectionDistance>(new StandardArray<_IntersectionDistance>(dists), x => (x.A.Dist > x.B.Dist));
+                Sort.InPlace<_IntersectionDistance>((a, b) => (a.Dist > b.Dist), dists);
                 _Intersection[] temp = new _Intersection[Intersections.Count];
                 Intersections.CopyTo(temp);
 
@@ -581,6 +581,7 @@ namespace Alunite
                         {
                             Input.ExcludeEdge(curpoint, nextpoint);
                         }
+                        curpoint = nextpoint;
                     }
                 }
             }
@@ -594,7 +595,7 @@ namespace Alunite
                 {
                     Input.AddLoopEdge(curpoint, nextpoint);
 
-                    TPoint? possiblenextpoint = Input.LoopNext(startpoint);
+                    TPoint? possiblenextpoint = Input.LoopNext(nextpoint);
                     if (possiblenextpoint != null)
                     {
                         curpoint = nextpoint;
@@ -626,15 +627,169 @@ namespace Alunite
                 int face = kvp.Key;
                 _FaceIntersection faceint = kvp.Value;
                 var facedata = Input.Lookup(face);
-                var nextsegs = new Dictionary<int, int>();
-                var prevsegs = new Dictionary<int, int>();
-                foreach (Segment<int> seg in facedata.Segments)
+                var pfi = new _ProcessFaceInput(faceint, NextInLoop, facedata, Excluded, Included);
+                ProcessFace<_ProcessFaceInput, int>(pfi);
+                Output.Add(pfi.BuildPolygon(facedata.Plane));
+            }
+        }
+
+        /// <summary>
+        /// Default process face input for process faces.
+        /// </summary>
+        private struct _ProcessFaceInput : IProcessFaceInput<int>
+        {
+            public _ProcessFaceInput(
+                _FaceIntersection FaceIntersections,
+                Dictionary<int, int> NextInLoop,
+                PolyhedronFace<Triangle<int>, Point, int> Face,
+                HashSet<Segment<int>> Excluded,
+                HashSet<Segment<int>> Included)
+            {
+                this.NextInLoop = NextInLoop;
+                this.Included = Included;
+                this.Excluded = Excluded;
+
+                // Build next in face, construct points.
+                this.NextInFace = new Dictionary<int, int>();
+                this.Points = new Dictionary<int, Point>();
+                foreach (Segment<int> faceseg in Face.Segments)
                 {
-                    nextsegs[seg.A] = seg.B;
-                    prevsegs[seg.B] = seg.A;
+                    var deref = Face.Points[faceseg.A];
+                    this.NextInFace.Add(deref.B, Face.Points[faceseg.B].B);
+                    this.Points.Add(deref.B, deref.A);
                 }
 
+                // End points
+                this.EndpointEdges = new Dictionary<Segment<int>, EndpointEdge<int>>();
+                var curedges = new Dictionary<Segment<int>, List<Tuple<int, _EdgeIntersection>>>();
+                foreach (var edgeint in FaceIntersections.IntersectingEdges)
+                {
+                    int edgeind = edgeint.Value.Edge;
+                    Segment<int> faceseg = Face.Segments[edgeind];
+                    Segment<int> realseg = new Segment<int>(Face.Points[faceseg.A].B, Face.Points[faceseg.B].B);
+                    Point uv = Segment.Along(
+                        new Segment<Point>(Face.Points[faceseg.A].A, Face.Points[faceseg.B].A), 
+                        edgeint.Value.Reverse ? 1.0 - edgeint.Value.Length : edgeint.Value.Length);
+                    this.Points.Add(edgeint.Key, uv);
+
+                    List<Tuple<int, _EdgeIntersection>> es;
+                    if (!curedges.TryGetValue(realseg, out es))
+                    {
+                        curedges[realseg] = es = new List<Tuple<int, _EdgeIntersection>>();
+                    }
+                    es.Add(Tuple.Create(edgeint.Key, edgeint.Value));
+                }
+                foreach (var edgeints in curedges)
+                {
+                    // Sort and add as endpoints
+                    var intlist = edgeints.Value;
+                    Sort.InPlace<Tuple<int, _EdgeIntersection>>((a, b) => (a.B.Reverse ? 1.0 - a.B.Length : a.B.Length) > (b.B.Reverse ? 1.0 - b.B.Length : b.B.Length), intlist);
+                    List<int> endpoints = new List<int>();
+                    foreach (var endpoint in intlist)
+                    {
+                        endpoints.Add(endpoint.A);
+                    }
+                    this.EndpointEdges.Add(edgeints.Key, new EndpointEdge<int>() { A = edgeints.Key.A, B = edgeints.Key.B, Direction = !intlist[0].B.Reverse, Endpoints = endpoints });
+                }
+
+                // Loop points
+                foreach (var looppoint in FaceIntersections.UV)
+                {
+                    this.Points.Add(looppoint.Key, looppoint.Value);
+                }
+
+                this.FinalFace = new HashSet<Segment<int>>();
             }
+
+            public int? LoopNext(int Point)
+            {
+                int n = NextInLoop[Point];
+                if (Points.ContainsKey(n))
+                {
+                    return n;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            public int FaceNext(int Point)
+            {
+                return this.NextInFace[Point];
+            }
+
+            public EndpointEdge<int>? PopEndpointEdge()
+            {
+                var en = this.EndpointEdges.GetEnumerator();
+                if (en.MoveNext())
+                {
+                    var seg = en.Current;
+                    this.EndpointEdges.Remove(seg.Key);
+                    return seg.Value;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            public EndpointEdge<int>? PopEndpointEdge(int A, int B)
+            {
+                Segment<int> seg = new Segment<int>(A, B);
+                EndpointEdge<int> ee;
+                if (this.EndpointEdges.TryGetValue(seg, out ee))
+                {
+                    this.EndpointEdges.Remove(seg);
+                    return ee;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            public void AddLoopEdge(int A, int B)
+            {
+                FinalFace.Add(new Segment<int>(A, B));
+            }
+
+            public void AddIncludedEndpointEdge(int A, int B)
+            {
+                FinalFace.Add(new Segment<int>(A, B));
+            }
+
+            public void AddExcludedEndpointEdge(int A, int B)
+            {
+              
+            }
+
+            public void ExcludeEdge(int A, int B)
+            {
+                Excluded.Add(new Segment<int>(A, B));
+            }
+
+            public void IncludeEdge(int A, int B)
+            {
+                FinalFace.Add(new Segment<int>(A, B));
+                Included.Add(new Segment<int>(A, B));
+            }
+
+            /// <summary>
+            /// Creates the new polygon for this face.
+            /// </summary>
+            public PolyhedronFace<Triangle<int>, Point, int> BuildPolygon(Triangle<int> Plane)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Dictionary<int, int> NextInLoop;
+            public Dictionary<int, Point> Points;
+            public Dictionary<Segment<int>, EndpointEdge<int>> EndpointEdges;
+            public Dictionary<int, int> NextInFace;
+            public HashSet<Segment<int>> Included;
+            public HashSet<Segment<int>> Excluded;
+            public HashSet<Segment<int>> FinalFace;
         }
     }
 }

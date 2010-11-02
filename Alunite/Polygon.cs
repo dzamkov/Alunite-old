@@ -80,7 +80,7 @@ namespace Alunite
             {
                 List<Vertex> sorted = new List<Vertex>(this._Next.Count);
                 sorted.AddRange(this.Vertices);
-                Sort.InPlace<ListArray<Vertex>, Vertex>(new ListArray<Vertex>(sorted), x => this.Compare(x.A, x.B));
+                Sort.InPlace<Vertex>((a, b) => this.Compare(a, b), sorted);
                 return sorted;
             }
         }

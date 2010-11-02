@@ -163,6 +163,11 @@ namespace Alunite
             return poly;
         }
 
+        public int Add(PolyhedronFace<Triangle<int>, Point, int> Face)
+        {
+            return this.Add(Face.Segments, Face.Points, Face.Plane);
+        }
+
         public void Remove(int Face)
         {
             var poly = this._Faces[Face];

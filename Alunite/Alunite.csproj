@@ -54,7 +54,6 @@
     <Compile Include="Primitive.cs" />
     <Compile Include="Set.cs" />
     <Compile Include="Sort.cs" />
-    <Compile Include="Tetrahedralize.cs" />
     <Compile Include="TetrahedralMesh.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Texture.cs" />
