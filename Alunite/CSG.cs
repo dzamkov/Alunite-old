@@ -41,6 +41,10 @@ namespace Alunite
             var bsegs = B.Segments;
 
             // Intersections
+            var aints = Intersections(Geometry, asegs, B);
+            var bints = Intersections(Geometry, bsegs, A);
+
+            /*// Intersections
             Dictionary<_FacePair, List<_Intersection>> facepairs = new Dictionary<_FacePair, List<_Intersection>>();
             Dictionary<int, _FaceIntersection> ainfo = new Dictionary<int, _FaceIntersection>();
             Dictionary<int, _FaceIntersection> binfo = new Dictionary<int, _FaceIntersection>();
@@ -64,7 +68,138 @@ namespace Alunite
             HashSet<Segment<int>> bexclude = new HashSet<Segment<int>>();
             HashSet<Segment<int>> binclude = new HashSet<Segment<int>>();
             _ProcessFaces(ainfo, A, nextinloop, aexclude, ainclude, res);
-            _ProcessFaces(binfo, B, previnloop, bexclude, binclude, res);
+            _ProcessFaces(binfo, B, previnloop, bexclude, binclude, res);*/
+
+            return res;
+        }
+
+        /// <summary>
+        /// An intersection between a segment and a face.
+        /// </summary>
+        public struct Intersection<TVertex, TPoint>
+        {
+            public Intersection(TVertex Vertex, TPoint Point, bool Direction)
+            {
+                this.Vertex = Vertex;
+                this.Point = Point;
+                this.Direction = Direction;
+            }
+
+            /// <summary>
+            /// The vertex representing the point of intersection.
+            /// </summary>
+            public TVertex Vertex;
+
+            /// <summary>
+            /// The point on the face the hit is at.
+            /// </summary>
+            public TPoint Point;
+
+            /// <summary>
+            /// True if the segment hit the face on its front face, false otherwise.
+            /// </summary>
+            public bool Direction;
+        }
+
+        /// <summary>
+        /// An intersection of a segment onto a face.
+        /// </summary>
+        public struct FaceIntersection<TFace, TVertex, TPoint>
+        {
+            public FaceIntersection(TFace Face, Intersection<TVertex, TPoint> Intersection)
+            {
+                this.Face = Face;
+                this.Intersection = Intersection;
+            }
+
+            public FaceIntersection(TFace Face, TVertex Vertex, TPoint Point, bool Direction)
+            {
+                this.Face = Face;
+                this.Intersection = new Intersection<TVertex, TPoint>(Vertex, Point, Direction);
+            }
+
+            /// <summary>
+            /// The face that was hit.
+            /// </summary>
+            public TFace Face;
+
+            /// <summary>
+            /// The intersection of the face and segment.
+            /// </summary>
+            public Intersection<TVertex, TPoint> Intersection;
+        }
+
+        /// <summary>
+        /// An intersection in a vector geometry.
+        /// </summary>
+        public struct VectorIntersection
+        {
+            /// <summary>
+            /// Length along the segment the intersection is at.
+            /// </summary>
+            public double Length;
+
+            /// <summary>
+            /// The intersection of the segment onto the face.
+            /// </summary>
+            public FaceIntersection<int, int, Point> Intersection;
+        }
+
+        /// <summary>
+        /// Gets the intersections between a collection of segments and a polyhedron of faces. This function
+        /// may add new vertices to the geometry to indicate intersections.
+        /// </summary>
+        public static Dictionary<Segment<int>, List<VectorIntersection>> Intersections(
+            VectorGeometry Geometry,
+            IEnumerable<UnorderedSegment<int>> Segments,
+            VectorPolyhedron Faces)
+        {
+            var res = new Dictionary<Segment<int>, List<VectorIntersection>>();
+
+            // Collect intersections brute forcily
+            foreach (int face in Faces.Faces)
+            {
+                PolyhedronFace<Triangle<int>, Point, int> facedata = Faces.Lookup(face);
+                IEnumerable<Segment<Point>> poly = _PolygonConvert(facedata);
+                Triangle<Vector> plane = Geometry.Dereference(facedata.Plane);
+                foreach (var seg in Segments)
+                {
+                    Segment<int> iseg = seg.Source;
+                    Segment<Vector> hitseg = Geometry.Dereference(iseg);
+                    double len;
+                    Point uv;
+                    Vector pos;
+                    bool dir = Triangle.Intersect(plane, hitseg, out len, out pos, out uv);
+                    if (!dir)
+                    {
+                        len = 1.0 - len;
+                    }
+                    if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly).Relation == AreaRelation.Inside)
+                    {
+                        int nvert = Geometry.AddVertex(pos);
+
+                        List<VectorIntersection> vlist;
+                        if (!res.TryGetValue(iseg, out vlist))
+                        {
+                            res[iseg] = vlist = new List<VectorIntersection>();
+                        }
+                        vlist.Add(new VectorIntersection()
+                        {
+                            Length = len,
+                            Intersection = new FaceIntersection<int,int,Point>(face, nvert, uv, dir)
+                        });
+                    }
+                }
+            }
+
+            // Sort intersections within segments
+            foreach (var vlist in res.Values)
+            {
+                if (vlist.Count > 1)
+                {
+                    Sort.InPlace<VectorIntersection>((a, b) => a.Length > b.Length, vlist);
+                }
+            }
 
             return res;
         }
