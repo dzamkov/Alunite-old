@@ -44,6 +44,12 @@ namespace Alunite
             var aints = Intersections(Geometry, asegs, B);
             var bints = Intersections(Geometry, bsegs, A);
 
+            // Loops
+            var nextinloop = new Dictionary<int, int>();
+            var previnloop = new Dictionary<int, int>();
+            MakeLoops<_VectorMakeLoopsInput, _Intersection, int>(new _VectorMakeLoopsInput(
+                Geometry, A, B, aints, bints, nextinloop, previnloop));
+
             /*// Intersections
             Dictionary<_FacePair, List<_Intersection>> facepairs = new Dictionary<_FacePair, List<_Intersection>>();
             Dictionary<int, _FaceIntersection> ainfo = new Dictionary<int, _FaceIntersection>();
@@ -205,7 +211,249 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Represents a face segment intersection when both intersecting faces of the intersection are known.
+        /// Input to the make loops function.
+        /// </summary>
+        /// <typeparam name="TIntersection">An intersection between a segment and a face that produces a vertex.</typeparam>
+        /// <typeparam name="TFace">A face in one of the polyhedra.</typeparam>
+        public interface IMakeLoopsInput<TIntersection, TFace>
+            where TFace : IEquatable<TFace>
+        {
+            /// <summary>
+            /// Gets all the intersections produced by segments of A.
+            /// </summary>
+            IEnumerable<TIntersection> AIntersections { get; }
+
+            /// <summary>
+            /// Gets all the intersections produced by segments of B.
+            /// </summary>
+            IEnumerable<TIntersection> BIntersections { get; }
+
+            /// <summary>
+            /// Gets the face that is involved in one of the intersections.
+            /// </summary>
+            TFace HitFace(TIntersection Intersection);
+
+            /// <summary>
+            /// Gets the face that produces the segment that is involved in the specified intersection such that the segment
+            /// hits the target face on its front.
+            /// </summary>
+            TFace FrontFace(TIntersection Intersection);
+
+            /// <summary>
+            /// Gets the face that produces the segment that is involved in the specified intersection such that the
+            /// segment hits the target face on its back.
+            /// </summary>
+            TFace BackFace(TIntersection Intersection);
+
+            /// <summary>
+            /// Gets if segment involved in the specified intersection is from polyhedron A.
+            /// </summary>
+            bool IsSegmentFromA(TIntersection Intersection);
+
+            /// <summary>
+            /// Sorts the intersections and associated data (known to have colinear intersection points) in the list so that they
+            /// appear in order along the line they are all colinear to (in either direction).
+            /// </summary>
+            void Sort<TDatum>(List<Tuple<TIntersection, TDatum>> Intersections);
+
+            /// <summary>
+            /// Indicates that segment containing the vertices for the specified intersections is in the loop. A creates 
+            /// the vertex before B in the loop and B creates the vertex after A in the loop.
+            /// </summary>
+            void MarkLoop(TIntersection A, TIntersection B);
+        }
+
+        /// <summary>
+        /// Marks the "loops" formed by the intersection of two polyhedra. Loops are directed, closed, circuits that indicate
+        /// a common area of the two polyhedra. Loops are directed as to be consistent with the faces of polyhedra A.
+        /// </summary>
+        public static void MakeLoops<TInput, TIntersection, TFace>(TInput Input)
+            where TInput : IMakeLoopsInput<TIntersection, TFace>
+            where TFace : IEquatable<TFace>
+        {
+            var intersections = new Dictionary<_FacePair<TFace>, List<Tuple<TIntersection, bool>>>();
+            
+            // Get face pair intersections.
+            foreach (TIntersection inta in Input.AIntersections)
+            {
+                _Append(intersections, new _FacePair<TFace>(Input.FrontFace(inta), Input.HitFace(inta)), Tuple.Create(inta, true));
+                _Append(intersections, new _FacePair<TFace>(Input.BackFace(inta), Input.HitFace(inta)), Tuple.Create(inta, false));
+            }
+            foreach (TIntersection intb in Input.BIntersections)
+            {
+                _Append(intersections, new _FacePair<TFace>(Input.HitFace(intb), Input.FrontFace(intb)), Tuple.Create(intb, true));
+                _Append(intersections, new _FacePair<TFace>(Input.HitFace(intb), Input.BackFace(intb)), Tuple.Create(intb, false));
+            }
+
+            // Sort n stuff
+            foreach (var li in intersections.Values)
+            {
+                Input.Sort(li);
+                
+
+                // Check if the order of intersections is consistent with polyhedron A.
+                var firsti = li[0];
+                var lasti = li[li.Count - 1];
+                bool firsta = Input.IsSegmentFromA(firsti.A);
+                bool lasta = Input.IsSegmentFromA(lasti.A);
+                bool firstd = firsti.B;
+                bool lastd = lasti.B;
+                bool consistent;
+                if (firsta && lasta)
+                {
+                    consistent = !(firstd ^ firsta);
+                }
+                else
+                {
+                    if (firsta)
+                    {
+                        consistent = firstd;
+                    }
+                    else
+                    {
+                        consistent = !lastd;
+                    }
+                }
+
+                // Output segments in list
+                // Note: either all lists have an even number of elements, or the input is bad
+                for (int t = 0; t < li.Count / 2; t++)
+                {
+                    TIntersection a = li[t + 0].A;
+                    TIntersection b = li[t + 1].A;
+                    if (consistent)
+                    {
+                        Input.MarkLoop(a, b);
+                    }
+                    else
+                    {
+                        Input.MarkLoop(b, a);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Make loops input for vector polyhedron.
+        /// </summary>
+        private struct _VectorMakeLoopsInput : IMakeLoopsInput<_Intersection, int>
+        {
+            public _VectorMakeLoopsInput(
+                VectorGeometry Geometry,
+                VectorPolyhedron A,
+                VectorPolyhedron B,
+                Dictionary<Segment<int>, List<VectorIntersection>> AInts,
+                Dictionary<Segment<int>, List<VectorIntersection>> BInts,
+                Dictionary<int, int> NextInLoop,
+                Dictionary<int, int> PrevInLoop)
+            {
+                this.NextInLoop = NextInLoop;
+                this.PrevInLoop = PrevInLoop;
+                this.Geometry = Geometry;
+
+                List<_Intersection> aints = new List<_Intersection>();
+                List<_Intersection> bints = new List<_Intersection>();
+                foreach (var aint in AInts)
+                {
+                    int front = A.SegmentFace(aint.Key).Value.Face;
+                    int back = A.SegmentFace(aint.Key.Flip).Value.Face;
+                    foreach (var i in aint.Value)
+                    {
+                        bool dir = i.Intersection.Intersection.Direction;
+                        aints.Add(new _Intersection()
+                        {
+                            ASegment = true,
+                            HitFace = i.Intersection.Face,
+                            BackFace = dir ? back : front,
+                            FrontFace = dir ? front : back,
+                            NewVertex = i.Intersection.Intersection.Vertex,
+                            Length = i.Length
+                        });
+                    }
+                }
+                foreach (var bint in BInts)
+                {
+                    int front = B.SegmentFace(bint.Key).Value.Face;
+                    int back = B.SegmentFace(bint.Key.Flip).Value.Face;
+                    foreach (var i in bint.Value)
+                    {
+                        bool dir = i.Intersection.Intersection.Direction;
+                        bints.Add(new _Intersection()
+                        {
+                            ASegment = false,
+                            HitFace = i.Intersection.Face,
+                            BackFace = dir ? back : front,
+                            FrontFace = dir ? front : back,
+                            NewVertex = i.Intersection.Intersection.Vertex,
+                            Length = i.Length
+                        });
+                    }
+                }
+
+                this.AIntersections = aints;
+                this.BIntersections = bints;
+            }
+
+            IEnumerable<_Intersection> IMakeLoopsInput<_Intersection, int>.AIntersections
+            {
+                get 
+                {
+                    return this.AIntersections;
+                }
+            }
+
+            IEnumerable<_Intersection> IMakeLoopsInput<_Intersection, int>.BIntersections
+            {
+                get 
+                {
+                    return this.BIntersections;
+                }
+            }
+
+            public int HitFace(_Intersection Intersection)
+            {
+                return Intersection.HitFace;
+            }
+
+            public int FrontFace(_Intersection Intersection)
+            {
+                return Intersection.FrontFace;
+            }
+
+            public int BackFace(_Intersection Intersection)
+            {
+                return Intersection.BackFace;
+            }
+
+            public bool IsSegmentFromA(_Intersection Intersection)
+            {
+                return Intersection.ASegment;
+            }
+
+            public void Sort<TDatum>(List<Tuple<_Intersection, TDatum>> Intersections)
+            {
+                if (Intersections.Count > 2)
+                {
+                    VectorGeometry geo = this.Geometry;
+                    Alunite.Sort.InPlace((a, b) => Vector.Compare(geo.Lookup(a.A.NewVertex), geo.Lookup(b.A.NewVertex)), Intersections);
+                }
+            }
+
+            public void MarkLoop(_Intersection A, _Intersection B)
+            {
+                this.NextInLoop.Add(A.NewVertex, B.NewVertex);
+                this.PrevInLoop.Add(B.NewVertex, A.NewVertex);
+            }
+
+            public VectorGeometry Geometry;
+            public IEnumerable<_Intersection> AIntersections;
+            public IEnumerable<_Intersection> BIntersections;
+            public Dictionary<int, int> NextInLoop;
+            public Dictionary<int, int> PrevInLoop;
+        }
+
+        /// <summary>
+        /// An intersection for _VectorMakeLoopsInput.
         /// </summary>
         private struct _Intersection
         {
@@ -215,20 +463,24 @@ namespace Alunite
             public int NewVertex;
 
             /// <summary>
-            /// The edge that acted as the segment in the intersection.
+            /// Gets the face that was hit in the intersection.
             /// </summary>
-            public int Edge;
+            public int HitFace;
+
+            /// <summary>
+            /// Gets the face that produces the segment that hits the face on its front.
+            /// </summary>
+            public int FrontFace;
+
+            /// <summary>
+            /// Gets the face that produces the segment that hits the face on its back.
+            /// </summary>
+            public int BackFace;
 
             /// <summary>
             /// Length along the edge the hit is at.
             /// </summary>
             public double Length;
-
-            /// <summary>
-            /// True if the edge hit the face in the front-facing direction, false if the edge hit
-            /// the face in the back-facing direction.
-            /// </summary>
-            public bool Direction;
 
             /// <summary>
             /// True if A owns the segment that's part of the intersection.
@@ -239,17 +491,18 @@ namespace Alunite
         /// <summary>
         /// A pair of faces that intersect.
         /// </summary>
-        private struct _FacePair : IEquatable<_FacePair>
+        private struct _FacePair<TFace> : IEquatable<_FacePair<TFace>>
+            where TFace : IEquatable<TFace>
         {
-            public _FacePair(int AFace, int BFace)
+            public _FacePair(TFace AFace, TFace BFace)
             {
                 this.AFace = AFace;
                 this.BFace = BFace;
             }
 
-            public bool Equals(_FacePair other)
+            public bool Equals(_FacePair<TFace> other)
             {
-                return this.AFace == other.AFace && this.BFace == other.BFace;
+                return this.AFace.Equals(other.AFace) && this.BFace.Equals(other.BFace);
             }
 
             public override int GetHashCode()
@@ -257,74 +510,9 @@ namespace Alunite
                 return this.AFace.GetHashCode() ^ this.BFace.GetHashCode();
             }
 
-            public int AFace;
+            public TFace AFace;
 
-            public int BFace;
-        }
-
-        /// <summary>
-        /// Gets the intersections of the specified segments onto the target polyhedron and outputs them to the
-        /// intersection dictionary and face intersection info.
-        /// </summary>
-        /// <remarks>If two intersecting faces are convex, they will have exactly two intersections. No face pair will have
-        /// less than two intersections.</remarks>
-        private static void _Intersect(
-            VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B,
-            bool SegmentsAreA,
-            IEnumerable<UnorderedSegment<int>> Segments,
-            Dictionary<_FacePair, List<_Intersection>> Intersections,
-            Dictionary<int, _FaceIntersection> SegmentInfo,
-            Dictionary<int, _FaceIntersection> FaceInfo)
-        {
-            var res = new Dictionary<_FacePair, List<_Intersection>>();
-            var segsource = SegmentsAreA ? A : B;
-            var facesource = SegmentsAreA ? B : A;
-            foreach (int face in facesource.Faces)
-            {
-                PolyhedronFace<Triangle<int>, Point, int> facedata = facesource.Lookup(face);
-                IEnumerable<Segment<Point>> poly = _PolygonConvert(facedata);
-                Triangle<Vector> plane = Geometry.Dereference(facedata.Plane);
-                foreach (var seg in Segments)
-                {
-                    Segment<int> iseg = seg.Source;
-                    Segment<Vector> hitseg = Geometry.Dereference(iseg);
-                    double len;
-                    Point uv;
-                    Vector pos;
-                    if (!Triangle.Intersect(plane, hitseg, out len, out pos, out uv))
-                    {
-                        len = 1.0 - len;
-                        iseg = iseg.Flip;
-                    }
-                    if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly).Relation == AreaRelation.Inside)
-                    {
-                        int nvert = Geometry.AddVertex(pos);
-                        FaceEdge<int, int> fer = segsource.SegmentFace(iseg).Value;
-                        FaceEdge<int, int> few = segsource.SegmentFace(iseg.Flip).Value;
-                        _FacePair ferpair = SegmentsAreA ? new _FacePair(fer.Face, face) : new _FacePair(face, fer.Face);
-                        _FacePair fewpair = SegmentsAreA ? new _FacePair(few.Face, face) : new _FacePair(face, few.Face);
-                        _Append(Intersections, ferpair, new _Intersection()
-                        {
-                            Direction = true,
-                            Length = len,
-                            ASegment = SegmentsAreA,
-                            Edge = fer.Edge,
-                            NewVertex = nvert
-                        });
-                        _Append(Intersections, fewpair, new _Intersection()
-                        {
-                            Direction = false,
-                            Length = 1.0 - len,
-                            ASegment = SegmentsAreA,
-                            Edge = few.Edge,
-                            NewVertex = nvert
-                        });
-                        _AddFaceIntersectionPoint(FaceInfo, face, nvert, uv);
-                        _AddFaceIntersectionEdge(SegmentInfo, fer.Face, nvert, fer.Edge, len, false);
-                        _AddFaceIntersectionEdge(SegmentInfo, few.Face, nvert, few.Edge, 1.0 - len, true);
-                    }
-                }
-            }
+            public TFace BFace;
         }
 
         /// <summary>
@@ -349,108 +537,6 @@ namespace Alunite
             {
                 yield return new Segment<Point>(Face.Points[seg.A].A, Face.Points[seg.B].A);
             }
-        }
-
-        /// <summary>
-        /// Given the first and last (in any order) intersections between two faces, returns true if the loops
-        /// of the intersection go in a consistent direction with the segment formed from the first and last intersection.
-        /// </summary>
-        /// <remarks>Reversing the order of all face pair intersections will invert the result of this function.</remarks>
-        private static bool _LoopDirection(_Intersection First, _Intersection Last)
-        {
-            if (First.ASegment == Last.ASegment)
-            {
-                return !(First.Direction ^ First.ASegment);
-            }
-            else
-            {
-                if (First.ASegment)
-                {
-                    return First.Direction;
-                }
-                else
-                {
-                    return !(Last.Direction);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sorts the provided list of intersections (all lying on the intersection of two planes) to be consistent with loop
-        /// direction. The intersections are sorted to ascend left when looking into both front planes on their front face.
-        /// </summary>
-        private static void _SortPlanarIntersections(VectorGeometry Geometry, List<_Intersection> Intersections)
-        {
-            _Intersection curfirst = Intersections[0];
-            _Intersection cursecond = Intersections[1];
-            if (Intersections.Count > 2)
-            {
-                // Compute distances
-                Vector va = Geometry.Lookup(curfirst.NewVertex);
-                Vector vb = Geometry.Lookup(cursecond.NewVertex);
-                Vector d = vb - va;
-                var dists = new _IntersectionDistance[Intersections.Count];
-                dists[0] = new _IntersectionDistance(0, 0.0);
-                dists[1] = new _IntersectionDistance(1, 1.0);
-                for (int i = 2; i < Intersections.Count; i++)
-                {
-                    dists[i] = new _IntersectionDistance(i, Vector.Dot(Geometry.Lookup(Intersections[i].NewVertex) - va, d));
-                }
-
-                // Sort
-                Sort.InPlace<_IntersectionDistance>((a, b) => (a.Dist > b.Dist), dists);
-                _Intersection[] temp = new _Intersection[Intersections.Count];
-                Intersections.CopyTo(temp);
-
-                // Determine direction
-                bool reverse = !_LoopDirection(temp[dists[0].Ref], temp[dists[dists.Length - 1].Ref]);
-                
-                // Put back in list in the correct order.
-                if (reverse)
-                {
-                    int declen = dists.Length - 1;
-                    for (int i = 0; i < dists.Length; i++)
-                    {
-                        Intersections[i] = temp[dists[declen - i].Ref];
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < dists.Length; i++)
-                    {
-                        Intersections[i] = temp[dists[i].Ref];
-                    }
-                }
-            }
-            else
-            {
-                // Swap if needed
-                if (!_LoopDirection(curfirst, cursecond))
-                {
-                    Intersections[0] = cursecond;
-                    Intersections[1] = curfirst;
-                }
-            }
-        }
-
-        /// <summary>
-        /// For use by sort.
-        /// </summary>
-        private struct _IntersectionDistance : IEquatable<_IntersectionDistance>
-        {
-            public _IntersectionDistance(int Ref, double Dist)
-            {
-                this.Ref = Ref;
-                this.Dist = Dist;
-            }
-
-            public bool Equals(_IntersectionDistance other)
-            {
-                return this.Ref == other.Ref;
-            }
-
-            public int Ref;
-            public double Dist;
         }
 
         /// <summary>
@@ -521,33 +607,6 @@ namespace Alunite
                 Length = Length,
                 Reverse = Reverse
             });
-        }
-
-        /// <summary>
-        /// Calculates the "loops" as described by the csg algorithim, given the sorted intersections of
-        /// the face pairs.
-        /// </summary>
-        private static void _CalculateLoops(
-            Dictionary<_FacePair, List<_Intersection>> FacePairs,
-            Dictionary<int, int> Next,
-            Dictionary<int, int> Prev)
-        {
-            foreach (var faceints in FacePairs.Values)
-            {
-                bool on = false;
-                int prev = 0;
-                foreach (var i in faceints)
-                {
-                    int ne = i.NewVertex;
-                    if (on)
-                    {
-                        Prev.Add(ne, prev);
-                        Next.Add(prev, ne);
-                    }
-                    prev = ne;
-                    on = !on;
-                }
-            }
         }
 
         /// <summary>
