@@ -44,37 +44,23 @@ namespace Alunite
             var aints = Intersections(Geometry, asegs, B);
             var bints = Intersections(Geometry, bsegs, A);
 
+            // Process
+            List<_Intersection> arawints = new List<_Intersection>();
+            List<_Intersection> brawints = new List<_Intersection>();
+            Dictionary<int, _FaceIntersection> afaceinfo = new Dictionary<int,_FaceIntersection>();
+            Dictionary<int, _FaceIntersection> bfaceinfo = new Dictionary<int,_FaceIntersection>();
+            _ProcessSegmentIntersections(A, B, aints, true, arawints, afaceinfo, bfaceinfo);
+            _ProcessSegmentIntersections(B, A, bints, false, brawints, bfaceinfo, afaceinfo);
+
             // Loops
             var nextinloop = new Dictionary<int, int>();
             var previnloop = new Dictionary<int, int>();
             MakeLoops<_VectorMakeLoopsInput, _Intersection, int>(new _VectorMakeLoopsInput(
-                Geometry, A, B, aints, bints, nextinloop, previnloop));
+                Geometry, A, B, arawints, brawints, nextinloop, previnloop));
 
-            /*// Intersections
-            Dictionary<_FacePair, List<_Intersection>> facepairs = new Dictionary<_FacePair, List<_Intersection>>();
-            Dictionary<int, _FaceIntersection> ainfo = new Dictionary<int, _FaceIntersection>();
-            Dictionary<int, _FaceIntersection> binfo = new Dictionary<int, _FaceIntersection>();
-            _Intersect(Geometry, A, B, true, asegs, facepairs, ainfo, binfo);
-            _Intersect(Geometry, A, B, false, bsegs, facepairs, binfo, ainfo);
-            
-
-            // Loops
-            foreach (List<_Intersection> ilist in facepairs.Values)
-            {
-                _SortPlanarIntersections(Geometry, ilist);
-            }
-
-            Dictionary<int, int> nextinloop = new Dictionary<int, int>();
-            Dictionary<int, int> previnloop = new Dictionary<int, int>();
-            _CalculateLoops(facepairs, nextinloop, previnloop);
-
-            // Process intersection data
-            HashSet<Segment<int>> aexclude = new HashSet<Segment<int>>(); // Segments known not to be in the final result (from A)
-            HashSet<Segment<int>> ainclude = new HashSet<Segment<int>>(); // Segments known to be in the final result (from A)
-            HashSet<Segment<int>> bexclude = new HashSet<Segment<int>>();
-            HashSet<Segment<int>> binclude = new HashSet<Segment<int>>();
-            _ProcessFaces(ainfo, A, nextinloop, aexclude, ainclude, res);
-            _ProcessFaces(binfo, B, previnloop, bexclude, binclude, res);*/
+            // Boundary faces
+            _ProcessFaces(nextinloop, afaceinfo, A, res);
+            _ProcessFaces(previnloop, bfaceinfo, B, res);
 
             return res;
         }
@@ -342,56 +328,16 @@ namespace Alunite
                 VectorGeometry Geometry,
                 VectorPolyhedron A,
                 VectorPolyhedron B,
-                Dictionary<Segment<int>, List<VectorIntersection>> AInts,
-                Dictionary<Segment<int>, List<VectorIntersection>> BInts,
+                IEnumerable<_Intersection> AInts,
+                IEnumerable<_Intersection> BInts,
                 Dictionary<int, int> NextInLoop,
                 Dictionary<int, int> PrevInLoop)
             {
                 this.NextInLoop = NextInLoop;
                 this.PrevInLoop = PrevInLoop;
                 this.Geometry = Geometry;
-
-                List<_Intersection> aints = new List<_Intersection>();
-                List<_Intersection> bints = new List<_Intersection>();
-                foreach (var aint in AInts)
-                {
-                    int front = A.SegmentFace(aint.Key).Value.Face;
-                    int back = A.SegmentFace(aint.Key.Flip).Value.Face;
-                    foreach (var i in aint.Value)
-                    {
-                        bool dir = i.Intersection.Intersection.Direction;
-                        aints.Add(new _Intersection()
-                        {
-                            ASegment = true,
-                            HitFace = i.Intersection.Face,
-                            BackFace = dir ? back : front,
-                            FrontFace = dir ? front : back,
-                            NewVertex = i.Intersection.Intersection.Vertex,
-                            Length = i.Length
-                        });
-                    }
-                }
-                foreach (var bint in BInts)
-                {
-                    int front = B.SegmentFace(bint.Key).Value.Face;
-                    int back = B.SegmentFace(bint.Key.Flip).Value.Face;
-                    foreach (var i in bint.Value)
-                    {
-                        bool dir = i.Intersection.Intersection.Direction;
-                        bints.Add(new _Intersection()
-                        {
-                            ASegment = false,
-                            HitFace = i.Intersection.Face,
-                            BackFace = dir ? back : front,
-                            FrontFace = dir ? front : back,
-                            NewVertex = i.Intersection.Intersection.Vertex,
-                            Length = i.Length
-                        });
-                    }
-                }
-
-                this.AIntersections = aints;
-                this.BIntersections = bints;
+                this.AIntersections = AInts;
+                this.BIntersections = BInts;
             }
 
             IEnumerable<_Intersection> IMakeLoopsInput<_Intersection, int>.AIntersections
@@ -540,6 +486,76 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Processes the set of intersections between polyhedra.
+        /// </summary>
+        private static void _ProcessSegmentIntersections(
+            VectorPolyhedron SegmentPolyhedron,
+            VectorPolyhedron FacePolyhedron,
+            Dictionary<Segment<int>, List<VectorIntersection>> SegmentIntersections,
+            bool ASegment,
+            List<_Intersection> Intersections,
+            Dictionary<int, _FaceIntersection> SegmentPolyhedronIntersections,
+            Dictionary<int, _FaceIntersection> FacePolyhedronIntersections)
+        {
+            foreach (var segint in SegmentIntersections)
+            {
+                List<VectorIntersection> vis = segint.Value;
+
+                // Add segment to face intersection data.
+                FaceEdge<int, int> frontedge = SegmentPolyhedron.SegmentFace(segint.Key).Value;
+                FaceEdge<int, int> backedge = SegmentPolyhedron.SegmentFace(segint.Key.Flip).Value;
+                _FaceIntersection fif = _FaceIntersection.Get(frontedge.Face, SegmentPolyhedronIntersections);
+                _FaceIntersection fib = _FaceIntersection.Get(backedge.Face, SegmentPolyhedronIntersections);
+
+                _EdgeIntersection[] eif = new _EdgeIntersection[vis.Count];
+                for (int t = 0; t < eif.Length; t++)
+                {
+                    var vi = vis[t];
+                    Intersection<int, Point> ii = vi.Intersection.Intersection;
+                    eif[t] = new _EdgeIntersection()
+                    {
+                        Length = vi.Length,
+                        NewVertex = ii.Vertex,
+                        Direction = ii.Direction
+                    };
+                }
+                fif.IntersectingEdges.Add(frontedge.Edge, eif);
+
+                _EdgeIntersection[] bif = new _EdgeIntersection[vis.Count];
+                for (int t = 0; t < bif.Length; t++)
+                {
+                    var vi = vis[bif.Length - t - 1];
+                    Intersection<int, Point> ii = vi.Intersection.Intersection;
+                    bif[t] = new _EdgeIntersection()
+                    {
+                        Length = vi.Length,
+                        NewVertex = ii.Vertex,
+                        Direction = !ii.Direction
+                    };
+                }
+                fib.IntersectingEdges.Add(backedge.Edge, bif);
+
+
+                // Go through individual intersections
+                foreach (VectorIntersection vi in vis)
+                {
+                    bool dir = vi.Intersection.Intersection.Direction;
+                    int hitface = vi.Intersection.Face;
+                    _FaceIntersection.Get(hitface, FacePolyhedronIntersections).UV.Add(vi.Intersection.Intersection.Vertex, vi.Intersection.Intersection.Point);
+                    Intersections.Add(new _Intersection()
+                    {
+                        ASegment = ASegment,
+                        FrontFace = dir ? frontedge.Face : backedge.Face,
+                        BackFace = dir ? backedge.Face : frontedge.Face,
+                        HitFace = hitface,
+                        Length = vi.Length,
+                        NewVertex = vi.Intersection.Intersection.Vertex
+                    });
+                }
+            }
+        }
+
+        /// <summary>
         /// Information about a single intersecting face during a CSG operation.
         /// </summary>
         private struct _FaceIntersection
@@ -547,12 +563,29 @@ namespace Alunite
             /// <summary>
             /// Gets information about the new vertices created on the edges.
             /// </summary>
-            public Dictionary<int, _EdgeIntersection> IntersectingEdges;
+            public Dictionary<int, _EdgeIntersection[]> IntersectingEdges;
 
             /// <summary>
             /// Gets the UV coordinates of new vertices created on the surface of the Face.
             /// </summary>
             public Dictionary<int, Point> UV;
+
+            /// <summary>
+            /// Gets the face intersection information from a face in a dictionary, or creates an entry if none exists.
+            /// </summary>
+            public static _FaceIntersection Get(int Face, Dictionary<int, _FaceIntersection> Dictionary)
+            {
+                _FaceIntersection f;
+                if (!Dictionary.TryGetValue(Face, out f))
+                {
+                    Dictionary[Face] = f = new _FaceIntersection()
+                    {
+                        IntersectingEdges = new Dictionary<int, _EdgeIntersection[]>(),
+                        UV = new Dictionary<int, Point>()
+                    };
+                }
+                return f;
+            }
         }
 
         /// <summary>
@@ -561,79 +594,35 @@ namespace Alunite
         private struct _EdgeIntersection
         {
             /// <summary>
-            /// The edge that was involved in the intersection.
+            /// The new vertex produced at the intersection point.
             /// </summary>
-            public int Edge;
+            public int NewVertex;
 
             /// <summary>
-            /// The length along the edge the intersection is at.
+            /// Length along the edge the intersection is at.
             /// </summary>
             public double Length;
 
             /// <summary>
-            /// Did the intersection go in the reverse direction of the edge?
+            /// Did the intersection go in the same direction of as the edge?
             /// </summary>
-            public bool Reverse;
-        }
-
-        private static void _AddFaceIntersectionPoint(Dictionary<int, _FaceIntersection> Intersections, int Face, int Vertex, Point UV)
-        {
-            _FaceIntersection fi;
-            if (!Intersections.TryGetValue(Face, out fi))
-            {
-                Intersections[Face] = fi = new _FaceIntersection()
-                {
-                    IntersectingEdges = new Dictionary<int, _EdgeIntersection>(),
-                    UV = new Dictionary<int, Point>()
-                };
-            }
-            fi.UV.Add(Vertex, UV);
-        }
-
-        private static void _AddFaceIntersectionEdge(Dictionary<int, _FaceIntersection> Intersections, int Face, int Vertex, int Edge, double Length, bool Reverse)
-        {
-            _FaceIntersection fi;
-            if (!Intersections.TryGetValue(Face, out fi))
-            {
-                Intersections[Face] = fi = new _FaceIntersection()
-                {
-                    IntersectingEdges = new Dictionary<int, _EdgeIntersection>(),
-                    UV = new Dictionary<int, Point>()
-                };
-            }
-            fi.IntersectingEdges.Add(Vertex, new _EdgeIntersection()
-            {
-                Edge = Edge,
-                Length = Length,
-                Reverse = Reverse
-            });
+            public bool Direction;
         }
 
         /// <summary>
-        /// Represents an edge that has endpoints in a face-loop intersection.
+        /// An endpoint (loop-boundary) intersection on the edge of a face.
         /// </summary>
         /// <typeparam name="TPoint">A point on the face.</typeparam>
-        public struct EndpointEdge<TPoint>
+        public struct EdgeEndpoint<TPoint>
         {
             /// <summary>
-            /// Point A of the edge.
+            /// Gets the point the intersection is at.
             /// </summary>
-            public TPoint A;
+            public TPoint Point;
 
             /// <summary>
-            /// Point B of the edge.
-            /// </summary>
-            public TPoint B;
-
-            /// <summary>
-            /// An ordered collection (from A to B) of the endpoints contained on
-            /// this edge.
-            /// </summary>
-            public IEnumerable<TPoint> Endpoints;
-
-            /// <summary>
-            /// True if the first endpoint was created by edge A-B intersecting the opposing polygon
-            /// on its front face.
+            /// True if the point was created from the edge intersecting an opposing face on
+            /// its front side. False to indicate the back side.
             /// </summary>
             public bool Direction;
         }
@@ -642,56 +631,69 @@ namespace Alunite
         /// Input operations and data to ProcessFace
         /// </summary>
         /// <typeparam name="TPoint">A point on the face.</typeparam>
-        public interface IProcessFaceInput<TPoint>
-            where TPoint : struct, IEquatable<TPoint>
+        /// <typeparam name="TEdge">An edge on the original face.</typeparam>
+        public interface IProcessFaceInput<TPoint, TEdge>
+            where TPoint : IEquatable<TPoint>
+            where TEdge : IEquatable<TEdge>
         {
             /// <summary>
             /// Gets the point after the one specified, in the "loop". If the loop ends in that
             /// direction, null is returned.
             /// </summary>
-            TPoint? LoopNext(TPoint Point);
+            bool LoopNext(TPoint Point, out TPoint Next);
 
             /// <summary>
-            /// Gets the point after the one specified in the face such that
-            /// any point and its next form an edge on the original polygon.
+            /// Gets the edge after the specified edge on the face. If (X, Y) is the given edge,
+            /// an edge (Y, Z) on the original face should be returned.
             /// </summary>
-            TPoint FaceNext(TPoint Point);
+            TEdge EdgeNext(TEdge Edge);
 
             /// <summary>
-            /// Gets and removes an endpoint edge, if one exists.
+            /// Gets the segment for the specified edge.
             /// </summary>
-            EndpointEdge<TPoint>? PopEndpointEdge();
+            Segment<TPoint> EdgeSegment(TEdge Edge);
 
             /// <summary>
-            /// Gets if the specified edge contains endpoints, and if so, removes and returns it.
+            /// Gets the points on the intersecting loop that are on the face, including endpoints.
             /// </summary>
-            EndpointEdge<TPoint>? PopEndpointEdge(TPoint A, TPoint B);
+            IEnumerable<TPoint> LoopPoints { get; }
+
+            /// <summary>
+            /// Removes and returns an edge that contains endpoints (along with the endpoints, in order, on it), if any remain.
+            /// </summary>
+            bool PopEndpointEdge(out TEdge Edge, out IEnumerable<EdgeEndpoint<TPoint>> Points);
+
+            /// <summary>
+            /// If an edge contains endpoints, returns true, removes it, and outputs the endpoints (in order)
+            /// along it.
+            /// </summary>
+            bool RemoveEndpointEdge(TEdge Edge, out IEnumerable<EdgeEndpoint<TPoint>> Points);
 
             /// <summary>
             /// Adds an edge (present on the loop) to the final face.
             /// </summary>
-            void AddLoopEdge(TPoint A, TPoint B);
+            void AddLoopEdge(Segment<TPoint> Segment);
 
             /// <summary>
             /// Adds an edge (to be included in the final face) that was part of an endpoint edge.
             /// </summary>
-            void AddIncludedEndpointEdge(TPoint A, TPoint B);
+            void AddIncludedEndpointEdge(TEdge EndpointEdge, Segment<TPoint> Segment);
 
             /// <summary>
             /// Signals that an edge that was part of an endpoint edge is excluded from the final face.
             /// </summary>
-            void AddExcludedEndpointEdge(TPoint A, TPoint B);
+            void AddExcludedEndpointEdge(TEdge EndpointEdge, Segment<TPoint> Segment);
 
             /// <summary>
             /// Marks the specified edge (present in the original face) as excluded (from final face), 
             /// meaning it is inside the area defined by the loop.
             /// </summary>
-            void ExcludeEdge(TPoint A, TPoint B);
+            void ExcludeEdge(TEdge Edge);
 
             /// <summary>
             /// Marks the specified edge as included (to final face), outside the loop.
             /// </summary>
-            void IncludeEdge(TPoint A, TPoint B);
+            void IncludeEdge(TEdge Edge);
         }
 
         /// <summary>
@@ -699,277 +701,229 @@ namespace Alunite
         /// the final edges of the face, and determines which original segments are included (present in the
         /// final result) or excluded (not present in the final result).
         /// </summary>
-        public static void ProcessFace<TInput, TPoint>(TInput Input)
-            where TPoint : struct, IEquatable<TPoint>
-            where TInput : IProcessFaceInput<TPoint>
+        public static void ProcessFace<TInput, TPoint, TEdge>(TInput Input)
+            where TPoint : IEquatable<TPoint>
+            where TEdge : IEquatable<TEdge>
+            where TInput : IProcessFaceInput<TPoint, TEdge>
         {
-            // Maintain a set of points that act as endpoints of the loop onto the face that continue
-            // with LoopNext.
-            HashSet<TPoint> fowardendpoints = new HashSet<TPoint>();
-            
             // Cycle through the edges starting at endpoints, determine wether these edges are included
-            // or excluded, and find which of the endpoints are foward.
-            EndpointEdge<TPoint>? eestartq;
-            while ((eestartq = Input.PopEndpointEdge()) != null)
+            // or excluded.
+            TEdge firstedge;
+            IEnumerable<EdgeEndpoint<TPoint>> points;
+            while (Input.PopEndpointEdge(out firstedge, out points))
             {
-                EndpointEdge<TPoint> curedge /* lol */ = eestartq.Value;
-                TPoint startpoint = curedge.A;
-                bool finishedchain = false;
-                while(!finishedchain)
+                TEdge edge = firstedge;
+                do
                 {
-                    TPoint last = curedge.A;
-                    bool addnext = curedge.Direction;
-                    foreach (TPoint edgepoint in curedge.Endpoints)
+                    // Fill in information for the endpoint edge.
+                    Segment<TPoint> seg = Input.EdgeSegment(edge);
+                    TPoint last = seg.A;
+                    bool including = false;
+                    foreach (EdgeEndpoint<TPoint> endpoint in points)
                     {
-                        if (addnext)
+                        including = !endpoint.Direction;
+                        if (endpoint.Direction)
                         {
-                            Input.AddIncludedEndpointEdge(last, edgepoint);
-                            fowardendpoints.Add(edgepoint);
-                            addnext = false;
+                            Input.AddIncludedEndpointEdge(edge, new Segment<TPoint>(last, endpoint.Point));
                         }
                         else
                         {
-                            Input.AddExcludedEndpointEdge(last, edgepoint);
-                            addnext = true;
+                            Input.AddExcludedEndpointEdge(edge, new Segment<TPoint>(last, endpoint.Point));
                         }
-                        last = edgepoint;
+                        last = endpoint.Point;
                     }
-                    if (addnext)
+                    if (including)
                     {
-                        Input.AddIncludedEndpointEdge(last, curedge.B);
+                        Input.AddIncludedEndpointEdge(edge, new Segment<TPoint>(last, seg.B));
                     }
                     else
                     {
-                        Input.AddExcludedEndpointEdge(last, curedge.A);
+                        Input.AddExcludedEndpointEdge(edge, new Segment<TPoint>(last, seg.B));
                     }
 
-                    TPoint curpoint = curedge.B;
+                    // Exclude/include subsequent edges
                     while (true)
                     {
-                        if (curpoint.Equals(startpoint))
+                        edge = Input.EdgeNext(edge);
+                        if (Input.RemoveEndpointEdge(edge, out points))
                         {
-                            finishedchain = true;
                             break;
-                        }
-                        TPoint nextpoint = Input.FaceNext(curpoint);
-                        EndpointEdge<TPoint>? possiblee = Input.PopEndpointEdge(curpoint, nextpoint);
-                        if (possiblee != null)
-                        {
-                            curedge = possiblee.Value;
-                            break;
-                        }
-                        if (addnext)
-                        {
-                            Input.IncludeEdge(curpoint, nextpoint);
                         }
                         else
                         {
-                            Input.ExcludeEdge(curpoint, nextpoint);
+                            if (including)
+                            {
+                                Input.IncludeEdge(edge);
+                            }
+                            else
+                            {
+                                Input.ExcludeEdge(edge);
+                            }
                         }
-                        curpoint = nextpoint;
                     }
-                }
+                } while (!edge.Equals(firstedge));
             }
 
-            // Add loop parts to face
-            foreach (TPoint startpoint in fowardendpoints)
+            // Loop edges
+            foreach (TPoint looppoint in Input.LoopPoints)
             {
-                TPoint curpoint = startpoint;
-                TPoint nextpoint = Input.LoopNext(startpoint).Value;
-                while (true)
+                TPoint nextpoint;
+                if (Input.LoopNext(looppoint, out nextpoint))
                 {
-                    Input.AddLoopEdge(curpoint, nextpoint);
-
-                    TPoint? possiblenextpoint = Input.LoopNext(nextpoint);
-                    if (possiblenextpoint != null)
-                    {
-                        curpoint = nextpoint;
-                        nextpoint = possiblenextpoint.Value;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    Input.AddLoopEdge(new Segment<TPoint>(looppoint, nextpoint));
                 }
             }
         }
 
         /// <summary>
-        /// Processes face intersections, gets included and excluded segments that can be inferred from them  and
-        /// outputs faces for the specified polyhedron to the output.
+        /// Process face input for vector polyhedra.
         /// </summary>
-        private static void _ProcessFaces(
-            Dictionary<int, _FaceIntersection> FaceIntersections,
-            VectorPolyhedron Input,
-            Dictionary<int, int> NextInLoop,
-            HashSet<Segment<int>> Excluded,
-            HashSet<Segment<int>> Included,
-            VectorPolyhedron Output)
+        private struct _VectorProcessFaceInput : IProcessFaceInput<int, int>
         {
-            foreach (var kvp in FaceIntersections)
-            {
-                int face = kvp.Key;
-                _FaceIntersection faceint = kvp.Value;
-                var facedata = Input.Lookup(face);
-                var pfi = new _ProcessFaceInput(faceint, NextInLoop, facedata, Excluded, Included);
-                ProcessFace<_ProcessFaceInput, int>(pfi);
-                Output.Add(pfi.BuildPolygon(facedata.Plane));
-            }
-        }
-
-        /// <summary>
-        /// Default process face input for process faces.
-        /// </summary>
-        private struct _ProcessFaceInput : IProcessFaceInput<int>
-        {
-            public _ProcessFaceInput(
-                _FaceIntersection FaceIntersections,
-                Dictionary<int, int> NextInLoop,
+            public _VectorProcessFaceInput(
                 PolyhedronFace<Triangle<int>, Point, int> Face,
-                HashSet<Segment<int>> Excluded,
-                HashSet<Segment<int>> Included)
+                _FaceIntersection Intersection, 
+                Dictionary<int, int> NextInLoop)
             {
                 this.NextInLoop = NextInLoop;
-                this.Included = Included;
-                this.Excluded = Excluded;
 
-                // Build next in face, construct points.
-                this.NextInFace = new Dictionary<int, int>();
+                // Add to points
                 this.Points = new Dictionary<int, Point>();
-                foreach (Segment<int> faceseg in Face.Segments)
+                this.LoopPoints = new HashSet<int>();
+                this.EndpointEdges = new Dictionary<int, List<EdgeEndpoint<int>>>();
+                foreach (var facepoint in Face.Points)
                 {
-                    var deref = Face.Points[faceseg.A];
-                    this.NextInFace.Add(deref.B, Face.Points[faceseg.B].B);
-                    this.Points.Add(deref.B, deref.A);
+                    this.Points.Add(facepoint.B, facepoint.A);
                 }
-
-                // End points
-                this.EndpointEdges = new Dictionary<Segment<int>, EndpointEdge<int>>();
-                var curedges = new Dictionary<Segment<int>, List<Tuple<int, _EdgeIntersection>>>();
-                foreach (var edgeint in FaceIntersections.IntersectingEdges)
+                foreach (var intedge in Intersection.IntersectingEdges)
                 {
-                    int edgeind = edgeint.Value.Edge;
-                    Segment<int> faceseg = Face.Segments[edgeind];
-                    Segment<int> realseg = new Segment<int>(Face.Points[faceseg.A].B, Face.Points[faceseg.B].B);
-                    Point uv = Segment.Along(
-                        new Segment<Point>(Face.Points[faceseg.A].A, Face.Points[faceseg.B].A), 
-                        edgeint.Value.Reverse ? 1.0 - edgeint.Value.Length : edgeint.Value.Length);
-                    this.Points.Add(edgeint.Key, uv);
-
-                    List<Tuple<int, _EdgeIntersection>> es;
-                    if (!curedges.TryGetValue(realseg, out es))
+                    Segment<int> faceedge = Face.Segments[intedge.Key];
+                    Segment<Point> uvedge = new Segment<Point>(Face.Points[faceedge.A].A, Face.Points[faceedge.B].A);
+                    List<EdgeEndpoint<int>> endpoints = new List<EdgeEndpoint<int>>();
+                    foreach (var edgint in intedge.Value)
                     {
-                        curedges[realseg] = es = new List<Tuple<int, _EdgeIntersection>>();
+                        this.Points.Add(edgint.NewVertex, Segment.Along(uvedge, edgint.Length));
+                        this.LoopPoints.Add(edgint.NewVertex);
+                        endpoints.Add(new EdgeEndpoint<int>() { Direction = edgint.Direction, Point = edgint.NewVertex });
                     }
-                    es.Add(Tuple.Create(edgeint.Key, edgeint.Value));
+                    this.EndpointEdges.Add(intedge.Key, endpoints);
                 }
-                foreach (var edgeints in curedges)
+                foreach (var polyint in Intersection.UV)
                 {
-                    // Sort and add as endpoints
-                    var intlist = edgeints.Value;
-                    Sort.InPlace<Tuple<int, _EdgeIntersection>>((a, b) => (a.B.Reverse ? 1.0 - a.B.Length : a.B.Length) > (b.B.Reverse ? 1.0 - b.B.Length : b.B.Length), intlist);
-                    List<int> endpoints = new List<int>();
-                    foreach (var endpoint in intlist)
-                    {
-                        endpoints.Add(endpoint.A);
-                    }
-                    this.EndpointEdges.Add(edgeints.Key, new EndpointEdge<int>() { A = edgeints.Key.A, B = edgeints.Key.B, Direction = !intlist[0].B.Reverse, Endpoints = endpoints });
+                    this.Points.Add(polyint.Key, polyint.Value);
+                    this.LoopPoints.Add(polyint.Key);
                 }
 
-                // Loop points
-                foreach (var looppoint in FaceIntersections.UV)
+                // Edges
+                this.Segments = new List<Segment<int>>();
+                this.EdgeContainingAsA = new Dictionary<int, int>();
+                int i = 0;
+                foreach (var edge in Face.Segments)
                 {
-                    this.Points.Add(looppoint.Key, looppoint.Value);
+                    int a = Face.Points[edge.A].B;
+                    this.Segments.Add(new Segment<int>(a, Face.Points[edge.B].B));
+                    this.EdgeContainingAsA.Add(a, i);
+                    i++;
                 }
 
-                this.FinalFace = new HashSet<Segment<int>>();
+                // Initialize
+                this.FinalSegments = new List<Segment<int>>();
             }
 
-            public int? LoopNext(int Point)
+            public bool LoopNext(int Point, out int Next)
             {
-                int n = NextInLoop[Point];
-                if (Points.ContainsKey(n))
+                Next = this.NextInLoop[Point];
+                return this.LoopPoints.Contains(Next);
+            }
+
+            public int EdgeNext(int Edge)
+            {
+                return this.EdgeContainingAsA[this.Segments[Edge].B];
+            }
+
+            public Segment<int> EdgeSegment(int Edge)
+            {
+                return this.Segments[Edge];
+            }
+
+            IEnumerable<int> IProcessFaceInput<int, int>.LoopPoints
+            {
+                get 
                 {
-                    return n;
+                    return this.LoopPoints;
+                }
+            }
+
+            public bool PopEndpointEdge(out int Edge, out IEnumerable<EdgeEndpoint<int>> Points)
+            {
+                IEnumerator<KeyValuePair<int, List<EdgeEndpoint<int>>>> e = this.EndpointEdges.GetEnumerator();
+                if (e.MoveNext())
+                {
+                    var cur = e.Current;
+                    Edge = cur.Key;
+                    Points = cur.Value;
+                    return true;
                 }
                 else
                 {
-                    return null;
+                    Edge = 0;
+                    Points = null;
+                    return false;
                 }
             }
 
-            public int FaceNext(int Point)
+            public bool RemoveEndpointEdge(int Edge, out IEnumerable<EdgeEndpoint<int>> Points)
             {
-                return this.NextInFace[Point];
-            }
-
-            public EndpointEdge<int>? PopEndpointEdge()
-            {
-                var en = this.EndpointEdges.GetEnumerator();
-                if (en.MoveNext())
+                List<EdgeEndpoint<int>> points;
+                if (this.EndpointEdges.TryGetValue(Edge, out points))
                 {
-                    var seg = en.Current;
-                    this.EndpointEdges.Remove(seg.Key);
-                    return seg.Value;
+                    Points = points;
+                    this.EndpointEdges.Remove(Edge);
+                    return true;
                 }
                 else
                 {
-                    return null;
+                    Points = null;
+                    return false;
                 }
             }
 
-            public EndpointEdge<int>? PopEndpointEdge(int A, int B)
+            public void AddLoopEdge(Segment<int> Segment)
             {
-                Segment<int> seg = new Segment<int>(A, B);
-                EndpointEdge<int> ee;
-                if (this.EndpointEdges.TryGetValue(seg, out ee))
-                {
-                    this.EndpointEdges.Remove(seg);
-                    return ee;
-                }
-                else
-                {
-                    return null;
-                }
+                this.FinalSegments.Add(Segment);
             }
 
-            public void AddLoopEdge(int A, int B)
+            public void AddIncludedEndpointEdge(int EndpointEdge, Segment<int> Segment)
             {
-                FinalFace.Add(new Segment<int>(A, B));
+                this.FinalSegments.Add(Segment);
             }
 
-            public void AddIncludedEndpointEdge(int A, int B)
+            public void AddExcludedEndpointEdge(int EndpointEdge, Segment<int> Segment)
             {
-                FinalFace.Add(new Segment<int>(A, B));
+
             }
 
-            public void AddExcludedEndpointEdge(int A, int B)
+            public void ExcludeEdge(int Edge)
             {
-              
+
             }
 
-            public void ExcludeEdge(int A, int B)
+            public void IncludeEdge(int Edge)
             {
-                Excluded.Add(new Segment<int>(A, B));
-            }
-
-            public void IncludeEdge(int A, int B)
-            {
-                FinalFace.Add(new Segment<int>(A, B));
-                Included.Add(new Segment<int>(A, B));
+                this.FinalSegments.Add(Segments[Edge]);
             }
 
             /// <summary>
-            /// Creates the new polygon for this face.
+            /// Creates the final face for the input.
             /// </summary>
-            public PolyhedronFace<Triangle<int>, Point, int> BuildPolygon(Triangle<int> Plane)
+            public PolyhedronFace<Triangle<int>, Point, int> CreateFace(Triangle<int> Plane)
             {
-                List<Segment<int>> finalsegs = new List<Segment<int>>();
+                List<Segment<int>> finalfacesegments = new List<Segment<int>>();
                 Dictionary<int, int> finalpointmap = new Dictionary<int, int>();
-                Tuple<Point, int>[] finalpoints = new Tuple<Point,int>[this.FinalFace.Count];
+                Tuple<Point, int>[] finalpoints = new Tuple<Point, int>[this.FinalSegments.Count];
 
                 int i = 0;
-                foreach (Segment<int> seg in this.FinalFace)
+                foreach (Segment<int> seg in this.FinalSegments)
                 {
                     Segment<int> finalseg = new Segment<int>();
                     if (!finalpointmap.TryGetValue(seg.A, out finalseg.A))
@@ -986,19 +940,39 @@ namespace Alunite
                         finalpoints[i] = Tuple.Create(this.Points[seg.B], seg.B);
                         i++;
                     }
-                    finalsegs.Add(finalseg);
+                    finalfacesegments.Add(finalseg);
                 }
 
-                return new PolyhedronFace<Triangle<int>, Point, int>(Plane, finalpoints, finalsegs);
+                return new PolyhedronFace<Triangle<int>, Point, int>(Plane, finalpoints, finalfacesegments);
             }
 
+            public HashSet<int> LoopPoints;
+            public List<Segment<int>> Segments;
+            public Dictionary<int, int> EdgeContainingAsA;
             public Dictionary<int, int> NextInLoop;
+            public Dictionary<int, List<EdgeEndpoint<int>>> EndpointEdges;
             public Dictionary<int, Point> Points;
-            public Dictionary<Segment<int>, EndpointEdge<int>> EndpointEdges;
-            public Dictionary<int, int> NextInFace;
-            public HashSet<Segment<int>> Included;
-            public HashSet<Segment<int>> Excluded;
-            public HashSet<Segment<int>> FinalFace;
+            public List<Segment<int>> FinalSegments;
         }
+
+        /// <summary>
+        /// Updates the faces in a polyhedron based on intersection data.
+        /// </summary>
+        private static void _ProcessFaces(
+            Dictionary<int, int> NextInLoop,
+            Dictionary<int, _FaceIntersection> FaceIntersections,
+            VectorPolyhedron Polyhedron,
+            VectorPolyhedron OutputPolyhedron)
+        {
+            foreach(var facei in FaceIntersections)
+            {
+                var facedata = Polyhedron.Lookup(facei.Key);
+                _VectorProcessFaceInput vpfi = new _VectorProcessFaceInput(facedata, facei.Value, NextInLoop);
+                ProcessFace<_VectorProcessFaceInput, int, int>(vpfi);
+                OutputPolyhedron.Add(vpfi.CreateFace(facedata.Plane));
+            }
+        }
+
+
     }
 }
