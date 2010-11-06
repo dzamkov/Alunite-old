@@ -59,8 +59,16 @@ namespace Alunite
                 Geometry, A, B, arawints, brawints, nextinloop, previnloop));
 
             // Boundary faces
-            _ProcessFaces(nextinloop, afaceinfo, A, res);
-            _ProcessFaces(previnloop, bfaceinfo, B, res);
+            HashSet<Segment<int>> aincluded = new HashSet<Segment<int>>();
+            HashSet<Segment<int>> aexcluded = new HashSet<Segment<int>>();
+            HashSet<Segment<int>> bincluded = new HashSet<Segment<int>>();
+            HashSet<Segment<int>> bexcluded = new HashSet<Segment<int>>();
+            _ProcessFaces(nextinloop, afaceinfo, A, res, aincluded, aexcluded);
+            _ProcessFaces(previnloop, bfaceinfo, B, res, bincluded, bexcluded);
+
+            // Fill
+            _Propagate(aincluded, A, res);
+            _Propagate(bincluded, B, res);
 
             return res;
         }
@@ -785,9 +793,13 @@ namespace Alunite
             public _VectorProcessFaceInput(
                 PolyhedronFace<Triangle<int>, Point, int> Face,
                 _FaceIntersection Intersection, 
-                Dictionary<int, int> NextInLoop)
+                Dictionary<int, int> NextInLoop,
+                HashSet<Segment<int>> Included,
+                HashSet<Segment<int>> Excluded)
             {
                 this.NextInLoop = NextInLoop;
+                this.Included = Included;
+                this.Excluded = Excluded;
 
                 // Add to points
                 this.Points = new Dictionary<int, Point>();
@@ -908,12 +920,14 @@ namespace Alunite
 
             public void ExcludeEdge(int Edge)
             {
-
+                this.Excluded.Add(this.Segments[Edge].Flip);
             }
 
             public void IncludeEdge(int Edge)
             {
-                this.FinalSegments.Add(Segments[Edge]);
+                Segment<int> seg = this.Segments[Edge];
+                this.FinalSegments.Add(seg);
+                this.Included.Add(seg.Flip);
             }
 
             /// <summary>
@@ -956,6 +970,8 @@ namespace Alunite
             public Dictionary<int, List<EdgeEndpoint<int>>> EndpointEdges;
             public Dictionary<int, Point> Points;
             public List<Segment<int>> FinalSegments;
+            public HashSet<Segment<int>> Included;
+            public HashSet<Segment<int>> Excluded;
         }
 
         /// <summary>
@@ -965,17 +981,55 @@ namespace Alunite
             Dictionary<int, int> NextInLoop,
             Dictionary<int, _FaceIntersection> FaceIntersections,
             VectorPolyhedron Polyhedron,
-            VectorPolyhedron OutputPolyhedron)
+            VectorPolyhedron OutputPolyhedron,
+            HashSet<Segment<int>> Included,
+            HashSet<Segment<int>> Excluded)
         {
             foreach(var facei in FaceIntersections)
             {
                 var facedata = Polyhedron.Lookup(facei.Key);
-                _VectorProcessFaceInput vpfi = new _VectorProcessFaceInput(facedata, facei.Value, NextInLoop);
+                _VectorProcessFaceInput vpfi = new _VectorProcessFaceInput(facedata, facei.Value, NextInLoop, Included, Excluded);
                 ProcessFace<_VectorProcessFaceInput, int, int>(vpfi);
                 OutputPolyhedron.Add(vpfi.CreateFace(facedata.Plane));
             }
         }
 
 
+        /// <summary>
+        /// Determines which faces in the source polyhedron directly or indirectly produce the specified segments.
+        /// The segments are removed in the process.
+        /// </summary>
+        private static void _Propagate(
+            HashSet<Segment<int>> Segments,
+            VectorPolyhedron Source,
+            VectorPolyhedron Output)
+        {
+            IEnumerator<Segment<int>> e = Segments.GetEnumerator();
+            while (e.MoveNext())
+            {
+                Segment<int> seg = e.Current;
+                int face = Source.SegmentFace(seg).Value.Face;
+                var facedata = Source.Lookup(face);
+
+                // Add to output
+                Output.Add(facedata);
+
+                // Update segments
+                foreach (var faceseg in facedata.Segments)
+                {
+                    Segment<int> rfaceseg = new Segment<int>(
+                        facedata.Points[faceseg.A].B,
+                        facedata.Points[faceseg.B].B);
+
+                    if (!Segments.Remove(rfaceseg))
+                    {
+                        Segments.Add(rfaceseg.Flip);
+                    }
+                }
+
+                // Next
+                e = Segments.GetEnumerator();
+            }
+        }
     }
 }
