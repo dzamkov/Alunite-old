@@ -162,10 +162,6 @@ namespace Alunite
                     Point uv;
                     Vector pos;
                     bool dir = Triangle.Intersect(plane, hitseg, out len, out pos, out uv);
-                    if (!dir)
-                    {
-                        len = 1.0 - len;
-                    }
                     if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly).Relation == AreaRelation.Inside)
                     {
                         int nvert = Geometry.AddVertex(pos);
@@ -297,7 +293,7 @@ namespace Alunite
                     }
                     else
                     {
-                        consistent = !lastd;
+                        consistent = lastd;
                     }
                 }
 
@@ -709,10 +705,11 @@ namespace Alunite
             // Cycle through the edges starting at endpoints, determine wether these edges are included
             // or excluded.
             TEdge firstedge;
-            IEnumerable<EdgeEndpoint<TPoint>> points;
+            IEnumerable<EdgeEndpoint<TPoint>> points;      
             while (Input.PopEndpointEdge(out firstedge, out points))
             {
                 TEdge edge = firstedge;
+                bool exit = false;
                 do
                 {
                     // Fill in information for the endpoint edge.
@@ -745,6 +742,11 @@ namespace Alunite
                     while (true)
                     {
                         edge = Input.EdgeNext(edge);
+                        if (edge.Equals(firstedge))
+                        {
+                            exit = true;
+                            break;
+                        }
                         if (Input.RemoveEndpointEdge(edge, out points))
                         {
                             break;
@@ -761,7 +763,7 @@ namespace Alunite
                             }
                         }
                     }
-                } while (!edge.Equals(firstedge));
+                } while (!exit);
             }
 
             // Loop edges
@@ -802,7 +804,7 @@ namespace Alunite
                     List<EdgeEndpoint<int>> endpoints = new List<EdgeEndpoint<int>>();
                     foreach (var edgint in intedge.Value)
                     {
-                        this.Points.Add(edgint.NewVertex, Segment.Along(uvedge, edgint.Length));
+                        this.Points.Add(edgint.NewVertex, Segment.Along(uvedge, edgint.Direction ? edgint.Length : 1.0 - edgint.Length));
                         this.LoopPoints.Add(edgint.NewVertex);
                         endpoints.Add(new EdgeEndpoint<int>() { Direction = edgint.Direction, Point = edgint.NewVertex });
                     }
@@ -862,6 +864,7 @@ namespace Alunite
                     var cur = e.Current;
                     Edge = cur.Key;
                     Points = cur.Value;
+                    this.EndpointEdges.Remove(Edge);
                     return true;
                 }
                 else
