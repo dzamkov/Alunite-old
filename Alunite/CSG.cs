@@ -32,7 +32,7 @@ namespace Alunite
         /// affects (such as difference) can be created by inverting one of the polyhedra. The first specified polyhedra
         /// will be changed to reflect the union (less changes are required if A is the most complex of the polyhedra).
         /// </summary>
-        public static VectorPolyhedron Union(VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B)
+        public static VectorPolyhedron Apply(VectorGeometry Geometry, VectorPolyhedron A, VectorPolyhedron B, Type CSGType)
         {
             VectorPolyhedron res = new VectorPolyhedron();
             
@@ -312,7 +312,7 @@ namespace Alunite
                     }
                     else
                     {
-                        consistent = lastd;
+                        consistent = !firstd;
                     }
                 }
 
@@ -1157,27 +1157,36 @@ namespace Alunite
             while (e.MoveNext())
             {
                 Segment<int> seg = e.Current;
-                int face = Source.SegmentFace(seg).Value.Face;
-                var facedata = Source.Lookup(face);
-
-                // Add to output
-                Output.Add(facedata);
-
-                // Update segments
-                foreach (var faceseg in facedata.Segments)
+                if (Segments.Remove(seg.Flip))
                 {
-                    Segment<int> rfaceseg = new Segment<int>(
-                        facedata.Points[faceseg.A].B,
-                        facedata.Points[faceseg.B].B);
-
-                    if (!Segments.Remove(rfaceseg))
-                    {
-                        Segments.Add(rfaceseg.Flip);
-                    }
+                    // Two segments in opposite directions cancel out.
+                    Segments.Remove(seg);
+                    e = Segments.GetEnumerator();
                 }
+                else
+                {
+                    int face = Source.SegmentFace(seg).Value.Face;
+                    var facedata = Source.Lookup(face);
 
-                // Next
-                e = Segments.GetEnumerator();
+                    // Add to output
+                    Output.Add(facedata);
+
+                    // Update segments
+                    foreach (var faceseg in facedata.Segments)
+                    {
+                        Segment<int> rfaceseg = new Segment<int>(
+                            facedata.Points[faceseg.A].B,
+                            facedata.Points[faceseg.B].B);
+
+                        if (!Segments.Remove(rfaceseg))
+                        {
+                            Segments.Add(rfaceseg.Flip);
+                        }
+                    }
+
+                    // Next
+                    e = Segments.GetEnumerator();
+                }
             }
         }
     }

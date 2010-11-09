@@ -104,9 +104,9 @@ namespace Alunite
         public void Change(Vector Location, bool Add)
         {
             Random r = new Random();
-            Vector nsize = new Vector(1.0, 1.0, 1.0);
+            Vector nsize = new Vector(r.NextDouble() + 0.5, r.NextDouble() + 0.5, r.NextDouble() + 0.5);
             VectorPolyhedron npoly = VectorPolyhedron.Cuboid(this._Geometry, nsize, Location);
-            this._Polyhedron = CSG.Union(this._Geometry, this._Polyhedron, npoly);
+            this._Polyhedron = CSG.Apply(this._Geometry, this._Polyhedron, npoly, Add ? CSG.Type.Union : CSG.Type.Difference);
             this._Triangulate();
         }
 

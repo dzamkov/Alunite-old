@@ -143,7 +143,7 @@ namespace Alunite
             GL.Uniform3(GL.GetUniformLocation(this._ShaderProgram, "SunDirection"), (Vector3)this._SunDir);
 
             GL.LineWidth(2.0f);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             this._VBO.Render(BeginMode.Triangles);
             GL.UseProgram(0);

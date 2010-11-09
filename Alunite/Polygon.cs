@@ -160,6 +160,7 @@ namespace Alunite
                             res.UnionWith(curval.Finish(vert));
                             res.UnionWith(prevval.ProcessNextHigh(Polygon, prevval.NextHighChain, vert));
                             res.UnionWith(prevval.ProcessNextHigh(Polygon, vert, prevvert));
+                            prevval.NeedMerge = false;
                             sweeps.Remove(cursweep);
                             break;
                         }
@@ -186,8 +187,8 @@ namespace Alunite
                                 _Sweep<Vertex> afterval = nextsweep.Next.Value;
                                 res.UnionWith(nextval.ProcessNextHigh(Polygon, nextval.NextHighChain, vert));
                                 res.UnionWith(nextval.Finish(vert));
-                                sweeps.Remove(nextsweep);
                                 res.UnionWith(afterval.ProcessNextLow(Polygon, afterval.NextLowChain, vert));
+                                sweeps.Remove(nextsweep);
                             }
 
                             break;
