@@ -141,8 +141,15 @@ namespace Alunite
             this._Dirt.Bind();
             GL.Uniform1(GL.GetUniformLocation(this._ShaderProgram, "MaterialDiffuse"), 0);
             GL.Uniform3(GL.GetUniformLocation(this._ShaderProgram, "SunDirection"), (Vector3)this._SunDir);
+
+            GL.LineWidth(2.0f);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+
             this._VBO.Render(BeginMode.Triangles);
             GL.UseProgram(0);
+
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
 
             // Cursor
             if (this._LookTarget != null)
@@ -179,24 +186,50 @@ namespace Alunite
             GL.Disable(EnableCap.Blend);
             GL.PopMatrix();
 
-            // Test polyhedrons
+            // Test polygons
             GL.Enable(EnableCap.DepthTest);
+            List<Point> polyverts = new List<Point>();
+            polyverts.Add(new Point(-0.5, -0.5)); // 0
+            polyverts.Add(new Point(0.5, -0.5));
+            polyverts.Add(new Point(0.5, 0.5));
+            polyverts.Add(new Point(-0.5, 0.5));
+            polyverts.Add(new Point(-0.4, -0.2));
+            polyverts.Add(new Point(-0.4, 0.2));
+            polyverts.Add(new Point(-0.3, 0.2));
+            polyverts.Add(new Point(-0.3, -0.2));
+            polyverts.Add(new Point(0.3, -0.2));
+            polyverts.Add(new Point(0.3, 0.2));
+            polyverts.Add(new Point(0.4, 0.2)); // 10
+            polyverts.Add(new Point(0.4, -0.2));
 
-            VectorGeometry geo = new VectorGeometry();
-            var polyhedrona = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.0, 0.0, -2.0));
-            var polyhedronb = VectorPolyhedron.Cuboid(geo, new Vector(0.4, 0.4, 0.4), new Vector(0.0, 0.0, -1.7));
-            var polyhedronf = CSG.Union(geo, polyhedrona, polyhedronb);
+
+            List<Segment<int>> segs = new List<Segment<int>>();
+            segs.Add(new Segment<int>(0, 1));
+            segs.Add(new Segment<int>(1, 2));
+            segs.Add(new Segment<int>(2, 3));
+            segs.Add(new Segment<int>(3, 0));
+            segs.Add(new Segment<int>(4, 5));
+            segs.Add(new Segment<int>(5, 6));
+            segs.Add(new Segment<int>(6, 7));
+            segs.Add(new Segment<int>(7, 4));
+            segs.Add(new Segment<int>(8, 9));
+            segs.Add(new Segment<int>(9, 10));
+            segs.Add(new Segment<int>(10, 11));
+            segs.Add(new Segment<int>(11, 8));
+
+
+            PointPolygon<int> poly = new PointPolygon<int>(x => polyverts[x], segs);
 
             GL.LineWidth(2.0f);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
             GL.Begin(BeginMode.Triangles);
             GL.Color4(Color.RGB(1.0, 0.0, 0.0));
-            foreach (Triangle<int> tri in polyhedronf.Triangulate(geo))
+            foreach (Triangle<int> tri in Polygon.Triangulate(poly))
             {
-                Triangle<Vector> vectri = new Triangle<Vector>(geo.Lookup(tri.A), geo.Lookup(tri.B), geo.Lookup(tri.C));
-                GL.Vertex3(vectri.A);
-                GL.Vertex3(vectri.B);
-                GL.Vertex3(vectri.C);
+                Triangle<Point> vectri = new Triangle<Point>(polyverts[tri.A], polyverts[tri.B], polyverts[tri.C]);
+                GL.Vertex3(vectri.A.X, vectri.A.Y, 0.5);
+                GL.Vertex3(vectri.B.X, vectri.B.Y, 0.5);
+                GL.Vertex3(vectri.C.X, vectri.C.Y, 0.5);
             }
             GL.End();
 

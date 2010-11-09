@@ -139,7 +139,7 @@ namespace Alunite
                 bool prevvertl = Polygon.Compare(prevvert, vert);
                 bool divergent = nextvertl && prevvertl;
                 bool convergent = !nextvertl && !prevvertl;
-
+                
                 // Go through sweeps
                 LinkedListNode<_Sweep<Vertex>> cursweep = sweeps.First;
                 bool startsweep = divergent; LinkedListNode<_Sweep<Vertex>> startafter = null;
