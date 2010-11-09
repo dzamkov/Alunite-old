@@ -174,6 +174,22 @@ namespace Alunite
                         {
                             // Merge time
                             curval.NeedMerge = true;
+
+                            // It is possible for this to be an endpoint of a merge too.
+                            if (prevneedmerge)
+                            {
+
+                            }
+                            _Sweep<Vertex> nextval = nextsweep.Value;
+                            if (nextval.NeedMerge && nextval.NextLowChain.Equals(vert))
+                            {
+                                _Sweep<Vertex> afterval = nextsweep.Next.Value;
+                                res.UnionWith(nextval.ProcessNextHigh(Polygon, nextval.NextHighChain, vert));
+                                res.UnionWith(nextval.Finish(vert));
+                                sweeps.Remove(nextsweep);
+                                res.UnionWith(afterval.ProcessNextLow(Polygon, afterval.NextLowChain, vert));
+                            }
+
                             break;
                         }
 
