@@ -143,6 +143,7 @@ namespace Alunite
                 // Go through sweeps
                 LinkedListNode<_Sweep<Vertex>> cursweep = sweeps.First;
                 bool startsweep = divergent; LinkedListNode<_Sweep<Vertex>> startafter = null;
+                bool prevneedmerge = false;
                 while (cursweep != null)
                 {
                     LinkedListNode<_Sweep<Vertex>> nextsweep = cursweep.Next;
@@ -151,15 +152,15 @@ namespace Alunite
                     if (curval.NextHighChain.Equals(vert))
                     {
                         startsweep = false;
-                        if (divergent)
+                        if (prevneedmerge)
                         {
-                            // There is a diagonal between a split and merge vertex. Very rare case.
-                            _Sweep<Vertex> nextval = nextsweep.Value;
-                            if (nextval.NextLowChain.Equals(vert))
-                            {
-                                res.UnionWith(curval.ProcessNextHigh(Polygon, vert, nextvert));
-                                res.UnionWith(nextval.ProcessNextLow(Polygon, vert, prevvert));
-                            }
+                            LinkedListNode<_Sweep<Vertex>> prevsweep = cursweep.Previous;
+                            _Sweep<Vertex> prevval = prevsweep.Value;
+                            res.UnionWith(curval.ProcessNextLow(Polygon, curval.NextLowChain, vert));
+                            res.UnionWith(curval.Finish(vert));
+                            res.UnionWith(prevval.ProcessNextHigh(Polygon, prevval.NextHighChain, vert));
+                            res.UnionWith(prevval.ProcessNextHigh(Polygon, vert, prevvert));
+                            sweeps.Remove(cursweep);
                             break;
                         }
                         if (curval.NextLowChain.Equals(vert))
@@ -167,34 +168,12 @@ namespace Alunite
                             // End vertex, good bye!
                             res.UnionWith(curval.Finish(vert));
                             sweeps.Remove(cursweep);
-                            if (!convergent)
-                            {
-                                // That sweep that just died was the result of an unfortunate merge
-                                // The other sweep needs to go on though.
-                                _Sweep<Vertex> nextval = nextsweep.Value;
-                                res.UnionWith(nextval.ProcessNextLow(Polygon, vert, nextvert));
-                            }
                             break;
                         }
                         if (convergent)
                         {
                             // Merge time
-                            _Sweep<Vertex> nextval = nextsweep.Value;
-
-                            Vertex nh = nextval.NextHighChain;
-                            Vertex nl = curval.NextLowChain;
-
-                            // Merge time
-                            if (Polygon.Compare(nl, nh))
-                            {
-                                res.UnionWith(nextval.ProcessNextLow(Polygon, vert, nh));
-                                res.UnionWith(curval.ProcessNextHigh(Polygon, vert, nh));
-                            }
-                            else
-                            {
-                                res.UnionWith(curval.ProcessNextHigh(Polygon, vert, nl));
-                                res.UnionWith(nextval.ProcessNextLow(Polygon, vert, nl));
-                            }
+                            curval.NeedMerge = true;
                             break;
                         }
 
@@ -218,38 +197,77 @@ namespace Alunite
                         if (Polygon.Order(new Triangle<Vertex>(curval.PrevLowChain, curval.NextLowChain, vert)))
                         {
                             startafter = cursweep;
-                            if (Polygon.Order(new Triangle<Vertex>(curval.NextHighChain, curval.PrevHighChain, vert)))
+                            if (curval.NeedMerge)
                             {
-                                // Split!
-                                _Sweep<Vertex> splitted = curval;
-                                Vertex last = splitted.ReflexChain.Peek();
-                                if (last.Equals(splitted.PrevHighChain))
+                                // Merge with next if possible
+                                _Sweep<Vertex> nextval = nextsweep.Value;
+                                if (Polygon.Order(new Triangle<Vertex>(nextval.NextHighChain, nextval.PrevHighChain, vert)))
                                 {
-                                    _Sweep<Vertex> created = new _Sweep<Vertex>(vert, nextvert, last);
-                                    created.ProcessNextHigh(Polygon, splitted.PrevHighChain, splitted.NextHighChain);
-                                    sweeps.AddAfter(cursweep, created);
-                                    res.UnionWith(splitted.ProcessNextHigh(Polygon, vert, prevvert));
+                                    curval.NeedMerge = false;
+                                    res.UnionWith(curval.ProcessNextHigh(Polygon, curval.NextHighChain, vert));
+                                    res.UnionWith(curval.ProcessNextHigh(Polygon, vert, prevvert));
+                                    res.UnionWith(nextval.ProcessNextLow(Polygon, nextval.NextLowChain, vert));
+                                    res.UnionWith(nextval.ProcessNextLow(Polygon, vert, nextvert));
+                                    startsweep = false;
+                                    break;
                                 }
-                                else
+                            }
+                            else
+                            {
+                                if (Polygon.Order(new Triangle<Vertex>(curval.NextHighChain, curval.PrevHighChain, vert)))
                                 {
-                                    _Sweep<Vertex> created = new _Sweep<Vertex>(vert, last, prevvert);
-                                    created.ProcessNextLow(Polygon, splitted.PrevLowChain, splitted.NextLowChain);
-                                    sweeps.AddBefore(cursweep, created);
-                                    res.UnionWith(splitted.ProcessNextLow(Polygon, vert, nextvert));
+                                    // Split!
+                                    _Sweep<Vertex> splitted = curval;
+                                    Vertex last = splitted.ReflexChain.Peek();
+                                    if (last.Equals(splitted.PrevHighChain))
+                                    {
+                                        _Sweep<Vertex> created = new _Sweep<Vertex>(vert, nextvert, last);
+                                        created.ProcessNextHigh(Polygon, splitted.PrevHighChain, splitted.NextHighChain);
+                                        sweeps.AddAfter(cursweep, created);
+                                        res.UnionWith(splitted.ProcessNextHigh(Polygon, vert, prevvert));
+                                    }
+                                    else
+                                    {
+                                        _Sweep<Vertex> created = new _Sweep<Vertex>(vert, last, prevvert);
+                                        created.ProcessNextLow(Polygon, splitted.PrevLowChain, splitted.NextLowChain);
+                                        sweeps.AddBefore(cursweep, created);
+                                        res.UnionWith(splitted.ProcessNextLow(Polygon, vert, nextvert));
+                                    }
+                                    startsweep = false;
+                                    break;
                                 }
-                                startsweep = false;
-                                break;
                             }
                         }
                     }
 
                     if (curval.NextLowChain.Equals(vert))
                     {
+                        if (curval.NeedMerge)
+                        {
+                            _Sweep<Vertex> nextval = nextsweep.Value;
+                            res.UnionWith(curval.ProcessNextHigh(Polygon, curval.NextHighChain, vert));
+                            res.UnionWith(curval.Finish(vert));
+                            res.UnionWith(nextval.ProcessNextLow(Polygon, nextval.NextLowChain, vert));
+                            if (!convergent)
+                            {
+                                res.UnionWith(nextval.ProcessNextLow(Polygon, vert, nextvert));
+                            }
+                            else
+                            {
+                                res.UnionWith(nextval.Finish(vert));
+                                sweeps.Remove(nextsweep);
+                            }
+                            sweeps.Remove(cursweep);
+                        }
+                        else
+                        {
+                            res.UnionWith(curval.ProcessNextLow(Polygon, vert, nextvert));
+                        }
                         startsweep = false;
-                        res.UnionWith(curval.ProcessNextLow(Polygon, vert, nextvert));
                         break;
                     }
 
+                    prevneedmerge = curval.NeedMerge;
                     cursweep = nextsweep;
                 }
 
@@ -289,6 +307,7 @@ namespace Alunite
                 this.NextLowChain = Next;
                 this.ReflexChain = new Stack<Vertex>();
                 this.ReflexChain.Push(Vert);
+                this.NeedMerge = false;
             }
 
             public IEnumerable<Triangle<Vertex>> ProcessNextHigh(IOrderedPolygon<Vertex> Polygon, Vertex Vertex, Vertex Prev)
@@ -390,6 +409,7 @@ namespace Alunite
             public Vertex PrevHighChain;
             public Vertex NextLowChain;
             public Vertex NextHighChain;
+            public bool NeedMerge;
             public Stack<Vertex> ReflexChain;
         }
 
