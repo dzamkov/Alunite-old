@@ -458,9 +458,11 @@ namespace Alunite
         /// <summary>
         /// Gets the relation between a point and a polygon with the specified segments.
         /// </summary>
-        public static Hit PointTest(Point Point, IEnumerable<Segment<Point>> Segments)
+        /// <param name="Order">True if the polygon represents a filled region in an open environment. False if the polygon
+        /// represents an unfilled region in a closed environment.</param>
+        public static Hit PointTest(Point Point, IEnumerable<Segment<Point>> Segments, bool Order)
         {
-            bool inpoly = false;
+            bool inpoly = !Order;
             double lowy = double.PositiveInfinity;
             int i = 0;
             foreach (var seg in Segments)

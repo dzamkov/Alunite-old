@@ -47,8 +47,8 @@ namespace Alunite
             // Process
             List<_Intersection> arawints = new List<_Intersection>();
             List<_Intersection> brawints = new List<_Intersection>();
-            Dictionary<int, _FaceIntersection> afaceinfo = new Dictionary<int,_FaceIntersection>();
-            Dictionary<int, _FaceIntersection> bfaceinfo = new Dictionary<int,_FaceIntersection>();
+            Dictionary<int, _FaceIntersection> afaceinfo = new Dictionary<int, _FaceIntersection>();
+            Dictionary<int, _FaceIntersection> bfaceinfo = new Dictionary<int, _FaceIntersection>();
             _ProcessSegmentIntersections(A, B, aints, true, arawints, afaceinfo, bfaceinfo);
             _ProcessSegmentIntersections(B, A, bints, false, brawints, bfaceinfo, afaceinfo);
 
@@ -71,6 +71,17 @@ namespace Alunite
             _Propagate(bincluded, B, res);
 
             return res;
+        }
+
+        /// <summary>
+        /// A type of CSG operation.
+        /// </summary>
+        public enum Type
+        {
+            Union,
+            Difference,
+            ReverseDifference,
+            Intersection
         }
 
         /// <summary>
@@ -170,7 +181,7 @@ namespace Alunite
                     Point uv;
                     Vector pos;
                     bool dir = Triangle.Intersect(plane, hitseg, out len, out pos, out uv);
-                    if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly).Relation == AreaRelation.Inside)
+                    if (len > 0.0 && len < 1.0 && Polygon.PointTest(uv, poly, true).Relation == AreaRelation.Inside)
                     {
                         int nvert = Geometry.AddVertex(pos);
 
@@ -674,7 +685,8 @@ namespace Alunite
             bool RemoveEndpointEdge(TEdge Edge, out IEnumerable<EdgeEndpoint<TPoint>> Points);
 
             /// <summary>
-            /// Adds an edge (present on the loop) to the final face.
+            /// Adds an edge (present on the loop) to the final face. Edges added using this method are considered "Strong" (this
+            /// is taken into account in the Inside function).
             /// </summary>
             void AddLoopEdge(Segment<TPoint> Segment);
 
@@ -695,9 +707,28 @@ namespace Alunite
             void ExcludeEdge(TEdge Edge);
 
             /// <summary>
-            /// Marks the specified edge as included (to final face), outside the loop.
+            /// Marks the specified edge as included (to final face), outside the loop. Edges are included as "Strong" by until
+            /// InitializeInside is called.
             /// </summary>
             void IncludeEdge(TEdge Edge);
+
+            /// <summary>
+            /// Returns true if an edge exists that is still not yet classified as excluded or included and outputs it.
+            /// Returns false if no edge remains unclassified.
+            /// </summary>
+            bool GetUnclassifiedEdge(out TEdge Edge);
+
+            /// <summary>
+            /// Prepares to use the Inside function. Indicates that no remaining edges will be classified as
+            /// "Strong" (connected directly or indirectly to a part of the loop).
+            /// </summary>
+            void InitializeInside();
+
+            /// <summary>
+            /// Gets if the specified point is inside the current polygon (inside the polygon formed by strongly
+            /// included edges).
+            /// </summary>
+            bool Inside(TPoint Point);
         }
 
         /// <summary>
@@ -783,6 +814,39 @@ namespace Alunite
                     Input.AddLoopEdge(new Segment<TPoint>(looppoint, nextpoint));
                 }
             }
+
+            // Weak edges
+            bool init = false;
+            TEdge weak;
+            while (Input.GetUnclassifiedEdge(out weak))
+            {
+                if (!init)
+                {
+                    Input.InitializeInside();
+                    init = true;
+                }
+
+                TEdge cur = weak;
+                if (Input.Inside(Input.EdgeSegment(weak).A))
+                {
+                    // Weakly include portion of face.
+                    do
+                    {
+                        Input.IncludeEdge(cur);
+                        cur = Input.EdgeNext(cur);
+                    }
+                    while (!cur.Equals(weak));
+                }
+                else
+                {
+                    do
+                    {
+                        Input.ExcludeEdge(cur);
+                        cur = Input.EdgeNext(weak);
+                    }
+                    while (!cur.Equals(weak));
+                }
+            }
         }
 
         /// <summary>
@@ -829,19 +893,27 @@ namespace Alunite
                 }
 
                 // Edges
+                this.Unclassified = new HashSet<int>();
                 this.Segments = new List<Segment<int>>();
                 this.EdgeContainingAsA = new Dictionary<int, int>();
                 int i = 0;
                 foreach (var edge in Face.Segments)
                 {
                     int a = Face.Points[edge.A].B;
-                    this.Segments.Add(new Segment<int>(a, Face.Points[edge.B].B));
+                    Segment<int> seg = new Segment<int>(a, Face.Points[edge.B].B);
+                    this.Segments.Add(seg);
+                    if (!this.EndpointEdges.ContainsKey(i))
+                    {
+                        this.Unclassified.Add(i);
+                    }
                     this.EdgeContainingAsA.Add(a, i);
                     i++;
                 }
 
                 // Initialize
                 this.FinalSegments = new List<Segment<int>>();
+                this.StrongEdgeOrder = false;
+                this.StrongEdges = null;
             }
 
             public bool LoopNext(int Point, out int Next)
@@ -921,6 +993,7 @@ namespace Alunite
             public void ExcludeEdge(int Edge)
             {
                 this.Excluded.Add(this.Segments[Edge].Flip);
+                this.Unclassified.Remove(Edge);
             }
 
             public void IncludeEdge(int Edge)
@@ -928,6 +1001,79 @@ namespace Alunite
                 Segment<int> seg = this.Segments[Edge];
                 this.FinalSegments.Add(seg);
                 this.Included.Add(seg.Flip);
+                this.Unclassified.Remove(Edge);
+            }
+
+            public bool GetUnclassifiedEdge(out int Edge)
+            {
+                IEnumerator<int> unclassifede = this.Unclassified.GetEnumerator();
+                if (unclassifede.MoveNext())
+                {
+                    Edge = unclassifede.Current;
+                    return true;
+                }
+                else
+                {
+                    Edge = 0;
+                    return false;
+                }
+            }
+
+            public void InitializeInside()
+            {
+                this.StrongEdges = new List<Segment<Point>>();
+                Point lexicovertsmall = new Point(double.PositiveInfinity, double.PositiveInfinity);
+                int lexicovert = 0;
+                foreach (Segment<int> seg in this.FinalSegments)
+                {
+                    Point a = this.Points[seg.A];
+                    this.StrongEdges.Add(new Segment<Point>(a, this.Points[seg.B]));
+                    if (Point.Compare(lexicovertsmall, a))
+                    {
+                        lexicovert = seg.A;
+                        lexicovertsmall = a;
+                    }
+                }
+
+                int lexiconext = -1;
+                int lexicoprev = -1;
+                foreach (Segment<int> seg in this.FinalSegments)
+                {
+                    if (seg.A == lexicovert)
+                    {
+                        lexiconext = seg.B;
+                        if (lexicoprev > -1)
+                        {
+                            break;
+                        }
+                    }
+                    if (seg.B == lexicovert)
+                    {
+                        lexicoprev = seg.A;
+                        if (lexiconext > -1)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                this.StrongEdgeOrder = Triangle.Order(new Triangle<Point>(
+                    this.Points[lexicoprev],
+                    this.Points[lexicovert],
+                    this.Points[lexiconext]));
+            }
+
+            public bool Inside(int Point)
+            {
+                Point uv = this.Points[Point];
+                if (Polygon.PointTest(uv, this.StrongEdges, this.StrongEdgeOrder).Relation == AreaRelation.Inside)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             /// <summary>
@@ -969,7 +1115,10 @@ namespace Alunite
             public Dictionary<int, int> NextInLoop;
             public Dictionary<int, List<EdgeEndpoint<int>>> EndpointEdges;
             public Dictionary<int, Point> Points;
+            public List<Segment<Point>> StrongEdges;
+            public bool StrongEdgeOrder;
             public List<Segment<int>> FinalSegments;
+            public HashSet<int> Unclassified;
             public HashSet<Segment<int>> Included;
             public HashSet<Segment<int>> Excluded;
         }

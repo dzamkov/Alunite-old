@@ -118,7 +118,7 @@ namespace Alunite
             Vector eyepos = this._PlayerPos + EyeOffset;
 
             GL.MatrixMode(MatrixMode.Projection);
-            Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(1.2, (double)this.Width / (double)this.Height, 0.01, 50.0);
+            Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(1.2, (double)this.Width / (double)this.Height, 0.01, 400.0);
             GL.LoadMatrix(ref proj);
             Matrix4d view = Matrix4d.LookAt(
                 new Vector3d(0.0, 0.0, 0.0),
@@ -184,7 +184,7 @@ namespace Alunite
 
             VectorGeometry geo = new VectorGeometry();
             var polyhedrona = VectorPolyhedron.Cuboid(geo, new Vector(0.5, 0.5, 0.5), new Vector(0.0, 0.0, -2.0));
-            var polyhedronb = VectorPolyhedron.Cuboid(geo, new Vector(0.6, 0.4, 0.4), new Vector(0.2, 0.2, -1.7));
+            var polyhedronb = VectorPolyhedron.Cuboid(geo, new Vector(0.4, 0.4, 0.4), new Vector(0.0, 0.0, -1.7));
             var polyhedronf = CSG.Union(geo, polyhedrona, polyhedronb);
 
             GL.LineWidth(2.0f);
