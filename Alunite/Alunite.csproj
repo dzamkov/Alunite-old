@@ -44,9 +44,11 @@
     <Compile Include="Array.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="CSG.cs" />
+    <Compile Include="Diagram.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Polygon.cs" />
     <Compile Include="Polyhedron.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Segment.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="Model.cs" />

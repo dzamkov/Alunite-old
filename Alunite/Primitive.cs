@@ -1,44 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
 
 namespace Alunite
 {
     /// <summary>
-    /// Contains functions for creating a static primitive object.
+    /// Represents a basic triangular mesh.
     /// </summary>
     public struct Primitive
     {
-        public Primitive(ISet<Tetrahedron<int>> Tetrahedra, IArray<Vector> Vertices)
+        public Primitive(Vector[] Vertices, Triangle<int>[] Indices)
         {
             this.Vertices = Vertices;
-            this.Tetrahedra = Tetrahedra;
+            this.Indices = Indices;
         }
 
-        /// <summary>
-        /// Creates a weakly delaunay cube with the specified edge length.
-        /// </summary>
-        public static Primitive Cube(double EdgeLength)
-        {
-            Vector[] vertices = new Vector[8];
-            double hel = EdgeLength / 2;
-            for (int t = 0; t < vertices.Length; t++)
-            {
-                vertices[t] = new Vector(
-                    (t % 8 < 4) ? -hel : hel,
-                    (t % 4 < 2) ? -hel : hel,
-                    (t % 2 < 1) ? -hel : hel);
-            }
 
-            int[] inds = new int[8];
-            for (int t = 0; t < inds.Length; t++)
-            {
-                inds[t] = 7 - t;
-            }
-
-            return new Primitive(Set.Create(Tetrahedron.Tesselate(inds, false)), Data.Create(vertices));
-        }
-
-        public ISet<Tetrahedron<int>> Tetrahedra;
-        public IArray<Vector> Vertices;
+        public Vector[] Vertices;
+        public Triangle<int>[] Indices;
     }
 }

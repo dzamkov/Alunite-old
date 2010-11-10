@@ -100,15 +100,8 @@ namespace Alunite
                     }
                 }
             };
-        }
 
-        /// <summary>
-        /// Program main entry point.
-        /// </summary>
-        public unsafe static void Main(string[] Args)
-        {
-            Window w = new Window();
-            w.Run();
+            this._Dia = new Diagram();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -142,9 +135,6 @@ namespace Alunite
             this._Dirt.Bind();
             GL.Uniform1(GL.GetUniformLocation(this._ShaderProgram, "MaterialDiffuse"), 0);
             GL.Uniform3(GL.GetUniformLocation(this._ShaderProgram, "SunDirection"), (Vector3)this._SunDir);
-
-            GL.LineWidth(2.0f);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
 
             this._VBO.Render(BeginMode.Triangles);
             GL.UseProgram(0);
@@ -186,6 +176,10 @@ namespace Alunite
             }
             GL.Disable(EnableCap.Blend);
             GL.PopMatrix();
+
+            // Diagram
+            this._Dia.RenderSetup();
+            this._Dia.Render();
 
             System.Threading.Thread.Sleep(1);
 
@@ -335,6 +329,8 @@ namespace Alunite
 
         public static readonly Vector EyeOffset = new Vector(0.0, 0.0, 1.4);
 
+        private Diagram _Dia;
+
         private Vector _SunDir;
 
         private double _CamZ;
@@ -346,7 +342,6 @@ namespace Alunite
         private Texture[] _Skybox;
         private Texture _Dirt;
 
-        private List<List<Point>> _Polygon;
         private int _ShaderProgram;
         private World _World;
         private NVVBO _VBO;
