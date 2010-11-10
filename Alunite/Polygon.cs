@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Alunite
 {
@@ -192,17 +193,6 @@ namespace Alunite
                             }
 
                             break;
-                        }
-
-                        if (!divergent && nextsweep != null)
-                        {
-                            // The next sweep might be destroyed, if it was part of a merge earlier
-                            _Sweep<Vertex> nextval = nextsweep.Value;
-                            if (nextval.NextLowChain.Equals(vert))
-                            {
-                                res.UnionWith(nextval.Finish(vert));
-                                sweeps.Remove(nextsweep);
-                            }
                         }
                         res.UnionWith(curval.ProcessNextHigh(Polygon, vert, prevvert));
                         
@@ -553,6 +543,33 @@ namespace Alunite
             {
                 Relation = inpoly ? AreaRelation.Inside : AreaRelation.Outside
             };
+        }
+
+        /// <summary>
+        /// Reads a polygon from a PNT file.
+        /// </summary>
+        public static IEnumerable<List<Point>> ReadPNTFile(string[] Lines)
+        {
+            int curline = 0;
+            int partsleft = 0;
+            int pointsleft = 0;
+            partsleft = int.Parse(Lines[curline]);
+            curline++;
+            while (partsleft > 0)
+            {
+                pointsleft = int.Parse(Lines[curline]);
+                curline++;
+                List<Point> pointlist = new List<Point>();
+                while (pointsleft > 0)
+                {
+                    string[] components = Lines[curline].Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    pointlist.Add(new Point(double.Parse(components[0]), double.Parse(components[1])));
+                    curline++;
+                    pointsleft--;
+                }
+                yield return pointlist;
+                partsleft--;
+            }
         }
     }
 }

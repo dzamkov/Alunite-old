@@ -42,6 +42,7 @@ namespace Alunite
             Path textures = resources["Textures"];
             Path models = resources["Models"];
             Path skyboxes = resources["Skyboxes"];
+            Path misc = resources["Misc"];
 
             // World
             this._World = new World();
@@ -345,6 +346,7 @@ namespace Alunite
         private Texture[] _Skybox;
         private Texture _Dirt;
 
+        private List<List<Point>> _Polygon;
         private int _ShaderProgram;
         private World _World;
         private NVVBO _VBO;
