@@ -13,7 +13,7 @@ namespace Alunite
         public Primitive(Vector[] Vertices, Triangle<int>[] Indices)
         {
             this.Vertices = Vertices;
-            this.Indices = Indices;
+            this.Triangles = Indices;
         }
 
         /// <summary>
@@ -72,6 +72,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Dereferences a triangle in the primitive.
+        /// </summary>
+        public Triangle<Vector> Dereference(Triangle<int> Triangle)
+        {
+            return new Triangle<Vector>(
+                this.Vertices[Triangle.A],
+                this.Vertices[Triangle.B],
+                this.Vertices[Triangle.C]);
+        }
+
+        /// <summary>
         /// Creates a diagram representing this primitive.
         /// </summary>
         public Diagram CreateDiagram()
@@ -82,7 +93,7 @@ namespace Alunite
             {
                 verti[t] = dia.AddVertex(this.Vertices[t]);
             }
-            foreach (Triangle<int> tri in this.Indices)
+            foreach (Triangle<int> tri in this.Triangles)
             {
                 dia.SetBorderedTriangle(
                     new Triangle<int>(verti[tri.A], verti[tri.B], verti[tri.C]), 
@@ -93,6 +104,6 @@ namespace Alunite
         }
 
         public Vector[] Vertices;
-        public Triangle<int>[] Indices;
+        public Triangle<int>[] Triangles;
     }
 }

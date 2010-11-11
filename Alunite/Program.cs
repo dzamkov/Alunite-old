@@ -11,8 +11,8 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            Primitive icosa = Primitive.Icosahedron;
-            Diagram dia = icosa.CreateDiagram();
+            Planet planet = new Planet();
+            Diagram dia = planet.CreateDiagram();
             dia.Display();
         }
     }

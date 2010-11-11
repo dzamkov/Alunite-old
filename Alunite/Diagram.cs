@@ -15,9 +15,17 @@ namespace Alunite
         public Diagram()
         {
             this._Triangles = new Dictionary<Triangle<int>, Color>();
-            this._Segments = new Dictionary<UnorderedSegment<int>, _SegmentStyle>();
+            this._Segments = new Dictionary<UnorderedSegment<int>, _Style>();
             this._SegmentsByThickness = new Dictionary<double, List<UnorderedSegment<int>>>();
             this._Vertices = new List<Vector>();
+        }
+
+        public Diagram(List<Vector> Vertices)
+        {
+            this._Triangles = new Dictionary<Triangle<int>, Color>();
+            this._Segments = new Dictionary<UnorderedSegment<int>, _Style>();
+            this._SegmentsByThickness = new Dictionary<double, List<UnorderedSegment<int>>>();
+            this._Vertices = Vertices;
         }
 
         /// <summary>
@@ -35,15 +43,21 @@ namespace Alunite
         /// </summary>
         public void RenderSetup()
         {
-            GL.UseProgram(0);
+            GL.Enable(EnableCap.CullFace);
+            GL.Enable(EnableCap.ColorMaterial);
             GL.Disable(EnableCap.Texture2D);
             GL.Enable(EnableCap.DepthTest);
+
+            GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
+
+            GL.UseProgram(0);
+           
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+
             GL.Enable(EnableCap.Light0);
             GL.Light(LightName.Light0, LightParameter.Position, new Vector4(1.0f, 1.0f, 1.0f, 0.0f));
-            GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.9, 0.9, 0.9));
-            GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.7, 0.7, 0.7));
-            GL.Enable(EnableCap.CullFace);
+            GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.6, 0.6, 0.6));
+            GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.1, 0.1, 0.1));
         }
 
         /// <summary>
@@ -96,7 +110,7 @@ namespace Alunite
         public void SetSegment(Segment<int> Segment, Color Color, double Thickness)
         {
             UnorderedSegment<int> unseg = new UnorderedSegment<int>(Segment);
-            this._Segments[unseg] = new _SegmentStyle() { Color = Color, Thickness = Thickness };
+            this._Segments[unseg] = new _Style() { Color = Color, Thickness = Thickness };
             List<UnorderedSegment<int>> seglist;
             if (!this._SegmentsByThickness.TryGetValue(Thickness, out seglist))
             {
@@ -221,7 +235,7 @@ namespace Alunite
                 GL.Begin(BeginMode.Lines);
                 foreach (var segi in thickness.Value)
                 {
-                    _SegmentStyle style = this._Segments[segi];
+                    _Style style = this._Segments[segi];
                     this._OutputSegment(segi.Source, style.Color, style.Thickness);
                 }
                 GL.End();
@@ -245,9 +259,9 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Rendering style for a segment.
+        /// Rendering style for a segment or point.
         /// </summary>
-        private struct _SegmentStyle
+        private struct _Style
         {
             public Color Color;
             public double Thickness;
@@ -255,7 +269,7 @@ namespace Alunite
 
         private List<Vector> _Vertices;
         private Dictionary<Triangle<int>, Color> _Triangles;
-        private Dictionary<UnorderedSegment<int>, _SegmentStyle> _Segments;
+        private Dictionary<UnorderedSegment<int>, _Style> _Segments;
         private Dictionary<double, List<UnorderedSegment<int>>> _SegmentsByThickness;
     }
 }
