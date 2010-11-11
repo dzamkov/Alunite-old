@@ -23,7 +23,7 @@ namespace Alunite
 
             // Random splits
             Random r = new Random(100);
-            for (int t = 0; t < 36; t++)
+            for (int t = 0; t < 1000; t++)
             {
                 
                 foreach (Triangle<int> tri in this._Triangles)
@@ -85,10 +85,19 @@ namespace Alunite
 
             this._Triangles.Remove(Triangle);
 
-            foreach (Segment<int> seg in Triangle.Segments)
+            // Maintain delaunay property by flipping encroached triangles.
+            List<Segment<int>> finalsegs = new List<Segment<int>>();
+            Stack<Segment<int>> possiblealtersegs = new Stack<Segment<int>>();
+            possiblealtersegs.Push(new Segment<int>(Triangle.A, Triangle.B));
+            possiblealtersegs.Push(new Segment<int>(Triangle.B, Triangle.C));
+            possiblealtersegs.Push(new Segment<int>(Triangle.C, Triangle.A));
+
+            while (possiblealtersegs.Count > 0)
             {
-                Triangle<int> othertri = this._SegmentTriangles[seg.Flip];
-                int otherpoint = Alunite.Triangle.Align(othertri, seg.Flip).Value.Vertex;
+                Segment<int> seg = possiblealtersegs.Pop();
+
+                Triangle<int> othertri = Alunite.Triangle.Align(this._SegmentTriangles[seg.Flip], seg.Flip).Value;
+                int otherpoint = othertri.Vertex;
                 Triangle<Vector> othervectri = this.Dereference(othertri);
                 Vector othercircumcenter = Alunite.Triangle.Normal(othervectri);
                 double othercircumangle = Vector.Dot(othercircumcenter, othervectri.A);
@@ -98,13 +107,18 @@ namespace Alunite
                 if (npointangle > othercircumangle)
                 {
                     this._Triangles.Remove(othertri);
-                    this._AddTriangle(new Triangle<int>(seg.A, otherpoint, npoint));
-                    this._AddTriangle(new Triangle<int>(seg.B, npoint, otherpoint));
+                    possiblealtersegs.Push(new Segment<int>(othertri.A, othertri.B));
+                    possiblealtersegs.Push(new Segment<int>(othertri.C, othertri.A));
                 }
                 else
                 {
-                    this._AddTriangle(new Triangle<int>(npoint, seg));
+                    finalsegs.Add(seg);
                 }
+            }
+
+            foreach (Segment<int> seg in finalsegs)
+            {
+                this._AddTriangle(new Triangle<int>(npoint, seg));
             }
         }
 
