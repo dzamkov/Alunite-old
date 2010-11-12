@@ -23,7 +23,7 @@ namespace Alunite
 
             // Random splits
             Random r = new Random(100);
-            for (int t = 0; t < 1000; t++)
+            for (int t = 0; t < 5000; t++)
             {
                 
                 foreach (Triangle<int> tri in this._Triangles)
@@ -48,6 +48,25 @@ namespace Alunite
                 dia.SetBorderedTriangle(tri, Color.RGB(0.0, 0.2, 1.0), Color.RGB(0.3, 1.0, 0.3), 4.0);
             }
             return dia;
+        }
+
+        /// <summary>
+        /// Creates a vertex buffer representation of the current state of the planet.
+        /// </summary>
+        public VBO<NormalVertex, NormalVertex.Model> CreateVBO()
+        {
+            NormalVertex[] verts = new NormalVertex[this._Vertices.Count];
+            for (int t = 0; t < verts.Length; t++)
+            {
+                // Lol, position and normal are the same.
+                Vector pos = this._Vertices[t];
+                verts[t].Position = pos;
+                verts[t].Normal = pos;
+            }
+            return new VBO<NormalVertex, NormalVertex.Model>(
+                NormalVertex.Model.Singleton,
+                verts, verts.Length,
+                this._Triangles, this._Triangles.Count);
         }
 
         /// <summary>

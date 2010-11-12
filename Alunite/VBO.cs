@@ -201,38 +201,38 @@ namespace Alunite
         where V : struct, IVertex
         where M : IVertexModel<V>
     {
-        public VBO(M Model, IArray<V> Source)
+        public VBO(M Model, IEnumerable<V> VertexSource, int VertexAmount)
         {
             this._Model = Model;
-            this._Count = Source.Size;
-            this._ArrayBuffer = _WriteArrayBuffer(Model, Source);
+            this._Count = VertexAmount;
+            this._ArrayBuffer = _WriteArrayBuffer(this._Model, VertexSource, VertexAmount);
         }
 
-        public VBO(M Model, IArray<V> VerticeSource, IArray<int> IndiceSource)
+        public VBO(M Model, IEnumerable<V> VertexSource, int VertexAmount, IEnumerable<int> IndexSource, int IndexAmount)
         {
             this._Model = Model;
-            this._Count = IndiceSource.Size;
-            this._ArrayBuffer = _WriteArrayBuffer(Model, VerticeSource);
-            this._ElementArrayBuffer = _WriteElementArrayBuffer(IndiceSource.Items, this._Count);
+            this._Count = IndexAmount;
+            this._ArrayBuffer = _WriteArrayBuffer(this._Model, VertexSource, VertexAmount);
+            this._ElementArrayBuffer = _WriteElementArrayBuffer(IndexSource, IndexAmount);
         }
 
-        public VBO(M Model, IArray<V> VerticeSource, ISet<Triangle<int>> TriangleSource)
+        public VBO(M Model, IEnumerable<V> VertexSource, int VertexAmount, IEnumerable<Triangle<int>> TriangleSource, int TriangleAmount)
         {
             this._Model = Model;
-            this._Count = TriangleSource.Size * 3;
-            this._ArrayBuffer = _WriteArrayBuffer(Model, VerticeSource);
-            this._ElementArrayBuffer = _WriteElementArrayBuffer(_Indices(TriangleSource.Items), this._Count);
+            this._Count = TriangleAmount * 3;
+            this._ArrayBuffer = _WriteArrayBuffer(this._Model, VertexSource, VertexAmount);
+            this._ElementArrayBuffer = _WriteElementArrayBuffer(_Indices(TriangleSource), TriangleAmount * 3);
         }
 
-        private static unsafe uint _WriteArrayBuffer(M Model, IArray<V> Source)
+        private static unsafe uint _WriteArrayBuffer(M Model, IEnumerable<V> Source, int Size)
         {
             uint ab;
             int vertsize = Model.Size;
             GL.GenBuffers(1, out ab);
             GL.BindBuffer(BufferTarget.ArrayBuffer, ab);
-            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Source.Size * vertsize), IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Size * vertsize), IntPtr.Zero, BufferUsageHint.StaticDraw);
             byte* buffer = (byte*)GL.MapBuffer(BufferTarget.ArrayBuffer, BufferAccess.WriteOnly).ToPointer();
-            foreach (V vertex in Source.Items)
+            foreach (V vertex in Source)
             {
                 Model.Write(vertex, (void*)(buffer));
                 buffer += vertsize;

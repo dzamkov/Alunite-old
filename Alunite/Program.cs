@@ -12,8 +12,8 @@ namespace Alunite
         public static void Main(string[] Args)
         {
             Planet planet = new Planet();
-            Diagram dia = planet.CreateDiagram();
-            dia.Display();
+            Window win = new Window(planet);
+            win.Run();
         }
     }
 }

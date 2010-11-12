@@ -67,7 +67,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Computes the normals for the specified set of vertices and triangles. The indices for the normals are aligned with vertices.
+        /// Computes the normals for the specified set of vertices and triangles assuming a smooth surface.
         /// </summary>
         public static StandardArray<Vector> ComputeNormals(IArray<Vector> Vertices, IEnumerable<Triangle<int>> Triangles, bool Normalize)
         {
