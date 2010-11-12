@@ -15,7 +15,7 @@ void main()
 	
 	vec3 sunref = reflect(SunDirection, Normal);
 	
-	float atmos = pow(max(1.0 - dot(Normal, -eyedir), 0.0), 8.0) + 0.1;
+	float atmos = min(pow(max(1.0 - dot(Normal, -eyedir), 0.0), 8.0) + 0.1, 1.0);
 	float specdot = max(dot(eyedir, sunref), 0.0);
 	float sundot = dot(Normal, SunDirection);
 	float normlight = smoothstep(-0.2, 1.0, sundot);
