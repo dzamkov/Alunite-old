@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Text;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+
 
 namespace Alunite
 {
@@ -54,6 +56,121 @@ namespace Alunite
             GL.AttachShader(shade.Program, fshade);
             GL.LinkProgram(shade.Program);
             return shade;
+        }
+
+        /// <summary>
+        /// Loads a shader from a single, defining _VERTEX_ for vertex shaders and _FRAGMENT_ for fragment shaders.
+        /// </summary>
+        public static Shader Load(Alunite.Path File)
+        {
+            return Load(new Alunite.Path[] { File }, new Dictionary<string, string>());
+        }
+
+        /// <summary>
+        /// More advanced shader loading function that will dynamically replace constants in the specified files.
+        /// </summary>
+        public static Shader Load(IEnumerable<Alunite.Path> Files, Dictionary<string, string> Constants)
+        {
+            int vshade = GL.CreateShader(ShaderType.VertexShader);
+            int fshade = GL.CreateShader(ShaderType.FragmentShader);
+
+            StringBuilder vshadesource = new StringBuilder();
+            StringBuilder fshadesource = new StringBuilder();
+            List<string> fullsourcelines = new List<string>();
+            foreach (Alunite.Path Path in Files)
+            {
+                string[] lines = File.ReadAllLines(Path.PathString);
+                foreach (string line in lines)
+                {
+                    fullsourcelines.Add(line);
+                }
+            }
+            Dictionary<string, string> vshadeconsts = new Dictionary<string, string>(Constants);
+            Dictionary<string, string> fshadeconsts = new Dictionary<string, string>(Constants);
+            vshadeconsts.Add("_VERTEX_", "1");
+            fshadeconsts.Add("_FRAGMENT_", "1");
+
+            BuildSource(fullsourcelines, vshadeconsts, vshadesource);
+            GL.ShaderSource(vshade, vshadesource.ToString());
+            GL.CompileShader(vshade);
+            vshadesource = null;
+
+            BuildSource(fullsourcelines, fshadeconsts, fshadesource);
+            GL.ShaderSource(fshade, fshadesource.ToString());
+            GL.CompileShader(fshade);
+            fshadesource = null;
+
+            Shader shade = new Shader();
+            shade.Program = GL.CreateProgram();
+            GL.AttachShader(shade.Program, vshade);
+            GL.AttachShader(shade.Program, fshade);
+            GL.LinkProgram(shade.Program);
+            return shade;
+        }
+
+
+        /// <summary>
+        /// Precompiles the source code defined by the lines with the specified constants defined. Outputs the precompiled source
+        /// to the given stringbuilder.
+        /// </summary>
+        public static void BuildSource(IEnumerable<string> Lines, Dictionary<string, string> Constants, StringBuilder Output)
+        {
+            _ProcessBlock(Lines.GetEnumerator(), Constants, Output, true);
+        }
+
+        /// <summary>
+        /// Processes an ifdef/endif block where Interpret denotes the success of the if statement.
+        /// </summary>
+        private static void _ProcessBlock(IEnumerator<string> LineEnumerator, Dictionary<string, string> Constants, StringBuilder Output, bool Interpret)
+        {
+            while (LineEnumerator.MoveNext())
+            {
+                string line = LineEnumerator.Current;
+
+                // Does this line contain a directive?
+                if (line.Length > 0)
+                {
+                    if (line[0] == '#')
+                    {
+                        string[] lineparts = line.Split(' ');
+                        if (lineparts[0] == "#ifdef")
+                        {
+                            _ProcessBlock(LineEnumerator, Constants, Output, Interpret && Constants.ContainsKey(lineparts[1]));
+                        }
+                        if (lineparts[0] == "#else")
+                        {
+                            _ProcessBlock(LineEnumerator, Constants, Output, !Interpret);
+                        }
+                        if (lineparts[0] == "#endif")
+                        {
+                            return;
+                        }
+                        if (Interpret)
+                        {
+                            if (lineparts[0] == "#define")
+                            {
+                                Constants[lineparts[1]] = lineparts[2];
+                            }
+                            if (lineparts[0] == "#undef")
+                            {
+                                Constants.Remove(lineparts[1]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (Interpret)
+                        {
+                            // Replace constants
+                            foreach (KeyValuePair<string, string> constant in Constants)
+                            {
+                                line = line.Replace(constant.Key, constant.Value);
+                            }
+                            Output.AppendLine(line);
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

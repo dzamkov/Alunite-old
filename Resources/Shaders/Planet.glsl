@@ -1,5 +1,3 @@
-#version 150
-
 uniform vec3 EyePosition;
 uniform vec3 SunDirection;
 
@@ -8,6 +6,18 @@ varying vec3 Normal;
 
 const vec3 SeaColor = vec3(0.1, 0.1, 0.5);
 const vec3 AtmoColor = vec3(0.7, 0.7, 0.9);
+
+#ifdef _VERTEX_
+
+void main()
+{
+    gl_FrontColor = gl_Color;
+    gl_Position = ftransform();
+	Position = vec3(gl_ModelViewMatrix * gl_Vertex);
+	Normal = gl_NormalMatrix * gl_Normal;
+}
+
+#else
 
 void main()
 {
@@ -24,3 +34,5 @@ void main()
 	
 	gl_FragColor = vec4(SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos, 1.0);
 }
+
+#endif

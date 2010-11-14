@@ -44,7 +44,7 @@ namespace Alunite
             Path resources = Path.ApplicationStartup.Parent.Parent.Parent["Resources"];
             Path shaders = resources["Shaders"];
 
-            this._PlanetShader = Shader.Load(shaders["PlanetVS.glsl"], shaders["PlanetFS.glsl"]);
+            this._PlanetShader = Shader.Load(shaders["Planet.glsl"]);
             this._VBO = Planet.CreateVBO();
         }
 
