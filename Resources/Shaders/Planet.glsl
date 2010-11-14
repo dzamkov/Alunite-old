@@ -25,15 +25,36 @@ void main()
 void main()
 {
 	vec3 ray = normalize(Ray);
-	vec3 cen = -EyePosition;
+	
 	
 	// Find where the ray intersects the planet.
+	vec3 cen = -EyePosition;
 	float r = length(cen);
     float mu = dot(cen, ray);
     float t = mu - sqrt(mu * mu - r * r + Radius * Radius); // Distance along ray of hit
-	vec3 hit = ray * t; // Point on ray where hit
+	vec3 hit = ray * t + EyePosition; // Point on ray where hit
+	
+	vec3 hitnorm = normalize(hit);
+	
+	if(t > 0.0)
+	{
+		vec3 eyedir = normalize(hit - EyePosition);
 
-	gl_FragColor = vec4(hit + EyePosition, 1.0);
+		vec3 sunref = reflect(SunDirection, hitnorm);
+
+		float atmos = min(pow(max(1.0 - dot(hitnorm, -eyedir), 0.0), 8.0) + 0.1, 1.0);
+		float specdot = max(dot(eyedir, sunref), 0.0);
+		float sundot = dot(hitnorm, SunDirection);
+		float normlight = smoothstep(-0.2, 1.0, sundot);
+		float sealight = normlight * 0.8 + pow(specdot, 4.0) * 0.1 + 0.1;
+		float atmolight = normlight * 0.4;
+
+		gl_FragColor = vec4(SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos, 1.0);
+	}
+	else
+	{
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+	}
 }
 
 #endif
