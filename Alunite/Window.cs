@@ -41,11 +41,11 @@ namespace Alunite
             GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.6, 0.6, 0.6));
             GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.1, 0.1, 0.1));
 
+            
             Path resources = Path.ApplicationStartup.Parent.Parent.Parent["Resources"];
             Path shaders = resources["Shaders"];
-
-            this._PlanetShader = Shader.Load(shaders["Planet.glsl"]);
-            this._VBO = Planet.CreateVBO();
+            this._Planet = Planet;
+            this._Planet.Load(shaders);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -54,20 +54,14 @@ namespace Alunite
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             double cosx = Math.Cos(this._XRot);
-            Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * 1.7;
-            GL.MatrixMode(MatrixMode.Projection);
-            Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(1.2, (double)this.Width / (double)this.Height, 0.01, 400.0);
-            GL.LoadMatrix(ref proj);
-            Matrix4d view = Matrix4d.LookAt(
-                eyepos,
-                new Vector3d(),
-                new Vector3d(0.0, 0.0, 1.0));
-            GL.MultMatrix(ref view);
+            Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * 5.0;
+            Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(1.2f, (float)this.Width / (float)this.Height, 0.1f, 10000.0f);
+            Matrix4 view = Matrix4.LookAt(
+                new Vector3(),
+                -(Vector3)eyepos,
+                new Vector3(0.0f, 0.0f, 1.0f));
 
-            this._PlanetShader.SetUniform("EyePosition", eyepos);
-            this._PlanetShader.SetUniform("SunDirection", new Vector(1.0, 1.0, 1.0));
-            this._PlanetShader.Call();
-            this._VBO.Render(BeginMode.Triangles);
+            this._Planet.Render(proj, view, eyepos, new Vector(1.0, 1.0, 1.0));
 
             this.SwapBuffers();
         }
@@ -90,7 +84,6 @@ namespace Alunite
 
         private double _XRot;
         private double _ZRot;
-        private Shader _PlanetShader;
-        private VBO<NormalVertex, NormalVertex.Model> _VBO;
+        private Planet _Planet;
     }
 }

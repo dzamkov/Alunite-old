@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using OpenTK;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
+
 namespace Alunite
 {
     /// <summary>
@@ -57,6 +61,23 @@ namespace Alunite
                 NormalVertex.Model.Singleton,
                 verts, verts.Length,
                 this._Triangles, this._Triangles.Count);
+        }
+
+        public void Load(Alunite.Path ShaderPath)
+        {
+            this._PlanetShader = Shader.Load(ShaderPath["Planet.glsl"]);
+        }
+
+        public void Render(Matrix4 Proj, Matrix4 View, Vector EyePosition, Vector SunDirection)
+        {
+            Proj.Invert();
+            //View.Invert();
+            GL.LoadIdentity();
+            this._PlanetShader.SetUniform("ProjInverse", ref Proj);
+            this._PlanetShader.SetUniform("ViewInverse", ref View);
+            this._PlanetShader.SetUniform("EyePosition", EyePosition);
+            this._PlanetShader.SetUniform("SunDirection", SunDirection);
+            this._PlanetShader.DrawFull();
         }
 
         /// <summary>
@@ -182,6 +203,8 @@ namespace Alunite
                 this._AddTriangle(new Triangle<int>(midpoints[0], midpoints[1], midpoints[2]));
             }
         }
+
+        private Shader _PlanetShader;
 
         private List<Vector> _Vertices;
         private HashSet<Triangle<int>> _Triangles;

@@ -32,11 +32,41 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Sets a uniform matrix.
+        /// </summary>
+        public void SetUniform(string Name, ref Matrix4 Matrix)
+        {
+            GL.UniformMatrix4(GL.GetUniformLocation(this.Program, Name), true, ref Matrix);
+        }
+
+        /// <summary>
+        /// Runs the fragment shader on all pixels on the current viewport.
+        /// </summary>
+        public void DrawFull()
+        {
+            this.Call();
+            DrawQuad();
+        }
+
+        /// <summary>
         /// Sets the rendering mode to default (removing all shaders).
         /// </summary>
         public static void Dismiss()
         {
             GL.UseProgram(0);
+        }
+
+        /// <summary>
+        /// Draws a shape that includes the entire viewport.
+        /// </summary>
+        public static void DrawQuad()
+        {
+            GL.Begin(BeginMode.TriangleStrip);
+            GL.Vertex2(-1.0, -1.0);
+            GL.Vertex2(+1.0, -1.0);
+            GL.Vertex2(-1.0, +1.0);
+            GL.Vertex2(+1.0, +1.0);
+            GL.End();
         }
 
         /// <summary>
@@ -54,6 +84,7 @@ namespace Alunite
             shade.Program = GL.CreateProgram();
             GL.AttachShader(shade.Program, vshade);
             GL.AttachShader(shade.Program, fshade);
+            
             GL.LinkProgram(shade.Program);
             return shade;
         }

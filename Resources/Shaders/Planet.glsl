@@ -1,38 +1,39 @@
 uniform vec3 EyePosition;
 uniform vec3 SunDirection;
-
-varying vec3 Position;
-varying vec3 Normal;
+uniform mat4 ProjInverse;
+uniform mat4 ViewInverse;
 
 const vec3 SeaColor = vec3(0.1, 0.1, 0.5);
 const vec3 AtmoColor = vec3(0.7, 0.7, 0.9);
+const float Radius = 1.0;
+
+varying vec2 Coords;
+varying vec3 Ray;
+varying vec3 Position;
 
 #ifdef _VERTEX_
 
 void main()
 {
-    gl_FrontColor = gl_Color;
-    gl_Position = ftransform();
-	Position = vec3(gl_ModelViewMatrix * gl_Vertex);
-	Normal = gl_NormalMatrix * gl_Normal;
+	Coords = gl_Vertex.xy * 0.5 + 0.5;
+	Ray = (ViewInverse * vec4((ProjInverse * gl_Vertex).xyz, 1.0)).xyz;
+	gl_Position = gl_Vertex;
 }
 
 #else
 
 void main()
 {
-	vec3 eyedir = normalize(Position - EyePosition);
+	vec3 ray = normalize(Ray);
+	vec3 cen = -EyePosition;
 	
-	vec3 sunref = reflect(SunDirection, Normal);
-	
-	float atmos = min(pow(max(1.0 - dot(Normal, -eyedir), 0.0), 8.0) + 0.1, 1.0);
-	float specdot = max(dot(eyedir, sunref), 0.0);
-	float sundot = dot(Normal, SunDirection);
-	float normlight = smoothstep(-0.2, 1.0, sundot);
-	float sealight = normlight * 0.8 + pow(specdot, 4.0) * 0.1 + 0.1;
-	float atmolight = normlight * 0.4;
-	
-	gl_FragColor = vec4(SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos, 1.0);
+	// Find where the ray intersects the planet.
+	float r = length(cen);
+    float mu = dot(cen, ray);
+    float t = mu - sqrt(mu * mu - r * r + Radius * Radius); // Distance along ray of hit
+	vec3 hit = ray * t; // Point on ray where hit
+
+	gl_FragColor = vec4(hit + EyePosition, 1.0);
 }
 
 #endif
