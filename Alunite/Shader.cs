@@ -40,6 +40,14 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Sets a uniform texture.
+        /// </summary>
+        public void SetUniform(string Name, TextureUnit Unit)
+        {
+            GL.Uniform1(GL.GetUniformLocation(this.Program, Name), (int)Unit);
+        }
+
+        /// <summary>
         /// Runs the fragment shader on all pixels on the current viewport.
         /// </summary>
         public void DrawFull()

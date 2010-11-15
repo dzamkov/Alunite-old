@@ -50,6 +50,7 @@ namespace Alunite
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
+            GL.Viewport(0, 0, this.Width, this.Height);
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 

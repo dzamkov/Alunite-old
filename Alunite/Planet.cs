@@ -65,7 +65,38 @@ namespace Alunite
 
         public void Load(Alunite.Path ShaderPath)
         {
-            this._PlanetShader = Shader.Load(ShaderPath["Planet.glsl"]);
+            Path atmosphere = ShaderPath["Atmosphere"];
+            Path precompute = atmosphere["Precompute"];
+            this._PlanetShader = Shader.Load(atmosphere["Planet.glsl"]);
+
+            // Atmospheric scattering precompution
+            int transw = 256;
+            int transh = 64;
+            TextureUnit transunit = TextureUnit.Texture0;
+            
+            GL.ActiveTexture(transunit);
+            this._TransmittanceTexture = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, this._TransmittanceTexture);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.BindBuffer(BufferTarget.PixelUnpackBuffer, 0);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb16f, transw, transh, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
+            
+
+            uint fbo;
+            GL.GenFramebuffers(1, out fbo);
+            GL.BindFramebuffer(FramebufferTarget.FramebufferExt, fbo);
+            GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
+            GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
+            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._TransmittanceTexture, 0);
+            GL.Viewport(0, 0, transw, transh);
+            Shader.Load(precompute["Transmittance.glsl"]).DrawFull();
+
+
+            GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
+
         }
 
         public void Render(Matrix4 Proj, Matrix4 View, Vector EyePosition, Vector SunDirection)
@@ -73,6 +104,7 @@ namespace Alunite
             Proj.Invert();
             //View.Invert();
             GL.LoadIdentity();
+            this._PlanetShader.SetUniform("Transmittance", this._TransmittanceUnit);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);
             this._PlanetShader.SetUniform("ViewInverse", ref View);
             this._PlanetShader.SetUniform("EyePosition", EyePosition);
@@ -204,6 +236,8 @@ namespace Alunite
             }
         }
 
+        private TextureUnit _TransmittanceUnit;
+        private int _TransmittanceTexture;
         private Shader _PlanetShader;
 
         private List<Vector> _Vertices;
