@@ -50,13 +50,14 @@ void main()
 		float sealight = normlight * 0.8 + pow(specdot, 4.0) * 0.5 + 0.1;
 		float atmolight = normlight * 0.4;
 
-		//gl_FragColor = vec4(SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos, 1.0);
-		gl_FragColor = texture2D(Transmittance, Coords);
+		gl_FragColor = vec4(SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos, 1.0);
 	}
 	else
 	{
 		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 	}
+	
+	gl_FragColor = texture2D(Transmittance, Coords);
 }
 
 #endif

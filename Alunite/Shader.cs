@@ -158,9 +158,10 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Processes an ifdef/endif block where Interpret denotes the success of the if statement.
+        /// Processes an ifdef/else/endif block where Interpret denotes the success of the if statement. Returns true if exited on an endif or false
+        /// if exited on an else.
         /// </summary>
-        private static void _ProcessBlock(IEnumerator<string> LineEnumerator, Dictionary<string, string> Constants, StringBuilder Output, bool Interpret)
+        private static bool _ProcessBlock(IEnumerator<string> LineEnumerator, Dictionary<string, string> Constants, StringBuilder Output, bool Interpret)
         {
             while (LineEnumerator.MoveNext())
             {
@@ -174,21 +175,42 @@ namespace Alunite
                         string[] lineparts = line.Split(' ');
                         if (lineparts[0] == "#ifdef")
                         {
-                            _ProcessBlock(LineEnumerator, Constants, Output, Interpret && Constants.ContainsKey(lineparts[1]));
+                            if (Interpret)
+                            {
+                                bool contains = Constants.ContainsKey(lineparts[1]);
+                                if (!_ProcessBlock(LineEnumerator, Constants, Output, contains))
+                                {
+                                    _ProcessBlock(LineEnumerator, Constants, Output, !contains);
+                                }
+                            }
+                            else
+                            {
+                                if (!_ProcessBlock(LineEnumerator, Constants, Output, false))
+                                {
+                                    _ProcessBlock(LineEnumerator, Constants, Output, false);
+                                }
+                            }
                         }
                         if (lineparts[0] == "#else")
                         {
-                            _ProcessBlock(LineEnumerator, Constants, Output, !Interpret);
+                            return false;
                         }
                         if (lineparts[0] == "#endif")
                         {
-                            return;
+                            return true;
                         }
                         if (Interpret)
                         {
                             if (lineparts[0] == "#define")
                             {
-                                Constants[lineparts[1]] = lineparts[2];
+                                if (lineparts.Length > 2)
+                                {
+                                    Constants[lineparts[1]] = lineparts[2];
+                                }
+                                else
+                                {
+                                    Constants[lineparts[1]] = "1";
+                                }
                             }
                             if (lineparts[0] == "#undef")
                             {
@@ -210,6 +232,8 @@ namespace Alunite
                     }
                 }
             }
+
+            return true;
         }
 
         /// <summary>
