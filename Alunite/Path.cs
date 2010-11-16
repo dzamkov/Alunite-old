@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using OPath = System.IO.Path;
 
 namespace Alunite
 {
@@ -35,6 +36,15 @@ namespace Alunite
             {
                 return new Path(Directory.GetParent(this._Path).FullName);
             }
+        }
+
+        /// <summary>
+        /// Finds the absolute path for the specified relative path.
+        /// </summary>
+        public Path Lookup(string Relative)
+        {
+            Relative = Relative.Replace('/', OPath.DirectorySeparatorChar).Replace('\\', OPath.DirectorySeparatorChar);
+            return new Path(OPath.GetFullPath(this._Path + OPath.DirectorySeparatorChar + Relative));
         }
 
         /// <summary>

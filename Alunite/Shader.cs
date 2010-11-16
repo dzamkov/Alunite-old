@@ -102,39 +102,42 @@ namespace Alunite
         /// </summary>
         public static Shader Load(Alunite.Path File)
         {
-            return Load(new Alunite.Path[] { File }, new Dictionary<string, string>());
+            return Load(File, new Dictionary<string, string>());
         }
 
         /// <summary>
         /// More advanced shader loading function that will dynamically replace constants in the specified files.
         /// </summary>
-        public static Shader Load(IEnumerable<Alunite.Path> Files, Dictionary<string, string> Constants)
+        public static Shader Load(Alunite.Path File, Dictionary<string, string> Constants)
+        {
+            return Load(File, new PrecompilerInput()
+            {
+                Constants = Constants,
+                LoadedFiles = new Dictionary<string, string[]>()
+            });
+        }
+
+        /// <summary>
+        /// Loads a shader from the specified file using the specified input.
+        /// </summary>
+        public static Shader Load(Alunite.Path File, PrecompilerInput Input)
         {
             int vshade = GL.CreateShader(ShaderType.VertexShader);
             int fshade = GL.CreateShader(ShaderType.FragmentShader);
 
             StringBuilder vshadesource = new StringBuilder();
             StringBuilder fshadesource = new StringBuilder();
-            List<string> fullsourcelines = new List<string>();
-            foreach (Alunite.Path Path in Files)
-            {
-                string[] lines = File.ReadAllLines(Path.PathString);
-                foreach (string line in lines)
-                {
-                    fullsourcelines.Add(line);
-                }
-            }
-            Dictionary<string, string> vshadeconsts = new Dictionary<string, string>(Constants);
-            Dictionary<string, string> fshadeconsts = new Dictionary<string, string>(Constants);
-            vshadeconsts.Add("_VERTEX_", "1");
-            fshadeconsts.Add("_FRAGMENT_", "1");
+            PrecompilerInput vpce = Input.Copy();
+            PrecompilerInput fpce = Input.Copy();
+            vpce.Define("_VERTEX_", "1");
+            fpce.Define("_FRAGMENT_", "1");
 
-            BuildSource(fullsourcelines, vshadeconsts, vshadesource);
+            BuildSource(File, vpce, vshadesource);
             GL.ShaderSource(vshade, vshadesource.ToString());
             GL.CompileShader(vshade);
             vshadesource = null;
 
-            BuildSource(fullsourcelines, fshadeconsts, fshadesource);
+            BuildSource(File, fpce, fshadesource);
             GL.ShaderSource(fshade, fshadesource.ToString());
             GL.CompileShader(fshade);
             fshadesource = null;
@@ -147,21 +150,96 @@ namespace Alunite
             return shade;
         }
 
+        /// <summary>
+        /// Creates a new precompiler input set.
+        /// </summary>
+        public static PrecompilerInput CreatePrecompilerInput()
+        {
+            return new PrecompilerInput()
+            {
+                Constants = new Dictionary<string, string>(),
+                LoadedFiles = new Dictionary<string, string[]>()
+            };
+        }
+
+        /// <summary>
+        /// Input to the precompiler.
+        /// </summary>
+        public struct PrecompilerInput
+        {
+            public PrecompilerInput(Path File)
+            {
+                this.Constants = new Dictionary<string, string>();
+                this.LoadedFiles = new Dictionary<string, string[]>();
+            }
+
+            /// <summary>
+            /// Gets the file at the specified path.
+            /// </summary>
+            public string[] GetFile(Path Path)
+            {
+                string[] lines;
+                if (!this.LoadedFiles.TryGetValue(Path.PathString, out lines))
+                {
+                    this.LoadedFiles[Path.PathString] = lines = File.ReadAllLines(Path.PathString);
+                }
+                return lines;
+            }
+
+            /// <summary>
+            /// Creates a copy of this precompiler input with its own precompiler constants.
+            /// </summary>
+            public PrecompilerInput Copy()
+            {
+                return new PrecompilerInput()
+                {
+                    LoadedFiles = this.LoadedFiles,
+                    Constants = new Dictionary<string, string>(this.Constants)
+                };
+            }
+
+            /// <summary>
+            /// Defines a constant.
+            /// </summary>
+            public void Define(string Constant, string Value)
+            {
+                this.Constants[Constant] = Value;
+            }
+
+            /// <summary>
+            /// Undefines a constant.
+            /// </summary>
+            public void Undefine(string Constant)
+            {
+                this.Constants.Remove(Constant);
+            }
+
+            /// <summary>
+            /// Constants defined for the precompiler.
+            /// </summary>
+            public Dictionary<string, string> Constants;
+
+            /// <summary>
+            /// The files loaded for the precompiler.
+            /// </summary>
+            public Dictionary<string, string[]> LoadedFiles;
+        }
 
         /// <summary>
         /// Precompiles the source code defined by the lines with the specified constants defined. Outputs the precompiled source
         /// to the given stringbuilder.
         /// </summary>
-        public static void BuildSource(IEnumerable<string> Lines, Dictionary<string, string> Constants, StringBuilder Output)
+        public static void BuildSource(Path File, PrecompilerInput Input, StringBuilder Output)
         {
-            _ProcessBlock(Lines.GetEnumerator(), Constants, Output, true);
+            string[] lines = Input.GetFile(File);
+            _ProcessBlock(((IEnumerable<string>)lines).GetEnumerator(), File, Input, Output, true);
         }
 
         /// <summary>
         /// Processes an ifdef/else/endif block where Interpret denotes the success of the if statement. Returns true if exited on an endif or false
         /// if exited on an else.
         /// </summary>
-        private static bool _ProcessBlock(IEnumerator<string> LineEnumerator, Dictionary<string, string> Constants, StringBuilder Output, bool Interpret)
+        private static bool _ProcessBlock(IEnumerator<string> LineEnumerator, Path File, PrecompilerInput Input, StringBuilder Output, bool Interpret)
         {
             while (LineEnumerator.MoveNext())
             {
@@ -177,18 +255,26 @@ namespace Alunite
                         {
                             if (Interpret)
                             {
-                                bool contains = Constants.ContainsKey(lineparts[1]);
-                                if (!_ProcessBlock(LineEnumerator, Constants, Output, contains))
+                                bool contains = Input.Constants.ContainsKey(lineparts[1]);
+                                if (!_ProcessBlock(LineEnumerator, File, Input, Output, contains))
                                 {
-                                    _ProcessBlock(LineEnumerator, Constants, Output, !contains);
+                                    _ProcessBlock(LineEnumerator, File, Input, Output, !contains);
                                 }
                             }
                             else
                             {
-                                if (!_ProcessBlock(LineEnumerator, Constants, Output, false))
+                                if (!_ProcessBlock(LineEnumerator, File, Input, Output, false))
                                 {
-                                    _ProcessBlock(LineEnumerator, Constants, Output, false);
+                                    _ProcessBlock(LineEnumerator, File, Input, Output, false);
                                 }
+                            }
+                        }
+                        if (lineparts[0] == "#include")
+                        {
+                            if (Interpret)
+                            {
+                                string filepath = lineparts[1].Substring(1, lineparts[1].Length - 2);
+                                BuildSource(File.Parent.Lookup(filepath), Input, Output);
                             }
                         }
                         if (lineparts[0] == "#else")
@@ -205,16 +291,16 @@ namespace Alunite
                             {
                                 if (lineparts.Length > 2)
                                 {
-                                    Constants[lineparts[1]] = lineparts[2];
+                                    Input.Define(lineparts[1], lineparts[2]);
                                 }
                                 else
                                 {
-                                    Constants[lineparts[1]] = "1";
+                                    Input.Define(lineparts[1], "1");
                                 }
                             }
                             if (lineparts[0] == "#undef")
                             {
-                                Constants.Remove(lineparts[1]);
+                                Input.Undefine(lineparts[1]);
                             }
                         }
                     }
@@ -223,7 +309,7 @@ namespace Alunite
                         if (Interpret)
                         {
                             // Replace constants
-                            foreach (KeyValuePair<string, string> constant in Constants)
+                            foreach (KeyValuePair<string, string> constant in Input.Constants)
                             {
                                 line = line.Replace(constant.Key, constant.Value);
                             }

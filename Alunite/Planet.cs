@@ -92,10 +92,11 @@ namespace Alunite
             GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
             GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._TransmittanceTexture, 0);
             GL.Viewport(0, 0, transw, transh);
-            Dictionary<string, string> consts = new Dictionary<string, string>();
-            consts.Add("TRANSMITTANCE_H", transh.ToString());
-            consts.Add("TRANSMITTANCE_W", transw.ToString());
-            Shader.Load(new Path[] { precompute["Transmittance.glsl"] }, consts).DrawFull();
+
+            Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
+            pci.Define("TRANSMITTANCE_H", transh.ToString());
+            pci.Define("TRANSMITTANCE_W", transw.ToString());
+            Shader.Load(precompute["Transmittance.glsl"], pci).DrawFull();
 
 
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
