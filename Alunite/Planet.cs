@@ -75,22 +75,14 @@ namespace Alunite
             TextureUnit transunit = TextureUnit.Texture0;
             
             GL.ActiveTexture(transunit);
-            this._TransmittanceTexture = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, this._TransmittanceTexture);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-            GL.BindBuffer(BufferTarget.PixelUnpackBuffer, 0);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb16f, transw, transh, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
-            
+            this._TransmittanceTexture = Texture.Initialize2D(transw, transh, Texture.RGB16Float);
 
             uint fbo;
             GL.GenFramebuffers(1, out fbo);
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, fbo);
             GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
             GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._TransmittanceTexture, 0);
+            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._TransmittanceTexture.ID, 0);
             GL.Viewport(0, 0, transw, transh);
 
             Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
@@ -241,7 +233,7 @@ namespace Alunite
         }
 
         private TextureUnit _TransmittanceUnit;
-        private int _TransmittanceTexture;
+        private Texture _TransmittanceTexture;
         private Shader _PlanetShader;
 
         private List<Vector> _Vertices;

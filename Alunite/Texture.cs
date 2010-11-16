@@ -13,7 +13,7 @@ namespace Alunite
 {
 
     /// <summary>
-    /// Represents a two-dimensional image loaded into graphics memory.
+    /// Represents a textured(of any dimension) loaded into graphics memory.
     /// </summary>
     public class Texture
     {
@@ -42,6 +42,11 @@ namespace Alunite
             Source.UnlockBits(bd);
         }
 
+        public Texture(int TextureID)
+        {
+            this._TextureID = (uint)TextureID;
+        }
+
         /// <summary>
         /// Gets the OpenGL id for the texture.
         /// </summary>
@@ -59,6 +64,46 @@ namespace Alunite
         public void Bind()
         {
             GL.BindTexture(TextureTarget.Texture2D, this._TextureID);
+        }
+
+        /// <summary>
+        /// Describes the format of a texture.
+        /// </summary>
+        public struct Format
+        {
+            public Format(
+                PixelInternalFormat PixelInternalFormat, 
+                OpenTK.Graphics.OpenGL.PixelFormat PixelFormat, 
+                PixelType PixelType)
+            {
+                this.PixelInternalFormat = PixelInternalFormat;
+                this.PixelFormat = PixelFormat;
+                this.PixelType = PixelType;
+            }
+
+            public PixelInternalFormat PixelInternalFormat;
+            public OpenTK.Graphics.OpenGL.PixelFormat PixelFormat;
+            public PixelType PixelType;
+        }
+
+        public static readonly Format RGB16Float = new Format(
+            PixelInternalFormat.Rgb16f, 
+            OpenTK.Graphics.OpenGL.PixelFormat.Rgb, 
+            PixelType.Float);
+
+        /// <summary>
+        /// Creates a generic 2d texture with no data.
+        /// </summary>
+        public static Texture Initialize2D(int Width, int Height, Format Format)
+        {
+            int tex = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, tex);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, Format.PixelInternalFormat, Width, Height, 0, Format.PixelFormat, Format.PixelType, IntPtr.Zero);
+            return new Texture(tex);
         }
 
         /// <summary>
