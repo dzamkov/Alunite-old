@@ -207,6 +207,14 @@ namespace Alunite
             }
 
             /// <summary>
+            /// Defines a constant.
+            /// </summary>
+            public void Define(string Constant)
+            {
+                this.Constants[Constant] = "1";
+            }
+
+            /// <summary>
             /// Undefines a constant.
             /// </summary>
             public void Undefine(string Constant)
@@ -295,7 +303,7 @@ namespace Alunite
                                 }
                                 else
                                 {
-                                    Input.Define(lineparts[1], "1");
+                                    Input.Define(lineparts[1]);
                                 }
                             }
                             if (lineparts[0] == "#undef")

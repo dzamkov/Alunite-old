@@ -18,8 +18,8 @@ void main()
 #define TRANSMITTANCE_INTEGRAL_SAMPLES 500
 
 void getTransmittanceRMu(out float r, out float mu) {
-    r = gl_FragCoord.y / float(TRANSMITTANCE_H);
-	mu = gl_FragCoord.x / float(TRANSMITTANCE_W);
+    r = gl_FragCoord.y / float(TRANSMITTANCE_RES_R);
+	mu = gl_FragCoord.x / float(TRANSMITTANCE_RES_MU);
 	r = Rg + r * (Rt - Rg);
 	mu = -1.0 + mu * 2.0;
 }

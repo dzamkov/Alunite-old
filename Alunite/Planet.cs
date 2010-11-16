@@ -70,29 +70,65 @@ namespace Alunite
             this._PlanetShader = Shader.Load(atmosphere["Planet.glsl"]);
 
             // Atmospheric scattering precompution
-            int transw = 256;
-            int transh = 64;
-            TextureUnit transunit = TextureUnit.Texture0;
-            
-            GL.ActiveTexture(transunit);
-            this._TransmittanceTexture = Texture.Initialize2D(transw, transh, Texture.RGB16Float);
-
             uint fbo;
             GL.GenFramebuffers(1, out fbo);
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, fbo);
             GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
             GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._TransmittanceTexture.ID, 0);
-            GL.Viewport(0, 0, transw, transh);
 
-            Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
-            pci.Define("TRANSMITTANCE_H", transh.ToString());
-            pci.Define("TRANSMITTANCE_W", transw.ToString());
-            Shader.Load(precompute["Transmittance.glsl"], pci).DrawFull();
+            // Set precompiler inputs for all shaders to be loaded
+            Shader.PrecompilerInput pci = _DefineCommon();
+
+            Shader.PrecompilerInput transmittancepci = pci.Copy();
+
+            Shader.PrecompilerInput irradianceinitialpci = pci.Copy();
+            irradianceinitialpci.Define("INITIAL");
+
+            Shader.PrecompilerInput irradiancepci = pci.Copy();
+
+            // Load shaders
+            Shader transmittance = Shader.Load(precompute["Transmittance.glsl"], transmittancepci);
+            Shader irradianceinitial = Shader.Load(precompute["Irradiance.glsl"], irradianceinitialpci);
+
+            // Initialize textures
+            TextureUnit transunit = TextureUnit.Texture0; GL.ActiveTexture(transunit);
+            this._TransmittanceTexture = Texture.Initialize2D(TransmittanceResMu, TransmittanceResR, Texture.RGB16Float);
+            TextureUnit deltairrunit = TextureUnit.Texture1; GL.ActiveTexture(deltairrunit);
+            this._IrradianceTexture = Texture.Initialize2D(IrradianceResMu, IrradianceResR, Texture.RGB16Float);
+
+           
+            // Create transmittance texture (information about how light is filtered through the atmosphere).
+            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._TransmittanceTexture.ID, 0);
+            GL.Viewport(0, 0, TransmittanceResMu, TransmittanceResR);
+            transmittance.DrawFull();
+
+            // Create delta irradiance texture (ground lighting cause by atmosphere).
+            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._IrradianceTexture.ID, 0);
+            GL.Viewport(0, 0, IrradianceResMu, IrradianceResR);
+            irradianceinitial.DrawFull();
 
 
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
 
+        }
+
+        private const int IrradianceResR = 16;
+        private const int IrradianceResMu = 64;
+        private const int TransmittanceResR = 64;
+        private const int TransmittanceResMu = 256;
+
+        /// <summary>
+        /// Creates a shader precompiler input with common atmosphere shader paramters from the specified source
+        /// input.
+        /// </summary>
+        private static Shader.PrecompilerInput _DefineCommon()
+        {
+            Shader.PrecompilerInput res = Shader.CreatePrecompilerInput();
+            res.Define("IRRADIANCE_RES_R", IrradianceResR.ToString());
+            res.Define("IRRADIANCE_RES_MU", IrradianceResMu.ToString());
+            res.Define("TRANSMITTANCE_RES_R", TransmittanceResR.ToString());
+            res.Define("TRANSMITTANCE_RES_MU", TransmittanceResMu.ToString());
+            return res;
         }
 
         public void Render(Matrix4 Proj, Matrix4 View, Vector EyePosition, Vector SunDirection)
@@ -100,7 +136,10 @@ namespace Alunite
             Proj.Invert();
             //View.Invert();
             GL.LoadIdentity();
-            this._PlanetShader.SetUniform("Transmittance", this._TransmittanceUnit);
+
+            this._TransmittanceTexture.SetUnit(TextureUnit.Texture0);
+
+            this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);
             this._PlanetShader.SetUniform("ViewInverse", ref View);
             this._PlanetShader.SetUniform("EyePosition", EyePosition);
@@ -232,8 +271,8 @@ namespace Alunite
             }
         }
 
-        private TextureUnit _TransmittanceUnit;
         private Texture _TransmittanceTexture;
+        private Texture _IrradianceTexture;
         private Shader _PlanetShader;
 
         private List<Vector> _Vertices;

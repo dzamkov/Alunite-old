@@ -117,6 +117,15 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Sets this texture to a texture unit for uses such as shaders.
+        /// </summary>
+        public void SetUnit(TextureUnit Unit)
+        {
+            GL.ActiveTexture(Unit);
+            this.Bind();
+        }
+
+        /// <summary>
         /// Sets the type of wrapping used by the texture.
         /// </summary>
         public void SetWrap(TextureWrapMode S, TextureWrapMode T)
