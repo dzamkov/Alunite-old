@@ -1,19 +1,14 @@
-varying vec2 Coords;
-
 #ifdef _VERTEX_
-
 void main()
 {
-	Coords = gl_Vertex.xy * 0.5 + 0.5;
 	gl_Position = gl_Vertex;
 }
+#endif
 
-#else
 
-#define COMMON_CONSTANTS
-#define COMMON_LIMIT
+#ifdef _FRAGMENT_
+#undef _FRAGMENT_
 #include "Common.glsl"
-
 
 #define TRANSMITTANCE_INTEGRAL_SAMPLES 500
 
@@ -48,5 +43,20 @@ void main() {
 	vec3 depth = betaR * opticalDepth(HR, r, mu) + betaMEx * opticalDepth(HM, r, mu);
     gl_FragColor = vec4(exp(-depth), 0.0);
 }
+#endif
 
+
+#ifdef _TRANSMITTANCE_USE_
+uniform sampler2D Transmittance;
+
+vec2 getTransmittanceUV(float r, float mu) {
+	float ur = (r - Rg) / (Rt - Rg);
+	float umu = (mu + 1.0) / 2.0;
+	return vec2(umu, ur);
+}
+
+vec3 transmittance(float r, float mu) {
+	vec2 uv = getTransmittanceUV(r, mu);
+	return texture2D(Transmittance, uv).rgb;
+}
 #endif

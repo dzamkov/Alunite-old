@@ -1,15 +1,15 @@
 #ifdef _VERTEX_
-
 void main()
 {
 	gl_Position = gl_Vertex;
 }
+#endif
 
-#else
-
-#define COMMON_CONSTANTS
-#define COMMON_TRANSMITTANCE
+#ifdef _FRAGMENT_
+#undef _FRAGMENT_
+#define _TRANSMITTANCE_USE_
 #include "Common.glsl"
+#include "Transmittance.glsl"
 
 void getIrradianceRMu(out float r, out float mu) {
     r = gl_FragCoord.y / float(IRRADIANCE_RES_R);
@@ -23,5 +23,4 @@ void main() {
 	getIrradianceRMu(r, mu);
     gl_FragColor = vec4(transmittance(r, mu) * max(mu, 0.0), 0.0);
 }
-
 #endif

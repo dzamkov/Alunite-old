@@ -137,7 +137,7 @@ namespace Alunite
             //View.Invert();
             GL.LoadIdentity();
 
-            this._IrradianceTexture.SetUnit(TextureUnit.Texture0);
+            this._TransmittanceTexture.SetUnit(TextureUnit.Texture0);
 
             this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);

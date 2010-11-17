@@ -62,7 +62,7 @@ namespace Alunite
                 -(Vector3)eyepos,
                 new Vector3(0.0f, 0.0f, 1.0f));
 
-            this._Planet.Render(proj, view, eyepos, Vector.Normalize(new Vector(1.0, 1.0, 1.0)));
+            this._Planet.Render(proj, view, eyepos, Vector.Normalize(new Vector(1.0, 0.0, 0.0)));
 
             this.SwapBuffers();
         }
