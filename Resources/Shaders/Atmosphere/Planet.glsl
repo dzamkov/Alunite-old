@@ -2,8 +2,8 @@ uniform vec3 EyePosition;
 uniform vec3 SunDirection;
 uniform mat4 ProjInverse;
 uniform mat4 ViewInverse;
-uniform sampler2D Transmittance;
 
+const vec3 SunColor = vec3(100.0);
 const vec3 SeaColor = vec3(0.1, 0.1, 0.5);
 const vec3 AtmoColor = vec3(0.7, 0.7, 0.9);
 const float Radius = 1.0;
@@ -23,20 +23,32 @@ void main()
 
 #else
 
+#define COMMON_CONSTANTS
+#define COMMON_TRANSMITTANCE
+#include "Precompute/Common.glsl"
+
+vec3 sunColor(vec3 v, vec3 sol)
+{
+	return  step(cos(3.1415 / 180.0), dot(v, sol)) *  SunColor;
+}
+
 void main()
 {
-	vec3 ray = normalize(Ray);
-	
-	
-	// Find where the ray intersects the planet.
+	vec3 v = normalize(Ray);
+	vec3 sol = SunDirection;
 	vec3 cen = -EyePosition;
 	float r = length(cen);
-    float mu = dot(cen, ray);
-    float t = mu - sqrt(mu * mu - r * r + Radius * Radius); // Distance along ray of hit
-	vec3 hit = ray * t + EyePosition; // Point on ray where hit
+	float mu = dot(cen, v);
+	
+	// Find where the ray intersects the planet.
+	float t = mu - sqrt(mu * mu - r * r + Rg * Rg); // Distance along ray of hit
+	vec3 hit = v * t + EyePosition; // Point on ray where hit
 	
 	vec3 hitnorm = normalize(hit);
 	
+	
+	vec3 groundcolor = vec3(0.0);
+	vec3 suncolor = sunColor(v, sol);
 	if(t > 0.0)
 	{
 		vec3 eyedir = normalize(hit - EyePosition);
@@ -50,14 +62,14 @@ void main()
 		float sealight = normlight * 0.8 + pow(specdot, 4.0) * 0.5 + 0.1;
 		float atmolight = normlight * 0.4;
 
-		gl_FragColor = vec4(SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos, 1.0);
-	}
-	else
-	{
-		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+		
+		
+		groundcolor = SeaColor * sealight * (1.0 - atmos) + AtmoColor * atmolight * atmos;
 	}
 	
-	gl_FragColor = texture2D(Transmittance, Coords);
+	gl_FragColor = vec4(groundcolor + suncolor, 1.0);
+	
+	//gl_FragColor = texture2D(Transmittance, Coords);
 }
 
 #endif

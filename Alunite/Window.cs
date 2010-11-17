@@ -55,7 +55,7 @@ namespace Alunite
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             double cosx = Math.Cos(this._XRot);
-            Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * 5.0;
+            Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * 50000.0;
             Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(1.2f, (float)this.Width / (float)this.Height, 0.1f, 10000.0f);
             Matrix4 view = Matrix4.LookAt(
                 new Vector3(),
@@ -70,10 +70,10 @@ namespace Alunite
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             double updatetime = e.Time;
-            if (this.Keyboard[Key.W]) this._XRot += updatetime * 5;
-            if (this.Keyboard[Key.A]) this._ZRot += updatetime * 5;
-            if (this.Keyboard[Key.S]) this._XRot -= updatetime * 5;
-            if (this.Keyboard[Key.D]) this._ZRot -= updatetime * 5;
+            if (this.Keyboard[Key.W]) this._XRot += updatetime;
+            if (this.Keyboard[Key.A]) this._ZRot += updatetime;
+            if (this.Keyboard[Key.S]) this._XRot -= updatetime;
+            if (this.Keyboard[Key.D]) this._ZRot -= updatetime;
             if (this.Keyboard[Key.Escape]) this.Close();
             this._XRot = Math.Min(Math.PI / 2.02, Math.Max(Math.PI / -2.02, this._XRot));
         }

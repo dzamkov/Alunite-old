@@ -1,7 +1,7 @@
 #ifdef COMMON_CONSTANTS
 
-#define Rt 6420.0
-#define Rg 6360.0
+const float Rt = 6420.0;
+const float Rg = 6360.0;
 
 // Rayleigh
 const float HR = 8.0;
@@ -15,6 +15,26 @@ const vec3 betaMEx = betaMSca / 0.9;
 const float mieG = 0.8;
 
 #endif
+
+
+#ifdef COMMON_TRANSMITTANCE
+
+uniform sampler2D Transmittance;
+
+vec2 getTransmittanceUV(float r, float mu) {
+	float ur = (r - Rg) / (Rt - Rg);
+	float umu = (mu + 1.0) / 2.0;
+	return vec2(umu, ur);
+}
+
+vec3 transmittance(float r, float mu) {
+	vec2 uv = getTransmittanceUV(r, mu);
+	return texture2D(Transmittance, uv).rgb;
+}
+
+#endif
+
+
 
 
 
@@ -37,3 +57,6 @@ float limit(float r, float mu) {
 }
 
 #endif
+
+
+
