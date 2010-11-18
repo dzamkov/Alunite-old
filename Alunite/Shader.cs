@@ -28,7 +28,8 @@ namespace Alunite
         /// </summary>
         public void SetUniform(string Name, Vector Value)
         {
-            GL.Uniform3(GL.GetUniformLocation(this.Program, Name), (Vector3)Value);
+            int loc = GL.GetUniformLocation(this.Program, Name);
+            GL.Uniform3(loc, (Vector3)Value);
         }
 
         /// <summary>
@@ -44,7 +45,16 @@ namespace Alunite
         /// </summary>
         public void SetUniform(string Name, TextureUnit Unit)
         {
-            GL.Uniform1(GL.GetUniformLocation(this.Program, Name), (int)Unit);
+            int loc = GL.GetUniformLocation(this.Program, Name);
+            GL.Uniform1(loc, (int)Unit);
+        }
+
+        /// <summary>
+        /// Sets a uniform integer.
+        /// </summary>
+        public void SetUniform(string Name, int Value)
+        {
+            GL.Uniform1(GL.GetUniformLocation(this.Program, Name), Value);
         }
 
         /// <summary>
@@ -276,6 +286,7 @@ namespace Alunite
                                     _ProcessBlock(LineEnumerator, File, Input, Output, false);
                                 }
                             }
+                            continue;
                         }
                         if (lineparts[0] == "#include")
                         {
@@ -284,6 +295,7 @@ namespace Alunite
                                 string filepath = lineparts[1].Substring(1, lineparts[1].Length - 2);
                                 BuildSource(File.Parent.Lookup(filepath), Input, Output);
                             }
+                            continue;
                         }
                         if (lineparts[0] == "#else")
                         {
@@ -305,11 +317,15 @@ namespace Alunite
                                 {
                                     Input.Define(lineparts[1]);
                                 }
+                                continue;
                             }
                             if (lineparts[0] == "#undef")
                             {
                                 Input.Undefine(lineparts[1]);
+                                continue;
                             }
+
+                            Output.AppendLine(line);
                         }
                     }
                     else
@@ -317,11 +333,42 @@ namespace Alunite
                         if (Interpret)
                         {
                             // Replace constants
+                            Dictionary<int, KeyValuePair<int, string>> matches = new Dictionary<int, KeyValuePair<int, string>>();
                             foreach (KeyValuePair<string, string> constant in Input.Constants)
                             {
-                                line = line.Replace(constant.Key, constant.Value);
+                                int ind = line.IndexOf(constant.Key);
+                                if (ind >= 0)
+                                {
+                                    int size = constant.Key.Length;
+                                    KeyValuePair<int, string> lastmatch;
+                                    if (matches.TryGetValue(ind, out lastmatch))
+                                    {
+                                        if (lastmatch.Key < size)
+                                        {
+                                            matches[ind] = new KeyValuePair<int, string>(size, constant.Value);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        matches[ind] = new KeyValuePair<int, string>(size, constant.Value);
+                                    }
+                                }
                             }
-                            Output.AppendLine(line);
+                            if (matches.Count > 0)
+                            {
+                                int c = 0;
+                                foreach (KeyValuePair<int, KeyValuePair<int, string>> match in matches)
+                                {
+                                    Output.Append(line.Substring(c, match.Key - c));
+                                    Output.Append(match.Value.Value);
+                                    c += match.Key + match.Value.Key;
+                                }
+                                Output.AppendLine(line.Substring(c));
+                            }
+                            else
+                            {
+                                Output.AppendLine(line);
+                            }
                         }
                     }
                 }

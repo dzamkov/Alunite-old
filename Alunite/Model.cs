@@ -99,7 +99,7 @@ namespace Alunite
         {
             if (Skybox[0] != null)
             {
-                Skybox[0].Bind();
+                Skybox[0].Bind2D();
                 GL.Begin(BeginMode.Quads);
                 GL.TexCoord2(0, 0); GL.Vertex3(-0.5f, -0.5f, 0.5f);
                 GL.TexCoord2(0, 1); GL.Vertex3(-0.5f, -0.5f, -0.5f);
@@ -109,7 +109,7 @@ namespace Alunite
             }
             if (Skybox[1] != null)
             {
-                Skybox[1].Bind();
+                Skybox[1].Bind2D();
                 GL.Begin(BeginMode.Quads);
                 GL.TexCoord2(0, 0); GL.Vertex3(0.5f, -0.5f, 0.5f);
                 GL.TexCoord2(0, 1); GL.Vertex3(0.5f, -0.5f, -0.5f);
@@ -120,7 +120,7 @@ namespace Alunite
             }
             if (Skybox[2] != null)
             {
-                Skybox[2].Bind();
+                Skybox[2].Bind2D();
                 GL.Begin(BeginMode.Quads);
                 GL.TexCoord2(1, 1); GL.Vertex3(0.5f, -0.5f, -0.5f);
                 GL.TexCoord2(1, 0); GL.Vertex3(0.5f, -0.5f, 0.5f);
@@ -130,7 +130,7 @@ namespace Alunite
             }
             if (Skybox[3] != null)
             {
-                Skybox[3].Bind();
+                Skybox[3].Bind2D();
                 GL.Begin(BeginMode.Quads);
                 GL.TexCoord2(1, 0); GL.Vertex3(0.5f, 0.5f, 0.5f);
                 GL.TexCoord2(0, 0); GL.Vertex3(-0.5f, 0.5f, 0.5f);
@@ -140,7 +140,7 @@ namespace Alunite
             }
             if (Skybox[4] != null)
             {
-                Skybox[4].Bind();
+                Skybox[4].Bind2D();
                 GL.Begin(BeginMode.Quads);
                 GL.TexCoord2(0, 1); GL.Vertex3(-0.5f, -0.5f, 0.5f);
                 GL.TexCoord2(1, 1); GL.Vertex3(-0.5f, 0.5f, 0.5f);
@@ -151,7 +151,7 @@ namespace Alunite
             if (Skybox[5] != null)
             {
                 // Untested
-                Skybox[5].Bind();
+                Skybox[5].Bind2D();
                 
             }
         }

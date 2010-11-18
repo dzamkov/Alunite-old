@@ -36,8 +36,8 @@ namespace Alunite
                 bd.Width, bd.Height, 0,
                 OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bd.Scan0);
 
-            this.SetInterpolation(TextureMinFilter.Linear, TextureMagFilter.Linear);
-            this.SetWrap(TextureWrapMode.Repeat, TextureWrapMode.Repeat);
+            this.SetInterpolation2D(TextureMinFilter.Linear, TextureMagFilter.Linear);
+            this.SetWrap2D(TextureWrapMode.Repeat, TextureWrapMode.Repeat);
 
             Source.UnlockBits(bd);
         }
@@ -61,9 +61,17 @@ namespace Alunite
         /// <summary>
         /// Sets this as the current texture.
         /// </summary>
-        public void Bind()
+        public void Bind(TextureTarget TextureTarget)
         {
-            GL.BindTexture(TextureTarget.Texture2D, this._TextureID);
+            GL.BindTexture(TextureTarget, this._TextureID);
+        }
+
+        /// <summary>
+        /// Sets this as the current 2d texture.
+        /// </summary>
+        public void Bind2D()
+        {
+            this.Bind(TextureTarget.Texture2D);
         }
 
         /// <summary>
@@ -91,6 +99,11 @@ namespace Alunite
             OpenTK.Graphics.OpenGL.PixelFormat.Rgb, 
             PixelType.Float);
 
+        public static readonly Format RGBA16Float = new Format(
+            PixelInternalFormat.Rgba16f,
+            OpenTK.Graphics.OpenGL.PixelFormat.Rgb,
+            PixelType.Float);
+
         /// <summary>
         /// Creates a generic 2d texture with no data.
         /// </summary>
@@ -107,11 +120,27 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates a generic 3d texture with no data.
+        /// </summary>
+        public static Texture Initialize3D(int Width, int Height, int Depth, Format Format)
+        {
+            int tex = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture3D, tex);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
+            GL.TexImage3D(TextureTarget.Texture3D, 0, Format.PixelInternalFormat, Width, Height, Depth, 0, Format.PixelFormat, Format.PixelType, IntPtr.Zero);
+            return new Texture(tex);
+        }
+
+        /// <summary>
         /// Sets the interpolation used by the texture.
         /// </summary>
-        public void SetInterpolation(TextureMinFilter Min, TextureMagFilter Mag)
+        public void SetInterpolation2D(TextureMinFilter Min, TextureMagFilter Mag)
         {
-            this.Bind();
+            this.Bind2D();
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)Min);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)Mag);
         }
@@ -119,18 +148,18 @@ namespace Alunite
         /// <summary>
         /// Sets this texture to a texture unit for uses such as shaders.
         /// </summary>
-        public void SetUnit(TextureUnit Unit)
+        public void SetUnit(TextureTarget Target, TextureUnit Unit)
         {
             GL.ActiveTexture(Unit);
-            this.Bind();
+            this.Bind(Target);
         }
 
         /// <summary>
         /// Sets the type of wrapping used by the texture.
         /// </summary>
-        public void SetWrap(TextureWrapMode S, TextureWrapMode T)
+        public void SetWrap2D(TextureWrapMode S, TextureWrapMode T)
         {
-            this.Bind();
+            this.Bind2D();
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)S);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)T); 
         }

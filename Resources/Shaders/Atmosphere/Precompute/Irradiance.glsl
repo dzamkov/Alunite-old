@@ -1,3 +1,5 @@
+uniform float Dummy;
+
 #ifdef _VERTEX_
 void main()
 {
