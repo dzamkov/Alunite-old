@@ -2,6 +2,7 @@ uniform vec3 EyePosition;
 uniform vec3 SunDirection;
 uniform mat4 ProjInverse;
 uniform mat4 ViewInverse;
+uniform sampler3D Test;
 
 const vec3 SunColor = vec3(100.0);
 const vec3 SeaColor = vec3(0.0, 0.0, 0.2);
@@ -94,5 +95,6 @@ void main()
 	
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
 	//gl_FragColor = texture2D(Inscatter, Coords) / 100.0;
+	gl_FragColor = texture3D(Test, vec3(0.5, 0.5, 0.5));
 }
 #endif

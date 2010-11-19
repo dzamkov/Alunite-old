@@ -123,6 +123,14 @@ namespace Alunite
             inscatterinitial.SetUniform("Transmittance", transunit);
             inscatterinitial.DrawFull();
 
+            this._TestTexture = Texture.Initialize3D(50, 50, 50, Texture.RGBA16Float);
+            for (int t = 0; t < 50; t++)
+            {
+                GL.FramebufferTexture3D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, TextureTarget.Texture3D, this._TestTexture.ID, 0, t);
+                GL.Viewport(0, 0, 50, 50);
+                GL.ClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+                GL.Clear(ClearBufferMask.ColorBufferBit);
+            }
 
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
 
@@ -161,9 +169,11 @@ namespace Alunite
             //View.Invert();
             GL.LoadIdentity();
 
+            this._TestTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture2);
             this._InscatterTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture1);
             this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
 
+            this._PlanetShader.SetUniform("Test", TextureUnit.Texture2);
             this._PlanetShader.SetUniform("Inscatter", TextureUnit.Texture1);
             this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);
@@ -297,6 +307,7 @@ namespace Alunite
             }
         }
 
+        private Texture _TestTexture;
         private Texture _InscatterTexture;
         private Texture _TransmittanceTexture;
         private Texture _IrradianceTexture;
