@@ -161,8 +161,8 @@ namespace Alunite
             //View.Invert();
             GL.LoadIdentity();
 
-            this._InscatterTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
             this._InscatterTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture1);
+            this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
 
             this._PlanetShader.SetUniform("Inscatter", TextureUnit.Texture1);
             this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);

@@ -26,13 +26,12 @@ float opticalDepth(float H, float r, float mu) {
 	float acrossdelta = sqrt(1 - mu * mu);
 	float updelta = mu;
 	
-    for (int i = 0; i < TRANSMITTANCE_INTEGRAL_SAMPLES; ++i) {
+    for (int i = 1; i <= TRANSMITTANCE_INTEGRAL_SAMPLES; ++i) {
         float xj = float(i) * dx;
 		float across = acrossdelta * xj;
 		float up = updelta * xj;
 		float ir = sqrt(across * across + (up + r) * (up + r));
-        float yj = exp(-(ir - Rg) / H);
-		result += yj * dx;
+		result += exp(-(ir - Rg) / H) * dx;
     }
     return result;
 }
@@ -58,5 +57,15 @@ vec2 getTransmittanceUV(float r, float mu) {
 vec3 transmittance(float r, float mu) {
 	vec2 uv = getTransmittanceUV(r, mu);
 	return texture2D(Transmittance, uv).rgb;
+}
+
+vec3 transmittance(float r, float mu, float t) {
+    float r1 = sqrt(r * r + t * t + 2.0 * r * mu * t);
+    float mu1 = (r * mu + t) / r1;
+    return transmittance(r, mu) / transmittance(r1, mu1);
+}
+
+vec3 transmittanceWithShadow(float r, float mu) {
+    return mu < -sqrt(1.0 - (Rg / r) * (Rg / r)) ? vec3(0.0) : transmittance(r, mu);
 }
 #endif

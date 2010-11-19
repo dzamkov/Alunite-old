@@ -46,7 +46,7 @@ namespace Alunite
         public void SetUniform(string Name, TextureUnit Unit)
         {
             int loc = GL.GetUniformLocation(this.Program, Name);
-            GL.Uniform1(loc, (int)Unit);
+            GL.Uniform1(loc, (int)Unit - (int)TextureUnit.Texture0);
         }
 
         /// <summary>
@@ -337,7 +337,7 @@ namespace Alunite
                             foreach (KeyValuePair<string, string> constant in Input.Constants)
                             {
                                 int ind = line.IndexOf(constant.Key);
-                                if (ind >= 0)
+                                while (ind >= 0)
                                 {
                                     int size = constant.Key.Length;
                                     KeyValuePair<int, string> lastmatch;
@@ -352,16 +352,19 @@ namespace Alunite
                                     {
                                         matches[ind] = new KeyValuePair<int, string>(size, constant.Value);
                                     }
+                                    ind = line.IndexOf(constant.Key, ind + 1);
                                 }
                             }
                             if (matches.Count > 0)
                             {
                                 int c = 0;
-                                foreach (KeyValuePair<int, KeyValuePair<int, string>> match in matches)
+                                var orderedmatches = new List<KeyValuePair<int, KeyValuePair<int, string>>>(matches);
+                                Sort.InPlace<KeyValuePair<int, KeyValuePair<int, string>>>((a, b) => a.Key > b.Key, orderedmatches);
+                                foreach (KeyValuePair<int, KeyValuePair<int, string>> match in orderedmatches)
                                 {
                                     Output.Append(line.Substring(c, match.Key - c));
                                     Output.Append(match.Value.Value);
-                                    c += match.Key + match.Value.Key;
+                                    c = match.Key + match.Value.Key;
                                 }
                                 Output.AppendLine(line.Substring(c));
                             }

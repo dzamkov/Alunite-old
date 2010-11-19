@@ -2,7 +2,6 @@ uniform vec3 EyePosition;
 uniform vec3 SunDirection;
 uniform mat4 ProjInverse;
 uniform mat4 ViewInverse;
-uniform sampler2D Inscatter;
 
 const vec3 SunColor = vec3(100.0);
 const vec3 SeaColor = vec3(0.0, 0.0, 0.2);
@@ -26,12 +25,34 @@ void main()
 #ifdef _FRAGMENT_
 #undef _FRAGMENT_
 #define _TRANSMITTANCE_USE_
+#define _INSCATTER_USE_
 #include "Precompute/Common.glsl"
 #include "Precompute/Transmittance.glsl"
+#include "Precompute/Inscatter.glsl"
+
+vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
+{
+	vec3 result = vec3(0.0);
+	float r = length(x);
+    float mu = dot(x, v) / r;
+    float d = -r * mu - sqrt(r * r * (mu * mu - 1.0) + Rt * Rt);
+    if (d > 0.0) {
+        x += d * v;
+        t -= d;
+        mu = (r * mu + d) / Rt;
+        r = Rt;
+    }
+    if (r <= Rt) { // if ray intersects atmosphere
+        float nu = dot(v, sol);
+        float mus = dot(x, sol) / r;
+        result = inscatter(mu, nu, r, mus);
+    }
+    return result * SunColor / 100.0;
+}
 
 vec3 sunColor(vec3 v, vec3 sol)
 {
-	return  step(cos(Pi / 180.0), dot(v, sol)) *  SunColor;
+	return step(cos(Pi / 180.0), dot(v, sol)) *  SunColor;
 }
 
 vec3 groundColor(vec3 n, vec3 sol)
@@ -54,14 +75,15 @@ void main()
 {
 	vec3 v = normalize(Ray);
 	vec3 sol = SunDirection;
-	vec3 cen = -EyePosition;
-	float r = length(cen);
-	float mu = dot(cen, v);
+	vec3 x = EyePosition;
+	float r = length(x);
+	float mu = dot(x, v) / r;
 	
 	// Find where the ray intersects the planet.
-	float t = mu - sqrt(mu * mu - r * r + Rg * Rg); // Distance along ray of hit
-	vec3 hit = v * t + EyePosition; // Point on ray where hit
+	float t = -r * mu - sqrt(r * r * (mu * mu - 1.0) + Rg * Rg); // Distance along ray of hit
+	vec3 hit = x + v * t; // Point on ray where hit
 	
+	vec3 atmocolor = atmoColor(t, x, v, sol);
 	vec3 groundcolor = vec3(0.0);
 	vec3 suncolor = sunColor(v, sol);
 	if(t > 0.0)
@@ -70,9 +92,7 @@ void main()
 		groundcolor = groundColor(hitnorm, sol);
 	}
 	
-	gl_FragColor = vec4(HDR(groundcolor + suncolor), 1.0);
-	
-	gl_FragColor = texture2D(Inscatter, Coords);
-	//gl_FragColor = texture2D(Transmittance, Coords);
+	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
+	//gl_FragColor = texture2D(Inscatter, Coords) / 100.0;
 }
 #endif
