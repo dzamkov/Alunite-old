@@ -45,6 +45,8 @@ void pointScatter(float r, float mu, float mus, float nu, float t, out vec3 ray,
         ray = exp(-(ri - Rg) / HR) * tra;
         mie = exp(-(ri - Rg) / HM) * tra;
     }
+	ray *= betaR;
+    mie *= betaMSca;
 }
 
 void main() {

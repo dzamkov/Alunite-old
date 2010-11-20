@@ -30,6 +30,21 @@ void main()
 #include "Precompute/Transmittance.glsl"
 #include "Precompute/Inscatter.glsl"
 
+// Rayleigh phase function
+float phaseFunctionR(float mu) {
+    return (3.0 / (16.0 * Pi)) * (1.0 + mu * mu);
+}
+
+// Mie phase function
+float phaseFunctionM(float mu) {
+	return 1.5 * 1.0 / (4.0 * Pi) * (1.0 - mieG * mieG) * pow(1.0 + (mieG * mieG) - 2.0 * mieG * mu, -3.0 / 2.0) * (1.0 + mu * mu) / (2.0 + mieG * mieG);
+}
+
+// approximated single Mie scattering (cf. approximate Cm in paragraph "Angular precision")
+vec3 getMie(vec4 rayMie) { // rayMie.rgb=C*, rayMie.w=Cm,r
+	return rayMie.rgb * rayMie.w / max(rayMie.r, 1e-4) * (betaR.r / betaR);
+}
+
 vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
 {
 	vec3 result = vec3(0.0);
@@ -45,9 +60,14 @@ vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
     if (r <= Rt) { // if ray intersects atmosphere
         float nu = dot(v, sol);
         float mus = dot(x, sol) / r;
-        result = inscatter(mu, nu, r, mus);
+		
+		float phaseR = phaseFunctionR(nu);
+        float phaseM = phaseFunctionM(nu);
+		
+        vec4 is = inscatter(mu, nu, r, mus);
+		result = max(is.rgb * phaseR + getMie(is) * phaseM, 0.0);
     }
-    return result * SunColor / 1000.0;
+    return result * SunColor;
 }
 
 vec3 sunColor(vec3 v, vec3 sol)
