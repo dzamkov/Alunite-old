@@ -20,17 +20,22 @@ void getInscatterMuNuRMus(out float mu, out float nu, out float r, out float mus
 	float y = gl_FragCoord.y;
 	float z = float(Layer);
 	
-	nu = floor(x / float(INSCATTER_RES_MU_S));
-	mus = x - nu * float(INSCATTER_RES_MU_S);
-	mus = mus / float(INSCATTER_RES_MU_S);
-	nu = nu / float(INSCATTER_RES_NU);
+	mus = mod(x, float(INSCATTER_RES_MU_S)) / (float(INSCATTER_RES_MU_S) - 1.0);
+	nu = floor(x / float(INSCATTER_RES_MU_S)) / (float(INSCATTER_RES_NU) - 1.0);
 	mu = y / float(INSCATTER_RES_MU);
 	r = z / float(INSCATTER_RES_R);
 	
+#ifdef INSCATTER_SIMPLE
 	mu = -1.0 + mu * 2.0;
 	nu = -1.0 + nu * 2.0;
 	mus = -1.0 + mus * 2.0;
 	r = Rg + r * (Rt - Rg);
+#else
+	mu = -1.0 + mu * 2.0;
+	nu = -1.0 + nu * 2.0;
+	mus = tan((2.0 * mus - 1.0 + 0.26) * 1.1) / tan(1.26 * 1.1);
+	r = Rg + r * (Rt - Rg);
+#endif
 }
 
 void pointScatter(float r, float mu, float mus, float nu, float t, out vec3 ray, out float mie)
@@ -73,17 +78,25 @@ void main() {
 uniform sampler3D Inscatter;
 
 vec4 inscatter(float mu, float nu, float r, float mus) {
-	mu = (mu + 1.0) / 2.0;
-	nu = (nu + 1.0) / 2.0;
-	mus = (mus + 1.0) / 2.0;
-	r = (r - Rg) / (Rt - Rg);
-	mus = max(1.0 / float(INSCATTER_RES_MU_S), mus);
-	mus = min(1.0 - 1.0 / float(INSCATTER_RES_MU_S), mus);
+#ifdef INSCATTER_SIMPLE
+	float umu = (mu + 1.0) / 2.0;
+	float unu = (nu + 1.0) / 2.0;
+	float umus = (mus + 1.0) / 2.0;
+	float ur = (r - Rg) / (Rt - Rg);
+#else
+	float umu = (mu + 1.0) / 2.0;
+	float unu = (nu + 1.0) / 2.0;
+	float umus = (atan(mus * tan(1.26 * 1.1)) / 1.1 + (1.0 - 0.26)) * 0.5;
+	float ur = (r - Rg) / (Rt - Rg);
+#endif
 	
-	float lerp = nu * (float(INSCATTER_RES_NU) - 1.0);
-    nu = floor(lerp);
-    lerp = lerp - nu;
-    return texture3D(Inscatter, vec3((nu + mus) / float(INSCATTER_RES_NU), mu, r)) * (1.0 - lerp) +
-           texture3D(Inscatter, vec3((nu + mus + 1.0) / float(INSCATTER_RES_NU), mu, r)) * lerp;
+	umus = max(1.0 / float(INSCATTER_RES_MU_S), umus);
+	umus = min(1.0 - 1.0 / float(INSCATTER_RES_MU_S), umus);
+	
+	float lerp = unu * (float(INSCATTER_RES_NU) - 1.0);
+    unu = floor(lerp);
+    lerp = lerp - unu;
+    return texture3D(Inscatter, vec3((unu + umus) / float(INSCATTER_RES_NU), umu, ur)) * (1.0 - lerp) +
+           texture3D(Inscatter, vec3((unu + umus + 1.0) / float(INSCATTER_RES_NU), umu, ur)) * lerp;
 }
 #endif

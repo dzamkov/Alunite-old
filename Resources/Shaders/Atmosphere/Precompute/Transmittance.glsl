@@ -70,7 +70,7 @@ vec3 transmittance(float r, float mu) {
 	return texture2D(Transmittance, uv).rgb;
 }
 
-// Gets transmittance in a ray.
+// Gets transmittance up to a certain distance on a ray.
 vec3 transmittance(float r, float mu, float t) {
 	vec3 result = vec3(0.0);
     float r1 = sqrt(r * r + t * t + 2.0 * r * mu * t);
@@ -83,6 +83,7 @@ vec3 transmittance(float r, float mu, float t) {
     return result;
 }
 
+// Gets transmittance with atmosphere, or zero if hitting ground.
 vec3 transmittanceWithShadow(float r, float mu) {
     return mu < -sqrt(1.0 - (Rg / r) * (Rg / r)) ? vec3(0.0) : transmittance(r, mu);
 }
