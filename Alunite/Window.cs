@@ -47,7 +47,7 @@ namespace Alunite
             this._Planet = Planet;
             this._Planet.Load(shaders);
 
-            this._Height = 50000.0;
+            this._Height = 20000.0;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -58,13 +58,21 @@ namespace Alunite
 
             double cosx = Math.Cos(this._XRot);
             Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * this._Height;
-            Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(1.2f, (float)this.Width / (float)this.Height, 0.1f, 10000.0f);
+            Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(2.2f, (float)this.Width / (float)this.Height, 0.1f, 10000.0f);
             Matrix4 view = Matrix4.LookAt(
                 new Vector3(),
                 -(Vector3)eyepos,
                 new Vector3(0.0f, 0.0f, 1.0f));
+            if (this._SunsetMode)
+            {
+                view = Matrix4.LookAt(
+                    new Vector3(0.0f, 6363.0f, 0.0f),
+                    new Vector3(3.0f, 6363.0f, 0.0f),
+                    new Vector3(0.0f, 1.0f, 0.0f));
+                eyepos = new Vector(0.0, 6363.0, 0.0);
+            }
 
-            this._Planet.Render(proj, view, eyepos, Vector.Normalize(new Vector(1.0, 0.0, 0.0)));
+            this._Planet.Render(proj, view, eyepos, Vector.Normalize(new Vector(Math.Sin(this._SunAngle), Math.Cos(this._SunAngle), 0.0)));
 
             this.SwapBuffers();
         }
@@ -79,6 +87,9 @@ namespace Alunite
             if (this.Keyboard[Key.D]) this._ZRot -= updatetime;
             if (this.Keyboard[Key.Q]) this._Height *= zoomfactor;
             if (this.Keyboard[Key.E]) this._Height /= zoomfactor;
+            if (this.Keyboard[Key.Z]) this._SunAngle += updatetime * 0.5;
+            if (this.Keyboard[Key.X]) this._SunAngle -= updatetime * 0.5;
+            if (this.Keyboard[Key.C]) this._SunsetMode = true; else this._SunsetMode = false;
             if (this.Keyboard[Key.Escape]) this.Close();
             this._XRot = Math.Min(Math.PI / 2.02, Math.Max(Math.PI / -2.02, this._XRot));
         }
@@ -88,9 +99,11 @@ namespace Alunite
             GL.Viewport(0, 0, this.Width, this.Height);
         }
 
+        private bool _SunsetMode;
         private double _Height;
         private double _XRot;
         private double _ZRot;
+        private double _SunAngle;
         private Planet _Planet;
     }
 }

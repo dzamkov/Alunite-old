@@ -30,18 +30,15 @@ void main()
 #include "Precompute/Transmittance.glsl"
 #include "Precompute/Inscatter.glsl"
 
-// Rayleigh phase function
 float phaseFunctionR(float mu) {
     return (3.0 / (16.0 * Pi)) * (1.0 + mu * mu);
 }
 
-// Mie phase function
 float phaseFunctionM(float mu) {
 	return 1.5 * 1.0 / (4.0 * Pi) * (1.0 - mieG * mieG) * pow(1.0 + (mieG * mieG) - 2.0 * mieG * mu, -3.0 / 2.0) * (1.0 + mu * mu) / (2.0 + mieG * mieG);
 }
 
-// approximated single Mie scattering (cf. approximate Cm in paragraph "Angular precision")
-vec3 getMie(vec4 rayMie) { // rayMie.rgb=C*, rayMie.w=Cm,r
+vec3 getMie(vec4 rayMie) {
 	return rayMie.rgb * rayMie.w / max(rayMie.r, 1e-4) * (betaR.r / betaR);
 }
 
@@ -100,8 +97,8 @@ void main()
 	float mu = dot(x, v) / r;
 	
 	// Find where the ray intersects the planet.
-	float t = -r * mu - sqrt(r * r * (mu * mu - 1.0) + Rg * Rg); // Distance along ray of hit
-	vec3 hit = x + v * t; // Point on ray where hit
+	float t = -r * mu - sqrt(r * r * (mu * mu - 1.0) + Rg * Rg);
+	vec3 hit = x + v * t;
 	
 	vec3 atmocolor = atmoColor(t, x, v, sol);
 	vec3 groundcolor = vec3(0.0);
@@ -116,5 +113,6 @@ void main()
 		suncolor = sunColor(v, sol);
 	}
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
+	//gl_FragColor = texture2D(Transmittance, Coords);
 }
 #endif

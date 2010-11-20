@@ -15,8 +15,13 @@ void main()
 void getTransmittanceRMu(out float r, out float mu) {
     r = gl_FragCoord.y / float(TRANSMITTANCE_RES_R);
 	mu = gl_FragCoord.x / float(TRANSMITTANCE_RES_MU);
+#ifdef TRANSMITTANCE_SIMPLE
 	r = Rg + r * (Rt - Rg);
 	mu = -1.0 + mu * 2.0;
+#else
+	r = Rg + (r * r) * (Rt - Rg);
+    mu = -0.15 + tan(1.5 * mu) / tan(1.5) * (1.0 + 0.15);
+#endif
 }
 
 float opticalDepth(float H, float r, float mu) {
@@ -49,20 +54,33 @@ void main() {
 uniform sampler2D Transmittance;
 
 vec2 getTransmittanceUV(float r, float mu) {
+#ifdef TRANSMITTANCE_SIMPLE
 	float ur = (r - Rg) / (Rt - Rg);
 	float umu = (mu + 1.0) / 2.0;
+#else
+	float ur = sqrt((r - Rg) / (Rt - Rg));
+	float umu = atan((mu + 0.15) / (1.0 + 0.15) * tan(1.5)) / 1.5;
+#endif
 	return vec2(umu, ur);
 }
 
+// Gets transmittance with the atmosphere (inaccurate when hitting ground).
 vec3 transmittance(float r, float mu) {
 	vec2 uv = getTransmittanceUV(r, mu);
 	return texture2D(Transmittance, uv).rgb;
 }
 
+// Gets transmittance in a ray.
 vec3 transmittance(float r, float mu, float t) {
+	vec3 result = vec3(0.0);
     float r1 = sqrt(r * r + t * t + 2.0 * r * mu * t);
     float mu1 = (r * mu + t) / r1;
-    return transmittance(r, mu) / transmittance(r1, mu1);
+	if (mu > 0.0) {
+        result = min(transmittance(r, mu) / transmittance(r1, mu1), 1.0);
+    } else {
+        result = min(transmittance(r1, -mu1) / transmittance(r, -mu), 1.0);
+    }
+    return result;
 }
 
 vec3 transmittanceWithShadow(float r, float mu) {
