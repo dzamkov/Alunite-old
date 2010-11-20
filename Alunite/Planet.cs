@@ -122,7 +122,7 @@ namespace Alunite
         }
 
         private const int InscatterResR = 32;
-        private const int InscatterResMu = 128;
+        private const int InscatterResMu = 256;
         private const int InscatterResMuS = 32;
         private const int InscatterResNu = 8;
         private const int IrradianceResR = 16;

@@ -31,7 +31,7 @@ void getInscatterMuNuRMus(out float mu, out float nu, out float r, out float mus
 	mus = -1.0 + mus * 2.0;
 	r = Rg + r * (Rt - Rg);
 #else
-	mu = tan((mu * 2.0) - 1.0) / tan(1.0);
+	mu = tan(((mu * 2.0) - 1.0) * 1.2) / tan(1.2);
 	nu = -1.0 + nu * 2.0;
 	mus = tan((2.0 * mus - 1.0 + 0.26) * 1.1) / tan(1.26 * 1.1);
 	r = Rg + (r * r) * (Rt - Rg);
@@ -84,7 +84,7 @@ vec4 inscatter(float mu, float nu, float r, float mus) {
 	float umus = (mus + 1.0) / 2.0;
 	float ur = (r - Rg) / (Rt - Rg);
 #else
-	float umu = (atan(mu * tan(1.0)) + 1.0) * 0.5;
+	float umu = (atan(mu * tan(1.2)) / 1.2 + 1.0) * 0.5;
 	float unu = (nu + 1.0) / 2.0;
 	float umus = (atan(mus * tan(1.26 * 1.1)) / 1.1 + (1.0 - 0.26)) * 0.5;
 	float ur = sqrt((r - Rg) / (Rt - Rg));

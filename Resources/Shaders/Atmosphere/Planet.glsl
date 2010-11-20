@@ -30,6 +30,8 @@ void main()
 #include "Precompute/Transmittance.glsl"
 #include "Precompute/Inscatter.glsl"
 
+#define HORIZON_FIX
+
 float phaseFunctionR(float mu) {
     return (3.0 / (16.0 * Pi)) * (1.0 + mu * mu);
 }
@@ -61,7 +63,10 @@ vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
 		float phaseR = phaseFunctionR(nu);
         float phaseM = phaseFunctionM(nu);
 		
-        vec4 is = inscatter(mu, nu, r, mus);
+		vec4 is = inscatter(mu, nu, r, mus);
+#ifdef HORIZON_FIX
+		is.w *= smoothstep(0.00, 0.02, mus);
+#endif
 		result = max(is.rgb * phaseR + getMie(is) * phaseM, 0.0);
     }
     return result * SunColor;
@@ -106,7 +111,7 @@ void main()
 	if(t > 0.0)
 	{
 		vec3 hitnorm = normalize(hit);
-		groundcolor = groundColor(hitnorm, sol);
+		groundcolor = groundColor(hitnorm, sol) * transmittance(r, mu, t);
 	}
 	else
 	{
