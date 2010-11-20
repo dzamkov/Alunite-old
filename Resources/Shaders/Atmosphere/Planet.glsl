@@ -2,7 +2,6 @@ uniform vec3 EyePosition;
 uniform vec3 SunDirection;
 uniform mat4 ProjInverse;
 uniform mat4 ViewInverse;
-uniform sampler3D Test;
 
 const vec3 SunColor = vec3(100.0);
 const vec3 SeaColor = vec3(0.0, 0.0, 0.2);
@@ -48,7 +47,7 @@ vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
         float mus = dot(x, sol) / r;
         result = inscatter(mu, nu, r, mus);
     }
-    return result * SunColor / 100.0;
+    return result * SunColor / 1000.0;
 }
 
 vec3 sunColor(vec3 v, vec3 sol)
@@ -86,15 +85,16 @@ void main()
 	
 	vec3 atmocolor = atmoColor(t, x, v, sol);
 	vec3 groundcolor = vec3(0.0);
-	vec3 suncolor = sunColor(v, sol);
+	vec3 suncolor = vec3(0.0);
 	if(t > 0.0)
 	{
 		vec3 hitnorm = normalize(hit);
 		groundcolor = groundColor(hitnorm, sol);
 	}
-	
+	else
+	{
+		suncolor = sunColor(v, sol);
+	}
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
-	//gl_FragColor = texture2D(Inscatter, Coords) / 100.0;
-	gl_FragColor = texture3D(Test, vec3(0.5, 0.5, 0.5));
 }
 #endif

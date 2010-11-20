@@ -13,20 +13,19 @@ void main()
 
 #define INSCATTER_INTEGRAL_SAMPLES 50
 
+uniform int Layer;
+
 void getInscatterMuNuRMus(out float mu, out float nu, out float r, out float mus) {
 	float x = gl_FragCoord.x;
 	float y = gl_FragCoord.y;
+	float z = float(Layer);
 	
-	mus = floor(y / float(INSCATTER_RES_R));
-	r = y - mus * float(INSCATTER_RES_R);
+	nu = floor(x / float(INSCATTER_RES_MU_S));
+	mus = x - nu * float(INSCATTER_RES_MU_S);
 	mus = mus / float(INSCATTER_RES_MU_S);
-	r = r / float(INSCATTER_RES_R);
-	
-	nu = floor(x / float(INSCATTER_RES_MU));
-	mu = x - nu * float(INSCATTER_RES_MU);
 	nu = nu / float(INSCATTER_RES_NU);
-	mu = mu / float(INSCATTER_RES_MU);
-	
+	mu = y / float(INSCATTER_RES_MU);
+	r = z / float(INSCATTER_RES_R);
 	
 	mu = -1.0 + mu * 2.0;
 	nu = -1.0 + nu * 2.0;
@@ -69,17 +68,20 @@ void main() {
 
 
 #ifdef _INSCATTER_USE_
-uniform sampler2D Inscatter;
+uniform sampler3D Inscatter;
 
 vec4 inscatter(float mu, float nu, float r, float mus) {
 	mu = (mu + 1.0) / 2.0;
 	nu = (nu + 1.0) / 2.0;
 	mus = (mus + 1.0) / 2.0;
 	r = (r - Rg) / (Rt - Rg);
-	float multmu = 1 / float(INSCATTER_RES_NU);
-	float multr = 1 / float(INSCATTER_RES_MU_S);
-	float offnu = min(floor(nu * float(INSCATTER_RES_NU)), INSCATTER_RES_NU - 1) / float(INSCATTER_RES_NU);
-	float offmus = min(floor(mus * float(INSCATTER_RES_MU_S)), INSCATTER_RES_MU_S - 1) / float(INSCATTER_RES_MU_S);
-	return texture2D(Inscatter, vec2(mu * multmu + offnu, r * multr + offmus));
+	mus = max(1.0 / float(INSCATTER_RES_MU_S), mus);
+	mus = min(1.0 - 1.0 / float(INSCATTER_RES_MU_S), mus);
+	
+	float lerp = nu * (float(INSCATTER_RES_NU) - 1.0);
+    nu = floor(lerp);
+    lerp = lerp - nu;
+    return texture3D(Inscatter, vec3((nu + mus) / float(INSCATTER_RES_NU), mu, r)) * (1.0 - lerp) +
+           texture3D(Inscatter, vec3((nu + mus + 1.0) / float(INSCATTER_RES_NU), mu, r)) * lerp;
 }
 #endif

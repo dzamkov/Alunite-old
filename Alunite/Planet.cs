@@ -102,38 +102,23 @@ namespace Alunite
             TextureUnit deltairrunit = TextureUnit.Texture1; GL.ActiveTexture(deltairrunit);
             this._IrradianceTexture = Texture.Initialize2D(IrradianceResMu, IrradianceResR, Texture.RGB16Float);
             TextureUnit inscaunit = TextureUnit.Texture2; GL.ActiveTexture(inscaunit);
-            this._InscatterTexture = Texture.Initialize2D(InscatterResMu * InscatterResNu, InscatterResMuS * InscatterResR, Texture.RGBA16Float);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            this._InscatterTexture = Texture.Initialize3D(InscatterResMuS * InscatterResNu, InscatterResMu, InscatterResR, Texture.RGBA16Float);
 
             // Create transmittance texture (information about how light is filtered through the atmosphere).
-            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, TextureTarget.Texture2D, this._TransmittanceTexture.ID, 0);
-            GL.Viewport(0, 0, TransmittanceResMu, TransmittanceResR);
-            transmittance.DrawFull();
+            transmittance.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, 
+                this._TransmittanceTexture.ID, TransmittanceResMu, TransmittanceResR);
 
             // Create delta irradiance texture (ground lighting cause by sun).
-            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, TextureTarget.Texture2D, this._IrradianceTexture.ID, 0);
-            GL.Viewport(0, 0, IrradianceResMu, IrradianceResR);
             irradianceinitial.SetUniform("Transmittance", transunit);
-            irradianceinitial.DrawFull();
-
+            irradianceinitial.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
+                this._IrradianceTexture.ID, IrradianceResMu, IrradianceResR);
+ 
             // Create delta inscatter texture (light from the atmosphere).
-            GL.FramebufferTexture2D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, TextureTarget.Texture2D, this._InscatterTexture.ID, 0);
-            GL.Viewport(0, 0, InscatterResMu * InscatterResNu, InscatterResMuS * InscatterResR);
             inscatterinitial.SetUniform("Transmittance", transunit);
-            inscatterinitial.DrawFull();
-
-            this._TestTexture = Texture.Initialize3D(50, 50, 50, Texture.RGBA16Float);
-            for (int t = 0; t < 50; t++)
-            {
-                GL.FramebufferTexture3D(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, TextureTarget.Texture3D, this._TestTexture.ID, 0, t);
-                GL.Viewport(0, 0, 50, 50);
-                GL.ClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-                GL.Clear(ClearBufferMask.ColorBufferBit);
-            }
+            inscatterinitial.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
+                this._InscatterTexture.ID, InscatterResMuS * InscatterResNu, InscatterResMu, InscatterResR);
 
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
-
         }
 
         private const int InscatterResR = 32;
@@ -169,11 +154,9 @@ namespace Alunite
             //View.Invert();
             GL.LoadIdentity();
 
-            this._TestTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture2);
-            this._InscatterTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture1);
+            this._InscatterTexture.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture1);
             this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
 
-            this._PlanetShader.SetUniform("Test", TextureUnit.Texture2);
             this._PlanetShader.SetUniform("Inscatter", TextureUnit.Texture1);
             this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);
@@ -307,7 +290,6 @@ namespace Alunite
             }
         }
 
-        private Texture _TestTexture;
         private Texture _InscatterTexture;
         private Texture _TransmittanceTexture;
         private Texture _IrradianceTexture;

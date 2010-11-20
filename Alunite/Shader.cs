@@ -58,6 +58,33 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Draws the shader in its current state to a frame buffer (and associated texture). Useful for precomputation.
+        /// </summary>
+        public void Draw2DFrame(FramebufferTarget Framebuffer, FramebufferAttachment Attachment, uint Texture, int Width, int Height)
+        {
+            GL.FramebufferTexture2D(Framebuffer, Attachment, TextureTarget.Texture2D, Texture, 0);
+            GL.Viewport(0, 0, Width, Height);
+            this.DrawFull();
+        }
+
+        /// <summary>
+        /// Draws the shader in its current state to a frame buffer (and associated texture). Useful for precomputation. The "Layer" uniform is set
+        /// in the shader to indicate depth.
+        /// </summary>
+        public void Draw3DFrame(FramebufferTarget Framebuffer, FramebufferAttachment Attachment, uint Texture, int Width, int Height, int Depth)
+        {
+            this.Call();
+            int luniform = GL.GetUniformLocation(this.Program, "Layer");
+            for (int t = 0; t < Depth; t++)
+            {
+                GL.FramebufferTexture3D(Framebuffer, Attachment, TextureTarget.Texture3D, Texture, 0, t);
+                GL.Viewport(0, 0, Width, Height);
+                GL.Uniform1(luniform, t);
+                DrawQuad();
+            }
+        }
+
+        /// <summary>
         /// Runs the fragment shader on all pixels on the current viewport.
         /// </summary>
         public void DrawFull()
