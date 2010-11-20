@@ -65,11 +65,12 @@ namespace Alunite
                 new Vector3(0.0f, 0.0f, 1.0f));
             if (this._SunsetMode)
             {
+                double h = 6360 + this._Height / 20000.0;
                 view = Matrix4.LookAt(
-                    new Vector3(0.0f, 6363.0f, 0.0f),
-                    new Vector3(3.0f, 6363.0f, 0.0f),
+                    new Vector3(0.0f, (float)h, 0.0f),
+                    new Vector3(3.0f, (float)h + 0.5f, 0.0f),
                     new Vector3(0.0f, 1.0f, 0.0f));
-                eyepos = new Vector(0.0, 6363.0, 0.0);
+                eyepos = new Vector(0.0, h, 0.0);
             }
 
             this._Planet.Render(proj, view, eyepos, Vector.Normalize(new Vector(Math.Sin(this._SunAngle), Math.Cos(this._SunAngle), 0.0)));

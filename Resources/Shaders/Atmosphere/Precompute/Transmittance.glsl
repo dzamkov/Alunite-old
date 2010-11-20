@@ -38,7 +38,7 @@ float opticalDepth(float H, float r, float mu) {
 		float ir = sqrt(across * across + (up + r) * (up + r));
 		result += exp(-(ir - Rg) / H) * dx;
     }
-    return result;
+    return mu < -sqrt(1.0 - (Rg / r) * (Rg / r)) ? 1e9 : result;
 }
 
 void main() {

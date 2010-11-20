@@ -62,10 +62,10 @@ vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
 		
 		float phaseR = phaseFunctionR(nu);
         float phaseM = phaseFunctionM(nu);
+		vec4 is = max(inscatter(mu, nu, r, mus), 0.0);
 		
-		vec4 is = inscatter(mu, nu, r, mus);
 #ifdef HORIZON_FIX
-		is.w *= smoothstep(0.00, 0.02, mus);
+		//is.w *= smoothstep(0.00, 0.02, mus);
 #endif
 		result = max(is.rgb * phaseR + getMie(is) * phaseM, 0.0);
     }
@@ -118,6 +118,5 @@ void main()
 		suncolor = sunColor(v, sol);
 	}
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
-	//gl_FragColor = texture2D(Transmittance, Coords);
 }
 #endif
