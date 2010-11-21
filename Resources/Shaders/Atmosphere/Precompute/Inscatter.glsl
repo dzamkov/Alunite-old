@@ -69,7 +69,13 @@ void main() {
 		mie += dmie * dx;
 	}
 	
-    gl_FragColor = vec4(ray, mie);
+	gl_FragColor = vec4(ray, mie);
+	
+	if(r < Rg + 0.001 && mu < 0.0)
+	{
+		// Degeneracy fix
+		gl_FragColor = vec4(0.0);
+	}
 }
 #endif
 
