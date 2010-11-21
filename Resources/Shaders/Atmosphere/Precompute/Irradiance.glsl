@@ -1,5 +1,3 @@
-uniform float Dummy;
-
 #ifdef _VERTEX_
 void main()
 {
@@ -20,9 +18,20 @@ void getIrradianceRMu(out float r, out float mu) {
 	mu = -1.0 + mu * 2.0;
 }
 
+#ifdef INITIAL
+#ifdef DELTA
 void main() {
 	float r, mu;
 	getIrradianceRMu(r, mu);
     gl_FragColor = vec4(transmittance(r, mu) * max(mu, 0.0), 0.0);
 }
+#else
+void main() {
+	gl_FragColor = vec4(0.0);
+}
+#endif
+#else
+
+
+#endif
 #endif

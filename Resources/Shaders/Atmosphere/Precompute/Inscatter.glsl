@@ -54,6 +54,8 @@ void pointScatter(float r, float mu, float mus, float nu, float t, out vec3 ray,
     mie *= betaMSca;
 }
 
+#ifdef INITIAL
+#ifdef DELTA
 void main() {
 	float mu, nu, r, mus;
 	getInscatterMuNuRMus(mu, nu, r, mus);
@@ -77,6 +79,16 @@ void main() {
 		gl_FragColor = vec4(0.0);
 	}
 }
+#else
+uniform sampler3D InscatterDelta;
+void main() {
+	vec3 uvw = vec3(gl_FragCoord.xy, float(Layer) + 0.5) / vec3(ivec3(INSCATTER_RES_MU_S * INSCATTER_RES_NU, INSCATTER_RES_MU, INSCATTER_RES_R));
+	gl_FragColor = texture3D(InscatterDelta, uvw);
+}
+#endif
+#else
+
+#endif
 #endif
 
 
