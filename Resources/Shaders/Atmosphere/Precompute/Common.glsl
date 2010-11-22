@@ -29,3 +29,53 @@ float limit(float r, float mu) {
 	}
     return res;
 }
+
+#ifdef _COMMON_ATMOSPHERE_TEXTURE_WRITE_
+void getAtmosphereTextureMuNuRMus(out float mu, out float nu, out float r, out float mus) {
+	float x = gl_FragCoord.x;
+	float y = gl_FragCoord.y;
+	float z = float(Layer);
+	
+	mus = mod(x, float(ATMOSPHERE_RES_MU_S)) / (float(ATMOSPHERE_RES_MU_S) - 1.0);
+	nu = floor(x / float(ATMOSPHERE_RES_MU_S)) / (float(ATMOSPHERE_RES_NU) - 1.0);
+	mu = y / float(ATMOSPHERE_RES_MU);
+	r = z / float(ATMOSPHERE_RES_R);
+	
+#ifdef ATMOSPHERE_TEXTURE_SIMPLE
+	mu = -1.0 + mu * 2.0;
+	nu = -1.0 + nu * 2.0;
+	mus = -1.0 + mus * 2.0;
+	r = Rg + r * (Rt - Rg);
+#else
+	mu = tan(((mu * 2.0) - 1.0) * 1.2) / tan(1.2);
+	nu = -1.0 + nu * 2.0;
+	mus = tan((2.0 * mus - 1.0 + 0.26) * 1.1) / tan(1.26 * 1.1);
+	r = Rg + (r * r) * (Rt - Rg);
+#endif
+}
+#endif
+
+#ifdef _COMMON_ATMOSPHERE_TEXTURE_READ_
+vec4 lookupAtmosphereTexture(sampler3D tex, float mu, float nu, float r, float mus) {
+#ifdef ATMOSPHERE_TEXTURE_SIMPLE
+	float umu = (mu + 1.0) / 2.0;
+	float unu = (nu + 1.0) / 2.0;
+	float umus = (mus + 1.0) / 2.0;
+	float ur = (r - Rg) / (Rt - Rg);
+#else
+	float umu = (atan(mu * tan(1.2)) / 1.2 + 1.0) * 0.5;
+	float unu = (nu + 1.0) / 2.0;
+	float umus = (atan(mus * tan(1.26 * 1.1)) / 1.1 + (1.0 - 0.26)) * 0.5;
+	float ur = sqrt((r - Rg) / (Rt - Rg));
+#endif
+	
+	umus = max(1.0 / float(ATMOSPHERE_RES_MU_S), umus);
+	umus = min(1.0 - 1.0 / float(ATMOSPHERE_RES_MU_S), umus);
+	
+	float lerp = unu * (float(ATMOSPHERE_RES_NU) - 1.0);
+    unu = floor(lerp);
+    lerp = lerp - unu;
+    return texture3D(tex, vec3((unu + umus) / float(ATMOSPHERE_RES_NU), umu, ur)) * (1.0 - lerp) +
+           texture3D(tex, vec3((unu + umus + 1.0) / float(ATMOSPHERE_RES_NU), umu, ur)) * lerp;
+}
+#endif

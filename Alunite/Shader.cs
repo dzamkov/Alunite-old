@@ -24,7 +24,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Sets a uniform variable.
+        /// Sets a uniform variable. Shader must be called beforehand.
         /// </summary>
         public void SetUniform(string Name, Vector Value)
         {
@@ -33,7 +33,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Sets a uniform matrix.
+        /// Sets a uniform matrix. Shader must be called beforehand.
         /// </summary>
         public void SetUniform(string Name, ref Matrix4 Matrix)
         {
@@ -41,7 +41,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Sets a uniform texture.
+        /// Sets a uniform texture. Shader must be called beforehand.
         /// </summary>
         public void SetUniform(string Name, TextureUnit Unit)
         {
@@ -50,7 +50,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Sets a uniform integer.
+        /// Sets a uniform integer. Shader must be called beforehand.
         /// </summary>
         public void SetUniform(string Name, int Value)
         {

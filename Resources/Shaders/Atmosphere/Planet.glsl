@@ -26,6 +26,7 @@ void main()
 #undef _FRAGMENT_
 #define _TRANSMITTANCE_USE_
 #define _INSCATTER_USE_
+#define _COMMON_ATMOSPHERE_TEXTURE_READ_
 #include "Precompute/Common.glsl"
 #include "Precompute/Transmittance.glsl"
 #include "Precompute/Inscatter.glsl"
@@ -118,5 +119,6 @@ void main()
 		suncolor = sunColor(v, sol);
 	}
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
+	//gl_FragColor = texture3D(Inscatter, vec3(Coords, 0.5));
 }
 #endif

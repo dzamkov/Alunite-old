@@ -14,8 +14,13 @@ void main()
 void getIrradianceRMu(out float r, out float mu) {
     r = gl_FragCoord.y / float(IRRADIANCE_RES_R);
 	mu = gl_FragCoord.x / float(IRRADIANCE_RES_MU);
+#ifdef IRRADIANCE_SIMPLE
 	r = Rg + r * (Rt - Rg);
 	mu = -1.0 + mu * 2.0;
+#else
+	r = Rg + r * r * (Rt - Rg);
+	mu = -1.0 + mu * 2.0;
+#endif
 }
 
 #ifdef INITIAL
@@ -34,4 +39,20 @@ void main() {
 
 
 #endif
+#endif
+
+#ifdef _IRRADIANCE_UV_
+vec2 getIrradianceUV(float r, float mu) {
+#ifdef IRRADIANCE_SIMPLE
+	return vec2((mu + 1.0) / 2.0, (r - Rg) / (Rt - Rg));
+#else
+	return vec2((mu + 1.0) / 2.0, sqrt((r - Rg) / (Rt - Rg)));
+#endif
+}
+#endif
+
+#ifdef _IRRADIANCE_USE_
+
+
+
 #endif

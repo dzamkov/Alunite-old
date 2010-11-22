@@ -7,36 +7,14 @@ void main()
 
 #ifdef _FRAGMENT_
 #undef _FRAGMENT_
+uniform int Layer;
+
 #define _TRANSMITTANCE_USE_
+#define _COMMON_ATMOSPHERE_TEXTURE_WRITE_
 #include "Common.glsl"
 #include "Transmittance.glsl"
 
 #define INSCATTER_INTEGRAL_SAMPLES 50
-
-uniform int Layer;
-
-void getInscatterMuNuRMus(out float mu, out float nu, out float r, out float mus) {
-	float x = gl_FragCoord.x;
-	float y = gl_FragCoord.y;
-	float z = float(Layer);
-	
-	mus = mod(x, float(INSCATTER_RES_MU_S)) / (float(INSCATTER_RES_MU_S) - 1.0);
-	nu = floor(x / float(INSCATTER_RES_MU_S)) / (float(INSCATTER_RES_NU) - 1.0);
-	mu = y / float(INSCATTER_RES_MU);
-	r = z / float(INSCATTER_RES_R);
-	
-#ifdef INSCATTER_SIMPLE
-	mu = -1.0 + mu * 2.0;
-	nu = -1.0 + nu * 2.0;
-	mus = -1.0 + mus * 2.0;
-	r = Rg + r * (Rt - Rg);
-#else
-	mu = tan(((mu * 2.0) - 1.0) * 1.2) / tan(1.2);
-	nu = -1.0 + nu * 2.0;
-	mus = tan((2.0 * mus - 1.0 + 0.26) * 1.1) / tan(1.26 * 1.1);
-	r = Rg + (r * r) * (Rt - Rg);
-#endif
-}
 
 void pointScatter(float r, float mu, float mus, float nu, float t, out vec3 ray, out float mie)
 {
@@ -58,7 +36,7 @@ void pointScatter(float r, float mu, float mus, float nu, float t, out vec3 ray,
 #ifdef DELTA
 void main() {
 	float mu, nu, r, mus;
-	getInscatterMuNuRMus(mu, nu, r, mus);
+	getAtmosphereTextureMuNuRMus(mu, nu, r, mus);
 	
 	vec3 ray = vec3(0.0);
 	float mie = 0.0;
@@ -82,7 +60,7 @@ void main() {
 #else
 uniform sampler3D InscatterDelta;
 void main() {
-	vec3 uvw = vec3(gl_FragCoord.xy, float(Layer) + 0.5) / vec3(ivec3(INSCATTER_RES_MU_S * INSCATTER_RES_NU, INSCATTER_RES_MU, INSCATTER_RES_R));
+	vec3 uvw = vec3(gl_FragCoord.xy, float(Layer) + 0.5) / vec3(ivec3(ATMOSPHERE_RES_MU_S * ATMOSPHERE_RES_NU, ATMOSPHERE_RES_MU, ATMOSPHERE_RES_R));
 	gl_FragColor = texture3D(InscatterDelta, uvw);
 }
 #endif
@@ -96,25 +74,6 @@ void main() {
 uniform sampler3D Inscatter;
 
 vec4 inscatter(float mu, float nu, float r, float mus) {
-#ifdef INSCATTER_SIMPLE
-	float umu = (mu + 1.0) / 2.0;
-	float unu = (nu + 1.0) / 2.0;
-	float umus = (mus + 1.0) / 2.0;
-	float ur = (r - Rg) / (Rt - Rg);
-#else
-	float umu = (atan(mu * tan(1.2)) / 1.2 + 1.0) * 0.5;
-	float unu = (nu + 1.0) / 2.0;
-	float umus = (atan(mus * tan(1.26 * 1.1)) / 1.1 + (1.0 - 0.26)) * 0.5;
-	float ur = sqrt((r - Rg) / (Rt - Rg));
-#endif
-	
-	umus = max(1.0 / float(INSCATTER_RES_MU_S), umus);
-	umus = min(1.0 - 1.0 / float(INSCATTER_RES_MU_S), umus);
-	
-	float lerp = unu * (float(INSCATTER_RES_NU) - 1.0);
-    unu = floor(lerp);
-    lerp = lerp - unu;
-    return texture3D(Inscatter, vec3((unu + umus) / float(INSCATTER_RES_NU), umu, ur)) * (1.0 - lerp) +
-           texture3D(Inscatter, vec3((unu + umus + 1.0) / float(INSCATTER_RES_NU), umu, ur)) * lerp;
+	return lookupAtmosphereTexture(Inscatter, mu, nu, r, mus);
 }
 #endif
