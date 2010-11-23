@@ -3,7 +3,7 @@ uniform vec3 SunDirection;
 uniform mat4 ProjInverse;
 uniform mat4 ViewInverse;
 
-const vec3 SunColor = vec3(100.0);
+const vec3 SunColor = vec3(70.0);
 const vec3 SeaColor = vec3(0.0, 0.0, 0.2);
 const vec3 AtmoColor = vec3(0.7, 0.7, 0.9);
 const float Radius = 1.0;
@@ -24,14 +24,15 @@ void main()
 
 #ifdef _FRAGMENT_
 #undef _FRAGMENT_
+#define _IRRADIANCE_UV_
 #define _TRANSMITTANCE_USE_
 #define _INSCATTER_USE_
+#define _IRRADIANCE_USE_
 #define _COMMON_ATMOSPHERE_TEXTURE_READ_
 #include "Precompute/Common.glsl"
 #include "Precompute/Transmittance.glsl"
+#include "Precompute/Irradiance.glsl"
 #include "Precompute/Inscatter.glsl"
-
-#define HORIZON_FIX
 
 vec3 getMie(vec4 rayMie) {
 	return rayMie.rgb * rayMie.w / max(rayMie.r, 1e-4) * (betaR.r / betaR);
@@ -55,13 +56,8 @@ vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
 		
 		float phaseR = phaseFunctionR(nu);
         float phaseM = phaseFunctionM(nu);
-		phaseR = 1.0;
-		phaseM = 0.0;
 		vec4 is = max(inscatter(mu, nu, r, mus), 0.0);
 		
-#ifdef HORIZON_FIX
-		//is.w *= smoothstep(0.00, 0.02, mus);
-#endif
 		result = max(is.rgb * phaseR + getMie(is) * phaseM, 0.0);
     }
     return result * SunColor;
@@ -74,10 +70,12 @@ vec3 sunColor(vec3 v, vec3 sol)
 
 vec3 groundColor(vec3 n, vec3 sol)
 {
-	// Direct sunlight
-	float mu = dot(n, sol);
-	vec3 direct = transmittance(Rg, mu) * max(mu, 0.0) * SunColor / Pi;
-	return direct * SeaColor;
+	float mus = dot(n, sol);
+	vec3 direct = transmittance(Rg, mus) * max(mus, 0.0) * SunColor / Pi;
+	vec3 irr = irradiance(Rg, mus);
+	vec3 full = direct + irr;
+	
+	return full * SeaColor;
 }
 
 vec3 HDR(vec3 L) {

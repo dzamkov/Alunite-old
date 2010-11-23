@@ -20,13 +20,16 @@ uniform sampler3D InscatterDelta;
 #include "Transmittance.glsl"
 #include "Irradiance.glsl"
 
-#define POINTSCATTER_SPHERICAL_INTEGRAL_SAMPLES 4
+#define POINTSCATTER_SPHERICAL_INTEGRAL_SAMPLES 16
 
 void main()
 {
 	float mu, nu, r, mus;
 	getAtmosphereTextureMuNuRMus(mu, nu, r, mus);
 	
+	r = clamp(r, Rg, Rt);
+    mu = clamp(mu, -1.0, 1.0);
+    mus = clamp(mus, -1.0, 1.0);
     float var = sqrt(1.0 - mu * mu) * sqrt(1.0 - mus * mus);
     nu = clamp(nu, mus * mu - var, mus * mu + var);
 	

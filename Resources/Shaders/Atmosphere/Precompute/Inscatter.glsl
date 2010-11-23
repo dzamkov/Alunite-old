@@ -70,7 +70,38 @@ void main() {
 }
 #endif
 #else
+#ifdef DELTA
+uniform sampler3D PointScatter;
 
+void main() {
+	float mu, nu, r, mus;
+	getAtmosphereTextureMuNuRMus(mu, nu, r, mus);
+	
+	vec3 raymie = vec3(0.0);
+    float dx = limit(r, mu) / float(INSCATTER_INTEGRAL_SAMPLES);
+    for (int i = 1; i <= INSCATTER_INTEGRAL_SAMPLES; ++i) {
+        float t = float(i) * dx;
+		
+		float ri = sqrt(r * r + t * t + 2.0 * r * mu * t);
+		float mui = (r * mu + t) / ri;
+		float musi = (nu * t + mus * r) / ri;
+        vec3 raymiei = lookupAtmosphereTexture(PointScatter, mui, nu, ri, musi).rgb * transmittance(r, mu, t);
+		
+        raymie += raymiei * dx;
+    }
+	
+	gl_FragColor = mu < -sqrt(1.0 - (Rg / r) * (Rg / r)) ? vec4(0.0) : vec4(raymie, 0.0);
+}
+#else
+uniform sampler3D InscatterDelta;
+void main() {
+	float mu, nu, r, mus;
+	getAtmosphereTextureMuNuRMus(mu, nu, r, mus);
+	float pr = phaseFunctionR(nu);
+	vec3 ray = lookupAtmosphereTexture(InscatterDelta, mu, nu, r, mus).rgb;
+	gl_FragColor = vec4(ray / pr, 0.0);
+}
+#endif
 #endif
 #endif
 
