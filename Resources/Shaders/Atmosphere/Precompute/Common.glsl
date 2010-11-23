@@ -3,6 +3,8 @@ const float Pi = 3.14159265;
 const float Rt = 6420.0;
 const float Rg = 6360.0;
 
+const float GroundReflectance = 0.1;
+
 // Rayleigh
 const float HR = 8.0;
 const vec3 betaR = vec3(5.8e-3, 1.35e-2, 3.31e-2);
@@ -28,6 +30,14 @@ float limit(float r, float mu) {
 		}
 	}
     return res;
+}
+
+float phaseFunctionR(float mu) {
+    return (3.0 / (16.0 * Pi)) * (1.0 + mu * mu);
+}
+
+float phaseFunctionM(float mu) {
+	return 1.5 * 1.0 / (4.0 * Pi) * (1.0 - mieG * mieG) * pow(1.0 + (mieG * mieG) - 2.0 * mieG * mu, -3.0 / 2.0) * (1.0 + mu * mu) / (2.0 + mieG * mieG);
 }
 
 #ifdef _COMMON_ATMOSPHERE_TEXTURE_WRITE_

@@ -33,14 +33,6 @@ void main()
 
 #define HORIZON_FIX
 
-float phaseFunctionR(float mu) {
-    return (3.0 / (16.0 * Pi)) * (1.0 + mu * mu);
-}
-
-float phaseFunctionM(float mu) {
-	return 1.5 * 1.0 / (4.0 * Pi) * (1.0 - mieG * mieG) * pow(1.0 + (mieG * mieG) - 2.0 * mieG * mu, -3.0 / 2.0) * (1.0 + mu * mu) / (2.0 + mieG * mieG);
-}
-
 vec3 getMie(vec4 rayMie) {
 	return rayMie.rgb * rayMie.w / max(rayMie.r, 1e-4) * (betaR.r / betaR);
 }
@@ -63,6 +55,8 @@ vec3 atmoColor(float t, vec3 x, vec3 v, vec3 sol)
 		
 		float phaseR = phaseFunctionR(nu);
         float phaseM = phaseFunctionM(nu);
+		phaseR = 1.0;
+		phaseM = 0.0;
 		vec4 is = max(inscatter(mu, nu, r, mus), 0.0);
 		
 #ifdef HORIZON_FIX
@@ -119,6 +113,5 @@ void main()
 		suncolor = sunColor(v, sol);
 	}
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
-	//gl_FragColor = texture3D(Inscatter, vec3(Coords, 0.5));
 }
 #endif

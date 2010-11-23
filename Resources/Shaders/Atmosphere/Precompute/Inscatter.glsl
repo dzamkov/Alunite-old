@@ -11,6 +11,7 @@ uniform int Layer;
 
 #define _TRANSMITTANCE_USE_
 #define _COMMON_ATMOSPHERE_TEXTURE_WRITE_
+#define _COMMON_ATMOSPHERE_TEXTURE_READ_
 #include "Common.glsl"
 #include "Transmittance.glsl"
 
@@ -34,6 +35,16 @@ void pointScatter(float r, float mu, float mus, float nu, float t, out vec3 ray,
 
 #ifdef INITIAL
 #ifdef DELTA
+uniform sampler3D Inscatter;
+void main() {
+	float mu, nu, r, mus;
+	getAtmosphereTextureMuNuRMus(mu, nu, r, mus);
+	float pr = phaseFunctionR(nu);
+	float pm = phaseFunctionM(nu);
+	vec4 raymies = lookupAtmosphereTexture(Inscatter, mu, nu, r, mus);
+	gl_FragColor = vec4(raymies.rgb * pr + vec3(raymies.w * pm), 0.0);
+}
+#else
 void main() {
 	float mu, nu, r, mus;
 	getAtmosphereTextureMuNuRMus(mu, nu, r, mus);
@@ -56,12 +67,6 @@ void main() {
 		// Degeneracy fix
 		gl_FragColor = vec4(0.0);
 	}
-}
-#else
-uniform sampler3D InscatterDelta;
-void main() {
-	vec3 uvw = vec3(gl_FragCoord.xy, float(Layer) + 0.5) / vec3(ivec3(ATMOSPHERE_RES_MU_S * ATMOSPHERE_RES_NU, ATMOSPHERE_RES_MU, ATMOSPHERE_RES_R));
-	gl_FragColor = texture3D(InscatterDelta, uvw);
 }
 #endif
 #else

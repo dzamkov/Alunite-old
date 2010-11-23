@@ -110,12 +110,14 @@ namespace Alunite
             this._IrradianceTexture = Texture.Initialize2D(IrradianceResMu, IrradianceResR, Texture.RGB16Float);
             this._InscatterTexture = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGBA16Float);
             Texture irrdelta = Texture.Initialize2D(IrradianceResMu, IrradianceResR, Texture.RGB16Float);
-            Texture insdelta = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGBA16Float);
+            Texture insdelta = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGB16Float);
             Texture ptsdelta = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGB16Float);
 
             this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
+            this._InscatterTexture.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture2);
             irrdelta.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture3);
             insdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture4);
+            ptsdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture5);
 
             // Create transmittance texture (information about how light is filtered through the atmosphere).
             transmittance.Call();
@@ -128,24 +130,24 @@ namespace Alunite
             irradianceinitialdelta.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                 irrdelta.ID, IrradianceResMu, IrradianceResR);
  
-            // Create delta inscatter texture (light from the atmosphere).
-            inscatterinitialdelta.Call();
-            inscatterinitialdelta.SetUniform("Transmittance", TextureUnit.Texture0);
-            inscatterinitialdelta.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                insdelta.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
+            // Create initial inscatter texture (light from atmosphere from sun, rayleigh and mie parts seperated for precision).
+            inscatterinitial.Call();
+            inscatterinitial.SetUniform("Transmittance", TextureUnit.Texture0);
+            inscatterinitial.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
+                this._InscatterTexture.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
 
             // Initialize irradiance to zero
             irradianceinitial.Call();
             irradianceinitial.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                 this._IrradianceTexture.ID, IrradianceResMu, IrradianceResR);
 
-            // Copy delta inscatter to inscatter
-            inscatterinitial.Call();
-            inscatterinitial.SetUniform("InscatterDelta", TextureUnit.Texture4);
-            inscatterinitial.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                this._InscatterTexture.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
+            // Copy inscatter to delta inscatter, combining rayleigh and mie parts.
+            inscatterinitialdelta.Call();
+            inscatterinitialdelta.SetUniform("Inscatter", TextureUnit.Texture2);
+            inscatterinitialdelta.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
+                insdelta.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
 
-            //for (int t = 0; t < MultipleScatterOrder; t++)
+            //for (int t = 2; t <= MultipleScatterOrder; t++)
             //{
                 // Generate point scattering information
                 pointscatter.Call();
@@ -195,7 +197,7 @@ namespace Alunite
             this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
             this._InscatterTexture.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture1);
 
-            this._PlanetShader.SetUniform("Inscatter", TextureUnit.Texture1);
+            this._PlanetShader.SetUniform("Inscatter", TextureUnit.Texture4);
             this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);
             this._PlanetShader.SetUniform("ViewInverse", ref View);
