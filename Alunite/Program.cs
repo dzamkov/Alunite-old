@@ -11,8 +11,7 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            Planet planet = new Planet();
-            Window win = new Window(planet);
+            Window win = new Window();
             win.Run();
         }
     }

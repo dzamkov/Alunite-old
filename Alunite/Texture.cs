@@ -136,6 +136,25 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates a generic cubemap with no data.
+        /// </summary>
+        public static Texture InitializeCubemap(int Length, Format Format)
+        {
+            int tex = GL.GenTexture();
+            GL.BindTexture(TextureTarget.TextureCubeMap, tex);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToEdge);
+            for (int t = 0; t < 6; t++)
+            {
+                GL.TexImage2D((TextureTarget)((int)TextureTarget.TextureCubeMapPositiveX + t), 0, Format.PixelInternalFormat, Length, Length, 0, Format.PixelFormat, Format.PixelType, IntPtr.Zero);
+            }
+            return new Texture(tex);
+        }
+
+        /// <summary>
         /// Sets the interpolation used by the texture.
         /// </summary>
         public void SetInterpolation2D(TextureMinFilter Min, TextureMagFilter Mag)

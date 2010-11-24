@@ -20,7 +20,7 @@ namespace Alunite
     /// </summary>
     public class Window : GameWindow
     {
-        public Window(Planet Planet)
+        public Window()
             : base(640, 480, GraphicsMode.Default, "Alunite")
         {
             this.WindowState = WindowState.Maximized;
@@ -28,26 +28,34 @@ namespace Alunite
             this.TargetRenderFrequency = 100.0;
             this.TargetUpdateFrequency = 500.0;
 
-            GL.Enable(EnableCap.Lighting);
             GL.Enable(EnableCap.CullFace);
             GL.Enable(EnableCap.ColorMaterial);
-            GL.Disable(EnableCap.Texture2D);
+            GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.DepthTest);
 
             GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.Diffuse);
 
-            GL.Enable(EnableCap.Light0);
-            GL.Light(LightName.Light0, LightParameter.Position, new Vector4(1.0f, 1.0f, 1.0f, 0.0f));
-            GL.Light(LightName.Light0, LightParameter.Diffuse, Color.RGB(0.6, 0.6, 0.6));
-            GL.Light(LightName.Light0, LightParameter.Ambient, Color.RGB(0.1, 0.1, 0.1));
-
-            
             Path resources = Path.ApplicationStartup.Parent.Parent.Parent["Resources"];
             Path shaders = resources["Shaders"];
-            this._Planet = Planet;
-            this._Planet.Load(shaders);
 
-            this._Height = 20000.0;
+            // Initial triangulation
+            this._Triangulation = SphericalTriangulation.CreateIcosahedron();
+
+            // Assign random colors for testing
+            Random r = new Random(101);
+            this._VertexColors = new Color[this._Triangulation.Vertices.Count];
+            for (int t = 0; t < this._VertexColors.Length; t++)
+            {
+                this._VertexColors[t] = Color.RGB(r.NextDouble(), r.NextDouble(), r.NextDouble());
+            }
+
+            // Create a cubemap
+            this._Cubemap = Cubemap.Generate(Texture.RGB16Float, 128, new _CubemapRenderable() { Window = this }, RadiusGround * 0.2f, RadiusGround * 1.2f);
+
+            // A shader to test the cubemap with
+            this._CubemapUnroll = Shader.Load(shaders["UnrollCubemap.glsl"]);
+
+            this._Height = RadiusGround * 3;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -58,24 +66,68 @@ namespace Alunite
 
             double cosx = Math.Cos(this._XRot);
             Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * this._Height;
-            Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(2.2f, (float)this.Width / (float)this.Height, 0.1f, 10000.0f);
+            Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(1.2f, (float)this.Width / (float)this.Height, 1.0f, 20000.0f);
             Matrix4 view = Matrix4.LookAt(
-                new Vector3(),
-                -(Vector3)eyepos,
+                (Vector3)eyepos,
+                new Vector3(0.0f, 0.0f, 0.0f),
                 new Vector3(0.0f, 0.0f, 1.0f));
-            if (this._SunsetMode)
+
+            // Unroll that cubemap
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+            this._Cubemap.SetUnit(TextureTarget.TextureCubeMap, TextureUnit.Texture0);
+            this._CubemapUnroll.Call();
+            this._CubemapUnroll.SetUniform("Cubemap", TextureUnit.Texture0);
+            this._CubemapUnroll.DrawFull();
+
+            /*
+            // Render spherical triangulation
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadMatrix(ref proj);
+            GL.MultMatrix(ref view);
+            GL.Begin(BeginMode.Triangles);
+            foreach (Triangle<int> tri in this._Triangulation.Triangles)
             {
-                double h = 6360 + this._Height / 20000.0;
-                view = Matrix4.LookAt(
-                    new Vector3(0.0f, (float)h, 0.0f),
-                    new Vector3(3.0f, (float)h + 0.5f, 0.0f),
-                    new Vector3(0.0f, 1.0f, 0.0f));
-                eyepos = new Vector(0.0, h, 0.0);
+                Triangle<Vector> vectri = this._Triangulation.Dereference(tri);
+                GL.Normal3(Triangle.Normal(vectri));
+                GL.Color4(this._VertexColors[tri.A]);
+                GL.Vertex3(vectri.A * RadiusGround);
+                GL.Color4(this._VertexColors[tri.B]);
+                GL.Vertex3(vectri.B * RadiusGround);
+                GL.Color4(this._VertexColors[tri.C]);
+                GL.Vertex3(vectri.C * RadiusGround);
+            }
+            GL.End();*/
+
+            System.Threading.Thread.Sleep(1);
+   
+            this.SwapBuffers();
+        }
+
+        /// <summary>
+        /// Renderable to produce a cubemap for the planet.
+        /// </summary>
+        private struct _CubemapRenderable : IRenderable
+        {
+            public void Render()
+            {
+                GL.Begin(BeginMode.Triangles);
+                foreach (Triangle<int> tri in this.Window._Triangulation.Triangles)
+                {
+                    Triangle<Vector> vectri = this.Window._Triangulation.Dereference(tri);
+                    GL.Normal3(Triangle.Normal(vectri));
+                    GL.Color4(this.Window._VertexColors[tri.A]);
+                    GL.Vertex3(vectri.A * RadiusGround);
+                    GL.Color4(this.Window._VertexColors[tri.C]);
+                    GL.Vertex3(vectri.C * RadiusGround);
+                    GL.Color4(this.Window._VertexColors[tri.B]);
+                    GL.Vertex3(vectri.B * RadiusGround);
+                }
+                GL.End();
             }
 
-            this._Planet.Render(proj, view, eyepos, Vector.Normalize(new Vector(Math.Sin(this._SunAngle), Math.Cos(this._SunAngle), 0.0)));
-
-            this.SwapBuffers();
+            public Window Window;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -88,9 +140,6 @@ namespace Alunite
             if (this.Keyboard[Key.D]) this._ZRot -= updatetime;
             if (this.Keyboard[Key.Q]) this._Height *= zoomfactor;
             if (this.Keyboard[Key.E]) this._Height /= zoomfactor;
-            if (this.Keyboard[Key.Z]) this._SunAngle += updatetime * 0.5;
-            if (this.Keyboard[Key.X]) this._SunAngle -= updatetime * 0.5;
-            if (this.Keyboard[Key.C]) this._SunsetMode = true; else this._SunsetMode = false;
             if (this.Keyboard[Key.Escape]) this.Close();
             this._XRot = Math.Min(Math.PI / 2.02, Math.Max(Math.PI / -2.02, this._XRot));
         }
@@ -100,11 +149,14 @@ namespace Alunite
             GL.Viewport(0, 0, this.Width, this.Height);
         }
 
-        private bool _SunsetMode;
+        public const double RadiusGround = 6360.0;
+
+        private Texture _Cubemap;
+        private Shader _CubemapUnroll;
+        private Color[] _VertexColors;
+        private SphericalTriangulation _Triangulation;
         private double _Height;
         private double _XRot;
         private double _ZRot;
-        private double _SunAngle;
-        private Planet _Planet;
     }
 }

@@ -3,7 +3,7 @@ uniform vec3 SunDirection;
 uniform mat4 ProjInverse;
 uniform mat4 ViewInverse;
 
-const vec3 SunColor = vec3(70.0);
+const vec3 SunColor = vec3(30.0);
 const vec3 SeaColor = vec3(0.0, 0.0, 0.2);
 const vec3 AtmoColor = vec3(0.7, 0.7, 0.9);
 const float Radius = 1.0;
@@ -79,7 +79,6 @@ vec3 groundColor(vec3 n, vec3 sol)
 }
 
 vec3 HDR(vec3 L) {
-    L = L * 0.4;
     L.r = L.r < 1.413 ? pow(L.r * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.r);
     L.g = L.g < 1.413 ? pow(L.g * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.g);
     L.b = L.b < 1.413 ? pow(L.b * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.b);

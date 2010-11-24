@@ -8,100 +8,20 @@ using OpenTK.Graphics.OpenGL;
 namespace Alunite
 {
     /// <summary>
-    /// Really big thing.
+    /// A triangulation over a unit sphere.
     /// </summary>
-    public class Planet
+    public struct SphericalTriangulation
     {
-        public Planet()
-        {
-            this._Triangles = new HashSet<Triangle<int>>();
-            this._SegmentTriangles = new Dictionary<Segment<int>, Triangle<int>>();
-
-            // Initialize with an icosahedron.
-            Primitive icosa = Primitive.Icosahedron;
-            this._Vertices = new List<Vector>(icosa.Vertices);
-            foreach (Triangle<int> tri in icosa.Triangles)
-            {
-                this._AddTriangle(tri);   
-            }
-
-            this._Subdivide();
-            this._Subdivide();
-            this._Subdivide();
-
-        }
 
         /// <summary>
-        /// Creates a diagram for the current state of the planet.
+        /// Adds a triangle to the triangulation.
         /// </summary>
-        public Diagram CreateDiagram()
+        public void AddTriangle(Triangle<int> Triangle)
         {
-            Diagram dia = new Diagram(this._Vertices);
-            foreach (Triangle<int> tri in this._Triangles)
-            {
-                dia.SetBorderedTriangle(tri, Color.RGB(0.0, 0.2, 1.0), Color.RGB(0.3, 1.0, 0.3), 4.0);
-            }
-            return dia;
-        }
-
-        /// <summary>
-        /// Creates a vertex buffer representation of the current state of the planet.
-        /// </summary>
-        public VBO<NormalVertex, NormalVertex.Model> CreateVBO()
-        {
-            NormalVertex[] verts = new NormalVertex[this._Vertices.Count];
-            for (int t = 0; t < verts.Length; t++)
-            {
-                // Lol, position and normal are the same.
-                Vector pos = this._Vertices[t];
-                verts[t].Position = pos;
-                verts[t].Normal = pos;
-            }
-            return new VBO<NormalVertex, NormalVertex.Model>(
-                NormalVertex.Model.Singleton,
-                verts, verts.Length,
-                this._Triangles, this._Triangles.Count);
-        }
-
-        public void Load(Alunite.Path ShaderPath)
-        {
-            Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
-
-            AtmosphereOptions options = AtmosphereOptions.DefaultEarth;
-            AtmosphereQualityOptions qualityoptions = AtmosphereQualityOptions.Default;
-
-            this._Atmosphere = Atmosphere.Generate(options, qualityoptions, pci, ShaderPath);
-
-            Path atmosphere = ShaderPath["Atmosphere"];
-            Path precompute = atmosphere["Precompute"];
-            Atmosphere.DefineConstants(options, qualityoptions, pci);
-            this._PlanetShader = Shader.Load(atmosphere["Planet.glsl"], pci);
-        }
-
-
-        public void Render(Matrix4 Proj, Matrix4 View, Vector EyePosition, Vector SunDirection)
-        {
-            Proj.Invert();
-            //View.Invert();
-            GL.LoadIdentity();
-
-            this._Atmosphere.Setup(this._PlanetShader);
-            this._PlanetShader.SetUniform("ProjInverse", ref Proj);
-            this._PlanetShader.SetUniform("ViewInverse", ref View);
-            this._PlanetShader.SetUniform("EyePosition", EyePosition);
-            this._PlanetShader.SetUniform("SunDirection", SunDirection);
-            this._PlanetShader.DrawFull();
-        }
-
-        /// <summary>
-        /// Adds a triangle to the planet.
-        /// </summary>
-        private void _AddTriangle(Triangle<int> Triangle)
-        {
-            this._Triangles.Add(Triangle);
+            this.Triangles.Add(Triangle);
             foreach (Segment<int> seg in Triangle.Segments)
             {
-                this._SegmentTriangles[seg] = Triangle;
+                this.SegmentTriangles[seg] = Triangle;
             }
         }
 
@@ -111,20 +31,17 @@ namespace Alunite
         public Triangle<Vector> Dereference(Triangle<int> Triangle)
         {
             return new Triangle<Vector>(
-                this._Vertices[Triangle.A],
-                this._Vertices[Triangle.B],
-                this._Vertices[Triangle.C]);
+                this.Vertices[Triangle.A],
+                this.Vertices[Triangle.B],
+                this.Vertices[Triangle.C]);
         }
 
         /// <summary>
-        /// Splits the triangle at the specified point while maintaining the delaunay property.
+        /// Inserts a point in the triangulation and splits triangles to maintain the delaunay property.
         /// </summary>
-        private void _SplitTriangle(Triangle<int> Triangle, Vector Point)
+        public void SplitTriangle(Triangle<int> Triangle, Vector NewPosition, int NewPoint)
         {
-            int npoint = this._Vertices.Count;
-            this._Vertices.Add(Point);
-
-            this._Triangles.Remove(Triangle);
+            this.Triangles.Remove(Triangle);
 
             // Maintain delaunay property by flipping encroached triangles.
             List<Segment<int>> finalsegs = new List<Segment<int>>();
@@ -137,17 +54,17 @@ namespace Alunite
             {
                 Segment<int> seg = possiblealtersegs.Pop();
 
-                Triangle<int> othertri = Alunite.Triangle.Align(this._SegmentTriangles[seg.Flip], seg.Flip).Value;
+                Triangle<int> othertri = Alunite.Triangle.Align(this.SegmentTriangles[seg.Flip], seg.Flip).Value;
                 int otherpoint = othertri.Vertex;
                 Triangle<Vector> othervectri = this.Dereference(othertri);
                 Vector othercircumcenter = Alunite.Triangle.Normal(othervectri);
                 double othercircumangle = Vector.Dot(othercircumcenter, othervectri.A);
 
                 // Check if triangle encroachs the new point
-                double npointangle = Vector.Dot(othercircumcenter, Point);
+                double npointangle = Vector.Dot(othercircumcenter, NewPosition);
                 if (npointangle > othercircumangle)
                 {
-                    this._Triangles.Remove(othertri);
+                    this.Triangles.Remove(othertri);
                     possiblealtersegs.Push(new Segment<int>(othertri.A, othertri.B));
                     possiblealtersegs.Push(new Segment<int>(othertri.C, othertri.A));
                 }
@@ -159,69 +76,64 @@ namespace Alunite
 
             foreach (Segment<int> seg in finalsegs)
             {
-                this._AddTriangle(new Triangle<int>(npoint, seg));
+                this.AddTriangle(new Triangle<int>(NewPoint, seg));
             }
         }
 
         /// <summary>
-        /// Splits a triangle at its circumcenter while maintaining the delaunay property.
+        /// Splits a triangle at its center, maintaining the delaunay property.
         /// </summary>
-        private void _SplitTriangle(Triangle<int> Triangle)
+        public void SplitTriangle(Triangle<int> Triangle)
         {
             Triangle<Vector> vectri = this.Dereference(Triangle);
-            Vector circumcenter = Alunite.Triangle.Normal(vectri);
-            this._SplitTriangle(Triangle, circumcenter);
+            Vector npos = Alunite.Triangle.Normal(vectri);
+            this.SplitTriangle(Triangle, npos, this.AddVertex(npos));
         }
 
         /// <summary>
-        /// Subdivides the entire planet, quadrupling the amount of triangles.
+        /// Adds a vertex (with length 1) to the spherical triangulation.
         /// </summary>
-        private void _Subdivide()
+        public int AddVertex(Vector Position)
         {
-            var oldtris = this._Triangles;
-            var oldsegs = this._SegmentTriangles;
-            this._Triangles = new HashSet<Triangle<int>>();
-            this._SegmentTriangles = new Dictionary<Segment<int>, Triangle<int>>();
-
-            Dictionary<Segment<int>, int> newsegs = new Dictionary<Segment<int>, int>();
-
-            foreach (Triangle<int> tri in oldtris)
-            {
-                int[] midpoints = new int[3];
-                Segment<int>[] segs = tri.Segments;
-                for (int t = 0; t < 3; t++)
-                {
-                    Segment<int> seg = segs[t];
-                    int midpoint;
-                    if (!newsegs.TryGetValue(seg, out midpoint))
-                    {
-                        midpoint = this._Vertices.Count;
-                        this._Vertices.Add(
-                            Vector.Normalize(
-                                Segment.Midpoint(
-                                    new Segment<Vector>(
-                                        this._Vertices[seg.A],
-                                        this._Vertices[seg.B]))));
-                        newsegs.Add(seg.Flip, midpoint);
-                    }
-                    else
-                    {
-                        newsegs.Remove(seg);
-                    }
-                    midpoints[t] = midpoint;
-                }
-                this._AddTriangle(new Triangle<int>(tri.A, midpoints[0], midpoints[2]));
-                this._AddTriangle(new Triangle<int>(tri.B, midpoints[1], midpoints[0]));
-                this._AddTriangle(new Triangle<int>(tri.C, midpoints[2], midpoints[1]));
-                this._AddTriangle(new Triangle<int>(midpoints[0], midpoints[1], midpoints[2]));
-            }
+            int ind = this.Vertices.Count;
+            this.Vertices.Add(Position);
+            return ind;
         }
 
-        private PrecomputedAtmosphere _Atmosphere;
-        private Shader _PlanetShader;
+        /// <summary>
+        /// Creates a spherical triangulation based off an icosahedron.
+        /// </summary>
+        public static SphericalTriangulation CreateIcosahedron()
+        {
+            SphericalTriangulation st = new SphericalTriangulation();
+            Primitive icosa = Primitive.Icosahedron;
 
-        private List<Vector> _Vertices;
-        private HashSet<Triangle<int>> _Triangles;
-        private Dictionary<Segment<int>, Triangle<int>> _SegmentTriangles;
+            st.Vertices = new List<Vector>(icosa.Vertices.Length);
+            st.Vertices.AddRange(icosa.Vertices);
+            st.SegmentTriangles = new Dictionary<Segment<int>, Triangle<int>>();
+            st.Triangles = new HashSet<Triangle<int>>();
+
+            foreach (Triangle<int> tri in icosa.Triangles)
+            {
+                st.AddTriangle(tri);
+            }
+
+            return st;
+        }
+
+        /// <summary>
+        /// Triangles that are part of the sphere.
+        /// </summary>
+        public HashSet<Triangle<int>> Triangles;
+
+        /// <summary>
+        /// A mapping of segments to the triangles that produce them.
+        /// </summary>
+        public Dictionary<Segment<int>, Triangle<int>> SegmentTriangles;
+
+        /// <summary>
+        /// An ordered list of vertices that make up the sphere.
+        /// </summary>
+        public List<Vector> Vertices;
     }
 }

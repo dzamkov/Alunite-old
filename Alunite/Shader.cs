@@ -85,7 +85,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Runs the fragment shader on all pixels on the current viewport.
+        /// Runs the fragment shader on all pixels on the current viewport. Transformation matrices must be set to identy for this to work correctly.
         /// </summary>
         public void DrawFull()
         {

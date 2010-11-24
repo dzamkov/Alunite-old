@@ -8,7 +8,7 @@ using OpenTK.Graphics.OpenGL;
 namespace Alunite
 {
     /// <summary>
-    /// Arguments defining a spherical atmosphere (affected by one sun).
+    /// Arguments defining a spherical atmosphere.
     /// </summary>
     public struct AtmosphereOptions
     {
@@ -119,7 +119,7 @@ namespace Alunite
     }
 
     /// <summary>
-    /// Information about the precomputed parts of a spherical atmosphere.
+    /// Information about the precomputed parts of the affects of light on a spherical atmosphere.
     /// </summary>
     public struct PrecomputedAtmosphere
     {
