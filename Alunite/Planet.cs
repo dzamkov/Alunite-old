@@ -65,173 +65,19 @@ namespace Alunite
 
         public void Load(Alunite.Path ShaderPath)
         {
-            Shader.PrecompilerInput pci = _DefineCommon();
+            Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
 
+            AtmosphereOptions options = AtmosphereOptions.DefaultEarth;
+            AtmosphereQualityOptions qualityoptions = AtmosphereQualityOptions.Default;
 
+            this._Atmosphere = Atmosphere.Generate(options, qualityoptions, pci, ShaderPath);
 
             Path atmosphere = ShaderPath["Atmosphere"];
             Path precompute = atmosphere["Precompute"];
-            this._PlanetShader = Shader.Load(atmosphere["Planet.glsl"], pci.Copy());
-
-            // Atmospheric scattering precompution
-            uint fbo;
-            GL.GenFramebuffers(1, out fbo);
-            GL.BindFramebuffer(FramebufferTarget.FramebufferExt, fbo);
-            GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
-            GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-
-            // Load shaders.
-            Shader.PrecompilerInput transmittancepci = pci.Copy();
-            Shader transmittance = Shader.Load(precompute["Transmittance.glsl"], transmittancepci);
-
-            Shader.PrecompilerInput irradianceinitialdeltapci = pci.Copy();
-            irradianceinitialdeltapci.Define("INITIAL");
-            irradianceinitialdeltapci.Define("DELTA");
-            Shader irradianceinitialdelta = Shader.Load(precompute["Irradiance.glsl"], irradianceinitialdeltapci);
-
-            Shader.PrecompilerInput irradianceinitialpci = pci.Copy();
-            irradianceinitialpci.Define("INITIAL");
-            Shader irradianceinitial = Shader.Load(precompute["Irradiance.glsl"], irradianceinitialpci);
-
-            Shader.PrecompilerInput irradiancedeltapci = pci.Copy();
-            irradiancedeltapci.Define("DELTA");
-            Shader irradiancedelta = Shader.Load(precompute["Irradiance.glsl"], irradiancedeltapci);
-
-            Shader.PrecompilerInput irradiancepci = pci.Copy();
-            Shader irradiance = Shader.Load(precompute["Irradiance.glsl"], irradiancepci);
-
-            Shader.PrecompilerInput inscatterinitialdeltapci = pci.Copy();
-            inscatterinitialdeltapci.Define("INITIAL");
-            inscatterinitialdeltapci.Define("DELTA");
-            Shader inscatterinitialdelta = Shader.Load(precompute["Inscatter.glsl"], inscatterinitialdeltapci);
-
-            Shader.PrecompilerInput inscatterinitialpci = pci.Copy();
-            inscatterinitialpci.Define("INITIAL");
-            Shader inscatterinitial = Shader.Load(precompute["Inscatter.glsl"], inscatterinitialpci);
-
-            Shader.PrecompilerInput inscatterdeltapci = pci.Copy();
-            inscatterdeltapci.Define("DELTA");
-            Shader inscatterdelta = Shader.Load(precompute["Inscatter.glsl"], inscatterdeltapci);
-
-            Shader.PrecompilerInput inscatterpci = pci.Copy();
-            Shader inscatter = Shader.Load(precompute["Inscatter.glsl"], inscatterpci);
-
-            Shader.PrecompilerInput pointscatterpci = pci.Copy();
-            Shader pointscatter = Shader.Load(precompute["PointScatter.glsl"], pointscatterpci);
-
-            // Initialize textures
-            this._TransmittanceTexture = Texture.Initialize2D(TransmittanceResMu, TransmittanceResR, Texture.RGB16Float);
-            this._IrradianceTexture = Texture.Initialize2D(IrradianceResMu, IrradianceResR, Texture.RGB16Float);
-            this._InscatterTexture = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGBA16Float);
-            Texture irrdelta = Texture.Initialize2D(IrradianceResMu, IrradianceResR, Texture.RGB16Float);
-            Texture insdelta = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGB16Float);
-            Texture ptsdelta = Texture.Initialize3D(AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR, Texture.RGB16Float);
-
-            this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
-            this._InscatterTexture.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture2);
-            irrdelta.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture3);
-            insdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture4);
-            ptsdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture5);
-
-            // Create transmittance texture (information about how light is filtered through the atmosphere).
-            transmittance.Call();
-            transmittance.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext, 
-                this._TransmittanceTexture.ID, TransmittanceResMu, TransmittanceResR);
-
-            // Create delta irradiance texture (ground lighting cause by sun).
-            irradianceinitialdelta.Call();
-            irradianceinitialdelta.SetUniform("Transmittance", TextureUnit.Texture0);
-            irradianceinitialdelta.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                irrdelta.ID, IrradianceResMu, IrradianceResR);
- 
-            // Create initial inscatter texture (light from atmosphere from sun, rayleigh and mie parts seperated for precision).
-            inscatterinitial.Call();
-            inscatterinitial.SetUniform("Transmittance", TextureUnit.Texture0);
-            inscatterinitial.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                this._InscatterTexture.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
-
-            // Initialize irradiance to zero (ground lighting caused by atmosphere).
-            irradianceinitial.Call();
-            irradianceinitial.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                this._IrradianceTexture.ID, IrradianceResMu, IrradianceResR);
-
-            // Copy inscatter to delta inscatter, combining rayleigh and mie parts.
-            inscatterinitialdelta.Call();
-            inscatterinitialdelta.SetUniform("Inscatter", TextureUnit.Texture2);
-            inscatterinitialdelta.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                insdelta.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
-
-            for (int t = 2; t <= MultipleScatterOrder; t++)
-            {
-                // Generate point scattering information
-                // Note that this texture will likely be very dark because it contains data for a single point, as opposed to a long line.
-                pointscatter.Call();
-                pointscatter.SetUniform("IrradianceDelta", TextureUnit.Texture3);
-                pointscatter.SetUniform("InscatterDelta", TextureUnit.Texture4);
-                pointscatter.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                    ptsdelta.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
-
-                // Compute new irradiance delta using current inscatter delta.
-                irradiancedelta.Call();
-                irradiancedelta.SetUniform("InscatterDelta", TextureUnit.Texture4);
-                irradiancedelta.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                    irrdelta.ID, IrradianceResMu, IrradianceResR);
-
-                // Compute new inscatter delta using pointscatter data.
-                inscatterdelta.Call();
-                inscatterdelta.SetUniform("PointScatter", TextureUnit.Texture5);
-                inscatterdelta.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                    insdelta.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
-
-                GL.Enable(EnableCap.Blend);
-                GL.BlendEquation(BlendEquationMode.FuncAdd);
-                GL.BlendFunc(BlendingFactorSrc.One, BlendingFactorDest.One);
-
-                // Add irradiance delta to irradiance.
-                irradiance.Call();
-                irradiance.SetUniform("IrradianceDelta", TextureUnit.Texture3);
-                irradiance.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                    this._IrradianceTexture.ID, IrradianceResMu, IrradianceResR);
-
-                // Add inscatter delta to inscatter.
-                inscatter.Call();
-                inscatter.SetUniform("InscatterDelta", TextureUnit.Texture4);
-                inscatter.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
-                    this._InscatterTexture.ID, AtmosphereResMuS * AtmosphereResNu, AtmosphereResMu, AtmosphereResR);
-
-                GL.Disable(EnableCap.Blend);
-            }
-
-            GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
+            Atmosphere.DefineConstants(options, qualityoptions, pci);
+            this._PlanetShader = Shader.Load(atmosphere["Planet.glsl"], pci);
         }
 
-        private const int MultipleScatterOrder = 4;
-        private const int AtmosphereResR = 32;
-        private const int AtmosphereResMu = 128;
-        private const int AtmosphereResMuS = 32;
-        private const int AtmosphereResNu = 8;
-        private const int IrradianceResR = 16;
-        private const int IrradianceResMu = 64;
-        private const int TransmittanceResR = 64;
-        private const int TransmittanceResMu = 256;
-
-        /// <summary>
-        /// Creates a shader precompiler input with common atmosphere shader paramters from the specified source
-        /// input.
-        /// </summary>
-        private static Shader.PrecompilerInput _DefineCommon()
-        {
-            Shader.PrecompilerInput res = Shader.CreatePrecompilerInput();
-            res.Define("ATMOSPHERE_RES_R", AtmosphereResR.ToString());
-            res.Define("ATMOSPHERE_RES_MU", AtmosphereResMu.ToString());
-            res.Define("ATMOSPHERE_RES_MU_S", AtmosphereResMuS.ToString());
-            res.Define("ATMOSPHERE_RES_NU", AtmosphereResNu.ToString());
-            res.Define("IRRADIANCE_RES_R", IrradianceResR.ToString());
-            res.Define("IRRADIANCE_RES_MU", IrradianceResMu.ToString());
-            res.Define("TRANSMITTANCE_RES_R", TransmittanceResR.ToString());
-            res.Define("TRANSMITTANCE_RES_MU", TransmittanceResMu.ToString());
-            return res;
-        }
 
         public void Render(Matrix4 Proj, Matrix4 View, Vector EyePosition, Vector SunDirection)
         {
@@ -239,13 +85,7 @@ namespace Alunite
             //View.Invert();
             GL.LoadIdentity();
 
-            this._TransmittanceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
-            this._InscatterTexture.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture1);
-            this._IrradianceTexture.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture2);
-
-            this._PlanetShader.SetUniform("Transmittance", TextureUnit.Texture0);
-            this._PlanetShader.SetUniform("Inscatter", TextureUnit.Texture1);
-            this._PlanetShader.SetUniform("Irradiance", TextureUnit.Texture2);
+            this._Atmosphere.Setup(this._PlanetShader);
             this._PlanetShader.SetUniform("ProjInverse", ref Proj);
             this._PlanetShader.SetUniform("ViewInverse", ref View);
             this._PlanetShader.SetUniform("EyePosition", EyePosition);
@@ -377,9 +217,7 @@ namespace Alunite
             }
         }
 
-        private Texture _InscatterTexture;
-        private Texture _TransmittanceTexture;
-        private Texture _IrradianceTexture;
+        private PrecomputedAtmosphere _Atmosphere;
         private Shader _PlanetShader;
 
         private List<Vector> _Vertices;

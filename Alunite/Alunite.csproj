@@ -42,6 +42,7 @@
   -->
   <ItemGroup>
     <Compile Include="Array.cs" />
+    <Compile Include="Atmosphere.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="CSG.cs" />
     <Compile Include="Diagram.cs" />

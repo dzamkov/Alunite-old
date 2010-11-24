@@ -1,17 +1,16 @@
 const float Pi = 3.14159265;
 
-const float Rt = 6420.0;
-const float Rg = 6360.0;
+const float Rt = float(RADIUS_BOUND);
+const float Rg = float(RADIUS_GROUND);
 
-const float GroundReflectance = 0.1;
+const float GroundReflectance = float(AVERAGE_GROUND_REFLECTANCE);
 
 // Rayleigh
-const float HR = 8.0;
+const float HR = float(RAYLEIGH_AVERAGE_HEIGHT);
 const vec3 betaR = vec3(5.8e-3, 1.35e-2, 3.31e-2);
 
 // Mie
-// DEFAULT
-const float HM = 1.2;
+const float HM = float(MIE_AVERAGE_HEIGHT);
 const vec3 betaMSca = vec3(4e-3);
 const vec3 betaMEx = betaMSca / 0.9;
 const float mieG = 0.8;
