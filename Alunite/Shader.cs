@@ -33,6 +33,15 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Sets a uniform float. Shader must be called beforehand.
+        /// </summary>
+        public void SetUniform(string Name, float Value)
+        {
+            int loc = GL.GetUniformLocation(this.Program, Name);
+            GL.Uniform1(loc, Value);
+        }
+
+        /// <summary>
         /// Sets a uniform matrix. Shader must be called beforehand.
         /// </summary>
         public void SetUniform(string Name, ref Matrix4 Matrix)

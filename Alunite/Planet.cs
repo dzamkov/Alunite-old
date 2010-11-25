@@ -37,6 +37,50 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Subdivides the entire sphere, quadrupling the amount of triangles while maintaining the delaunay property.
+        /// </summary>
+        public void Subdivide()
+        {
+            var oldtris = this.Triangles;
+            var oldsegs = this.SegmentTriangles;
+            this.Triangles = new HashSet<Triangle<int>>();
+            this.SegmentTriangles = new Dictionary<Segment<int>, Triangle<int>>();
+
+            Dictionary<Segment<int>, int> newsegs = new Dictionary<Segment<int>, int>();
+
+            foreach (Triangle<int> tri in oldtris)
+            {
+                int[] midpoints = new int[3];
+                Segment<int>[] segs = tri.Segments;
+                for (int t = 0; t < 3; t++)
+                {
+                    Segment<int> seg = segs[t];
+                    int midpoint;
+                    if (!newsegs.TryGetValue(seg, out midpoint))
+                    {
+                        midpoint = this.Vertices.Count;
+                        this.Vertices.Add(
+                            Vector.Normalize(
+                                Segment.Midpoint(
+                                    new Segment<Vector>(
+                                        this.Vertices[seg.A],
+                                        this.Vertices[seg.B]))));
+                        newsegs.Add(seg.Flip, midpoint);
+                    }
+                    else
+                    {
+                        newsegs.Remove(seg);
+                    }
+                    midpoints[t] = midpoint;
+                }
+                this.AddTriangle(new Triangle<int>(tri.A, midpoints[0], midpoints[2]));
+                this.AddTriangle(new Triangle<int>(tri.B, midpoints[1], midpoints[0]));
+                this.AddTriangle(new Triangle<int>(tri.C, midpoints[2], midpoints[1]));
+                this.AddTriangle(new Triangle<int>(midpoints[0], midpoints[1], midpoints[2]));
+            }
+        }
+
+        /// <summary>
         /// Inserts a point in the triangulation and splits triangles to maintain the delaunay property.
         /// </summary>
         public void SplitTriangle(Triangle<int> Triangle, Vector NewPosition, int NewPoint)

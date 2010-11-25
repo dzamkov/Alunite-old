@@ -1,11 +1,12 @@
 uniform vec3 EyePosition;
 uniform vec3 SunDirection;
 uniform mat4 ProjectionInverse;
-uniform mat4 ViewInverse;
+uniform float NearDistance;
+uniform float FarDistance;
+uniform samplerCube CubeMap;
+uniform sampler2D Map;
 
-const vec3 SunColor = vec3(30.0);
-const vec3 SeaColor = vec3(0.0, 0.0, 0.2);
-const vec3 AtmoColor = vec3(0.7, 0.7, 0.9);
+const vec3 SunColor = vec3(20.0);
 const float Radius = 1.0;
 
 varying vec2 Coords;
@@ -75,7 +76,10 @@ vec3 groundColor(vec3 n, vec3 sol)
 	vec3 irr = irradiance(Rg, mus);
 	vec3 full = direct + irr;
 	
-	return full * SeaColor;
+	vec3 color = textureCube(CubeMap, n);
+	color = texture2D(Map, vec2(atan(n.y, n.x), acos(n.z)) * vec2(0.5, 1.0) / Pi + vec2(0.5, 0.0));
+	
+	return full * color;
 }
 
 vec3 HDR(vec3 L) {
@@ -108,6 +112,7 @@ void main()
 	else
 	{
 		suncolor = sunColor(v, sol);
+		gl_FragDepth = 1.0;
 	}
 	gl_FragColor = vec4(HDR(groundcolor + suncolor + atmocolor), 1.0);
 }
