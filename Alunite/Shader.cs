@@ -37,7 +37,7 @@ namespace Alunite
         /// </summary>
         public void SetUniform(string Name, ref Matrix4 Matrix)
         {
-            GL.UniformMatrix4(GL.GetUniformLocation(this.Program, Name), true, ref Matrix);
+            GL.UniformMatrix4(GL.GetUniformLocation(this.Program, Name), false, ref Matrix);
         }
 
         /// <summary>

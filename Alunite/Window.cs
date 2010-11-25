@@ -75,22 +75,23 @@ namespace Alunite
             double cosx = Math.Cos(this._XRot);
             Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * this._Height;
             Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(1.2f, (float)this.Width / (float)this.Height, 1.0f, 20000.0f);
-            Matrix4 iproj = Matrix4.Invert(proj);
             Matrix4 view = Matrix4.LookAt(
                 (Vector3)eyepos,
                 new Vector3(0.0f, 0.0f, 0.0f),
                 new Vector3(0.0f, 0.0f, 1.0f));
+            Matrix4 total = view * proj;
+            Matrix4 itotal = Matrix4.Invert(total);
+
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadMatrix(ref total);
 
             // Planet
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-            GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadIdentity();
             this._Planet.Call();
             this._Atmosphere.Setup(this._Planet);
             this._Planet.SetUniform("EyePosition", eyepos);
             this._Planet.SetUniform("SunDirection", new Vector(1.0, 0.0, 0.0));
-            this._Planet.SetUniform("ProjInverse", ref proj);
-            this._Planet.SetUniform("ViewInverse", ref view);
+            this._Planet.SetUniform("ProjectionInverse", ref itotal);
             Shader.DrawQuad();
 
             // Render spherical triangulation
@@ -98,9 +99,6 @@ namespace Alunite
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.Disable(EnableCap.DepthTest);
-            GL.MatrixMode(MatrixMode.Projection);
-            GL.LoadMatrix(ref proj);
-            GL.MultMatrix(ref view);
             GL.Begin(BeginMode.Triangles);
             foreach (Triangle<int> tri in this._Triangulation.Triangles)
             {
