@@ -106,11 +106,11 @@ namespace Alunite
         /// </summary>
         public static void DrawQuad()
         {
-            GL.Begin(BeginMode.TriangleStrip);
+            GL.Begin(BeginMode.Quads);
             GL.Vertex2(-1.0, -1.0);
             GL.Vertex2(+1.0, -1.0);
-            GL.Vertex2(-1.0, +1.0);
             GL.Vertex2(+1.0, +1.0);
+            GL.Vertex2(-1.0, +1.0);
             GL.End();
         }
 

@@ -55,6 +55,14 @@ namespace Alunite
             // A shader to test the cubemap with
             this._CubemapUnroll = Shader.Load(shaders["UnrollCubemap.glsl"]);
 
+            // Planet
+            Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
+            AtmosphereOptions ao = AtmosphereOptions.DefaultEarth; ao.RadiusGround = (float)RadiusGround;
+            AtmosphereQualityOptions aqo = AtmosphereQualityOptions.Default;
+            this._Atmosphere = Atmosphere.Generate(ao, aqo, pci, shaders);
+            Atmosphere.DefineConstants(ao, aqo, pci);
+            this._Planet = Shader.Load(shaders["Atmosphere"]["Planet.glsl"], pci);
+
             this._Height = RadiusGround * 3;
         }
 
@@ -67,6 +75,7 @@ namespace Alunite
             double cosx = Math.Cos(this._XRot);
             Vector eyepos = new Vector(Math.Sin(this._ZRot) * cosx, Math.Cos(this._ZRot) * cosx, Math.Sin(this._XRot)) * this._Height;
             Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(1.2f, (float)this.Width / (float)this.Height, 1.0f, 20000.0f);
+            Matrix4 iproj = Matrix4.Invert(proj);
             Matrix4 view = Matrix4.LookAt(
                 (Vector3)eyepos,
                 new Vector3(0.0f, 0.0f, 0.0f),
@@ -76,13 +85,17 @@ namespace Alunite
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            this._Cubemap.SetUnit(TextureTarget.TextureCubeMap, TextureUnit.Texture0);
-            this._CubemapUnroll.Call();
-            this._CubemapUnroll.SetUniform("Cubemap", TextureUnit.Texture0);
-            this._CubemapUnroll.DrawFull();
+            this._Planet.Call();
+            this._Atmosphere.Setup(this._Planet);
+            this._Planet.SetUniform("EyePosition", eyepos);
+            this._Planet.SetUniform("SunDirection", new Vector(1.0, 0.0, 0.0));
+            this._Planet.SetUniform("ProjInverse", ref iproj);
+            this._Planet.SetUniform("ViewInverse", ref view);
+            Shader.DrawQuad();
 
-            /*
             // Render spherical triangulation
+            Shader.Dismiss();
+            GL.Disable(EnableCap.DepthTest);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadMatrix(ref proj);
             GL.MultMatrix(ref view);
@@ -92,15 +105,13 @@ namespace Alunite
                 Triangle<Vector> vectri = this._Triangulation.Dereference(tri);
                 GL.Normal3(Triangle.Normal(vectri));
                 GL.Color4(this._VertexColors[tri.A]);
-                GL.Vertex3(vectri.A * RadiusGround);
+                GL.Vertex3(vectri.A * RadiusGround * 0.5);
                 GL.Color4(this._VertexColors[tri.B]);
-                GL.Vertex3(vectri.B * RadiusGround);
+                GL.Vertex3(vectri.B * RadiusGround * 0.5);
                 GL.Color4(this._VertexColors[tri.C]);
-                GL.Vertex3(vectri.C * RadiusGround);
+                GL.Vertex3(vectri.C * RadiusGround * 0.5);
             }
-            GL.End();*/
-
-            System.Threading.Thread.Sleep(1);
+            GL.End();
    
             this.SwapBuffers();
         }
@@ -151,8 +162,10 @@ namespace Alunite
 
         public const double RadiusGround = 6360.0;
 
+        private PrecomputedAtmosphere _Atmosphere;
         private Texture _Cubemap;
         private Shader _CubemapUnroll;
+        private Shader _Planet;
         private Color[] _VertexColors;
         private SphericalTriangulation _Triangulation;
         private double _Height;

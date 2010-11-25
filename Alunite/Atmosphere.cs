@@ -106,7 +106,7 @@ namespace Alunite
         /// </summary>
         public static readonly AtmosphereQualityOptions Default = new AtmosphereQualityOptions()
             {
-                MultipleScatteringOrder = 4,
+                MultipleScatteringOrder = 2,
                 AtmosphereResMu = 128,
                 AtmosphereResR = 32,
                 AtmosphereResMuS = 32,
@@ -197,13 +197,6 @@ namespace Alunite
             Path atmosphere = ShaderPath["Atmosphere"];
             Path precompute = atmosphere["Precompute"];
 
-            // Atmospheric scattering precompution
-            uint fbo;
-            GL.GenFramebuffers(1, out fbo);
-            GL.BindFramebuffer(FramebufferTarget.FramebufferExt, fbo);
-            GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
-            GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-
             // Load shaders.
             Shader.PrecompilerInput transmittancepci = pci.Copy();
             Shader transmittance = Shader.Load(precompute["Transmittance.glsl"], transmittancepci);
@@ -258,11 +251,18 @@ namespace Alunite
             Texture insdelta = Texture.Initialize3D(atwidth, atheight, atdepth, Texture.RGB16Float);
             Texture ptsdelta = Texture.Initialize3D(atwidth, atheight, atdepth, Texture.RGB16Float);
 
-            pa.Transmittance.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
+            pa.Transmittance.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture1);
             pa.Inscatter.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture2);
             irrdelta.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture3);
             insdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture4);
             ptsdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture5);
+
+
+            uint fbo;
+            GL.GenFramebuffers(1, out fbo);
+            GL.BindFramebuffer(FramebufferTarget.FramebufferExt, fbo);
+            GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
+            GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
 
             // Create transmittance texture (information about how light is filtered through the atmosphere).
             transmittance.Call();
@@ -271,13 +271,13 @@ namespace Alunite
 
             // Create delta irradiance texture (ground lighting cause by sun).
             irradianceinitialdelta.Call();
-            irradianceinitialdelta.SetUniform("Transmittance", TextureUnit.Texture0);
+            irradianceinitialdelta.SetUniform("Transmittance", TextureUnit.Texture1);
             irradianceinitialdelta.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                 irrdelta.ID, irrwidth, irrheight);
 
             // Create initial inscatter texture (light from atmosphere from sun, rayleigh and mie parts seperated for precision).
             inscatterinitial.Call();
-            inscatterinitial.SetUniform("Transmittance", TextureUnit.Texture0);
+            inscatterinitial.SetUniform("Transmittance", TextureUnit.Texture1);
             inscatterinitial.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                 pa.Inscatter.ID, atwidth, atheight, atdepth);
 
@@ -310,6 +310,7 @@ namespace Alunite
 
                 // Compute new inscatter delta using pointscatter data.
                 inscatterdelta.Call();
+                inscatterdelta.SetUniform("Transmittance", TextureUnit.Texture1);
                 inscatterdelta.SetUniform("PointScatter", TextureUnit.Texture5);
                 inscatterdelta.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                     insdelta.ID, atwidth, atheight, atdepth);
@@ -333,7 +334,13 @@ namespace Alunite
                 GL.Disable(EnableCap.Blend);
             }
 
+            insdelta.Delete();
+            irrdelta.Delete();
+            ptsdelta.Delete();
+
             GL.BindFramebuffer(FramebufferTarget.FramebufferExt, 0);
+            GL.Finish();
+            GL.DeleteFramebuffers(1, ref fbo);
 
             return pa;
         }

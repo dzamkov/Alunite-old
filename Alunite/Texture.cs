@@ -202,6 +202,14 @@ namespace Alunite
             return new Texture(new Bitmap(Stream));
         }
 
+        /// <summary>
+        /// Deletes the texture, making it unusable.
+        /// </summary>
+        public void Delete()
+        {
+            GL.DeleteTexture(this._TextureID);
+        }
+
         private uint _TextureID;
     }
 
