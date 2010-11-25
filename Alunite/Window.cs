@@ -81,7 +81,7 @@ namespace Alunite
                 new Vector3(0.0f, 0.0f, 0.0f),
                 new Vector3(0.0f, 0.0f, 1.0f));
 
-            // Unroll that cubemap
+            // Planet
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
@@ -89,12 +89,14 @@ namespace Alunite
             this._Atmosphere.Setup(this._Planet);
             this._Planet.SetUniform("EyePosition", eyepos);
             this._Planet.SetUniform("SunDirection", new Vector(1.0, 0.0, 0.0));
-            this._Planet.SetUniform("ProjInverse", ref iproj);
+            this._Planet.SetUniform("ProjInverse", ref proj);
             this._Planet.SetUniform("ViewInverse", ref view);
             Shader.DrawQuad();
 
             // Render spherical triangulation
             Shader.Dismiss();
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.Disable(EnableCap.DepthTest);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadMatrix(ref proj);
@@ -105,14 +107,16 @@ namespace Alunite
                 Triangle<Vector> vectri = this._Triangulation.Dereference(tri);
                 GL.Normal3(Triangle.Normal(vectri));
                 GL.Color4(this._VertexColors[tri.A]);
-                GL.Vertex3(vectri.A * RadiusGround * 0.5);
+                GL.Vertex3(vectri.A * RadiusGround);
                 GL.Color4(this._VertexColors[tri.B]);
-                GL.Vertex3(vectri.B * RadiusGround * 0.5);
+                GL.Vertex3(vectri.B * RadiusGround);
                 GL.Color4(this._VertexColors[tri.C]);
-                GL.Vertex3(vectri.C * RadiusGround * 0.5);
+                GL.Vertex3(vectri.C * RadiusGround);
             }
             GL.End();
-   
+
+            this.Title = this._Height.ToString();
+
             this.SwapBuffers();
         }
 

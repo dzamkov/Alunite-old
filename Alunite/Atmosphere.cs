@@ -251,7 +251,7 @@ namespace Alunite
             Texture insdelta = Texture.Initialize3D(atwidth, atheight, atdepth, Texture.RGB16Float);
             Texture ptsdelta = Texture.Initialize3D(atwidth, atheight, atdepth, Texture.RGB16Float);
 
-            pa.Transmittance.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture1);
+            pa.Transmittance.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture0);
             pa.Inscatter.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture2);
             irrdelta.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture3);
             insdelta.SetUnit(TextureTarget.Texture3D, TextureUnit.Texture4);
@@ -271,13 +271,13 @@ namespace Alunite
 
             // Create delta irradiance texture (ground lighting cause by sun).
             irradianceinitialdelta.Call();
-            irradianceinitialdelta.SetUniform("Transmittance", TextureUnit.Texture1);
+            irradianceinitialdelta.SetUniform("Transmittance", TextureUnit.Texture0);
             irradianceinitialdelta.Draw2DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                 irrdelta.ID, irrwidth, irrheight);
 
             // Create initial inscatter texture (light from atmosphere from sun, rayleigh and mie parts seperated for precision).
             inscatterinitial.Call();
-            inscatterinitial.SetUniform("Transmittance", TextureUnit.Texture1);
+            inscatterinitial.SetUniform("Transmittance", TextureUnit.Texture0);
             inscatterinitial.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                 pa.Inscatter.ID, atwidth, atheight, atdepth);
 
@@ -310,7 +310,7 @@ namespace Alunite
 
                 // Compute new inscatter delta using pointscatter data.
                 inscatterdelta.Call();
-                inscatterdelta.SetUniform("Transmittance", TextureUnit.Texture1);
+                inscatterdelta.SetUniform("Transmittance", TextureUnit.Texture0);
                 inscatterdelta.SetUniform("PointScatter", TextureUnit.Texture5);
                 inscatterdelta.Draw3DFrame(FramebufferTarget.FramebufferExt, FramebufferAttachment.ColorAttachment0Ext,
                     insdelta.ID, atwidth, atheight, atdepth);
