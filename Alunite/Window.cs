@@ -42,6 +42,9 @@ namespace Alunite
             this._Triangulation = SphericalTriangulation.CreateIcosahedron();
             this._Triangulation.Subdivide();
             this._Triangulation.Subdivide();
+            this._Triangulation.Subdivide();
+            this._Triangulation.Subdivide();
+            this._Triangulation.Subdivide();
 
             // Assign random colors for testing
             Random r = new Random(101);
@@ -59,7 +62,7 @@ namespace Alunite
             }
 
             // Create a cubemap
-            this._Cubemap = Cubemap.Generate(Texture.RGB16Float, 128, new _CubemapRenderable() { Window = this }, RadiusGround * 0.2f, RadiusGround * 1.2f);
+            this._Cubemap = Cubemap.Generate(Texture.RGB16Float, 512, new _CubemapRenderable() { Window = this }, RadiusGround * 0.2f, RadiusGround * 1.2f);
 
             // Planet
             Shader.PrecompilerInput pci = Shader.CreatePrecompilerInput();
@@ -68,8 +71,6 @@ namespace Alunite
             this._Atmosphere = Atmosphere.Generate(ao, aqo, pci, shaders);
             Atmosphere.DefineConstants(ao, aqo, pci);
             this._Planet = Shader.Load(shaders["Atmosphere"]["Planet.glsl"], pci);
-            this._Earth = Texture.Load(resources["Textures"]["Earth.tif"]);
-
 
             this._Height = RadiusGround * 3;
         }
@@ -103,17 +104,15 @@ namespace Alunite
             this._Planet.Call();
             this._Atmosphere.Setup(this._Planet);
             this._Cubemap.SetUnit(TextureTarget.TextureCubeMap, TextureUnit.Texture4);
-            this._Earth.SetUnit(TextureTarget.Texture2D, TextureUnit.Texture5);
             this._Planet.SetUniform("EyePosition", eyepos);
             this._Planet.SetUniform("SunDirection", new Vector(Math.Sin(this._SunAngle), Math.Cos(this._SunAngle), 0.0));
             this._Planet.SetUniform("ProjectionInverse", ref itotal);
             this._Planet.SetUniform("NearDistance", 300.0f);
             this._Planet.SetUniform("FarDistance", 20000.0f);
             this._Planet.SetUniform("CubeMap", TextureUnit.Texture4);
-            this._Planet.SetUniform("Map", TextureUnit.Texture5);
             Shader.DrawQuad();
 
-            this.Title = this._Height.ToString();
+            this.Title = "Alunite (" + this.RenderFrequency.ToString() + ")";
 
             this.SwapBuffers();
         }
@@ -167,7 +166,6 @@ namespace Alunite
         public const double RadiusGround = 6360.0;
 
         private PrecomputedAtmosphere _Atmosphere;
-        private Texture _Earth;
         private Texture _Cubemap;
         private Shader _CubemapUnroll;
         private Shader _Planet;

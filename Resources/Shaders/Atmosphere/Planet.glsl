@@ -4,7 +4,6 @@ uniform mat4 ProjectionInverse;
 uniform float NearDistance;
 uniform float FarDistance;
 uniform samplerCube CubeMap;
-uniform sampler2D Map;
 
 const vec3 SunColor = vec3(20.0);
 const float Radius = 1.0;
@@ -77,7 +76,6 @@ vec3 groundColor(vec3 n, vec3 sol)
 	vec3 full = direct + irr;
 	
 	vec3 color = textureCube(CubeMap, n);
-	color = texture2D(Map, vec2(atan(n.y, n.x), acos(n.z)) * vec2(0.5, 1.0) / Pi + vec2(0.5, 0.0));
 	
 	return full * color;
 }
