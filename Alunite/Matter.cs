@@ -27,6 +27,49 @@ namespace Alunite
     }
 
     /// <summary>
+    /// Represents a possible the orientation, translation and velocity offset for matter.
+    /// </summary>
+    public struct Transform
+    {
+        public Transform(Vector Offset, Vector VelocityOffset, Quaternion Rotation)
+        {
+            this.Offset = Offset;
+            this.VelocityOffset = VelocityOffset;
+            this.Rotation = Rotation;
+        }
+
+        /// <summary>
+        /// Applies this transform to another, in effect combining them.
+        /// </summary>
+        public Transform Apply(Transform Transform)
+        {
+            return new Transform(
+                this.Offset + this.Rotation.Rotate(Transform.Offset),
+                this.VelocityOffset + this.Rotation.Rotate(Transform.VelocityOffset),
+                this.Rotation * Transform.Rotation);
+        }
+
+        /// <summary>
+        /// Gets the inverse of this transform.
+        /// </summary>
+        public Transform Inverse
+        {
+            get
+            {
+                Quaternion nrot = this.Rotation.Conjugate;
+                return new Transform(
+                    nrot.Rotate(-this.Offset),
+                    nrot.Rotate(-this.VelocityOffset),
+                    nrot);
+            }
+        }
+
+        public Vector Offset;
+        public Vector VelocityOffset;
+        public Quaternion Rotation;
+    }
+
+    /// <summary>
     /// A piece of transformed matter.
     /// </summary>
     public struct Element
