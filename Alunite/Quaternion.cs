@@ -38,6 +38,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the identity quaternion.
+        /// </summary>
+        public static Quaternion Identity
+        {
+            get
+            {
+                return new Quaternion(1.0, 0.0, 0.0, 0.0);
+            }
+        }
+
+        /// <summary>
         /// Gets the real (scalar) part of the quaternion.
         /// </summary>
         public double Real

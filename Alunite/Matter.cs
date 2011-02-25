@@ -12,7 +12,15 @@ namespace Alunite
         /// Creates the updated form of this matter given the environment (which is all matter in the world excluding, and given 
         /// in the frame of reference of the matter in question) by a given amount of time in seconds.
         /// </summary>
-        public abstract Element Update(Matter Environment, double Time);
+        public abstract Matter Update(Matter Environment, double Time);
+
+        /// <summary>
+        /// Applies a transform to this matter.
+        /// </summary>
+        public virtual Matter Apply(Transform Transform)
+        {
+            return new Element(this, Transform);
+        }
     }
 
     /// <summary>
@@ -23,7 +31,7 @@ namespace Alunite
         /// <summary>
         /// Gets the pieces of matter that makes up this matter. The order should not matter (lol).
         /// </summary>
-        public abstract IEnumerable<Element> Elements { get; }
+        public abstract IEnumerable<Matter> Elements { get; }
     }
 
     /// <summary>
@@ -64,6 +72,20 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Gets the identity transform.
+        /// </summary>
+        public static Transform Identity
+        {
+            get
+            {
+                return new Transform(
+                    new Vector(0.0, 0.0, 0.0), 
+                    new Vector(0.0, 0.0, 0.0), 
+                    Quaternion.Identity);
+            }
+        }
+
         public Vector Offset;
         public Vector VelocityOffset;
         public Quaternion Rotation;
@@ -72,11 +94,47 @@ namespace Alunite
     /// <summary>
     /// A piece of transformed matter.
     /// </summary>
-    public struct Element
+    public class Element : Matter
     {
+        public Element(Matter Source, Transform Transform)
+        {
+            this._Source = Source;
+            this._Transform = Transform;
+        }
+
         /// <summary>
-        /// The original matter for this element.
+        /// Gets the transform of the element.
         /// </summary>
-        public Matter Source;
+        public Transform Transform
+        {
+            get
+            {
+                return this._Transform;
+            }
+        }
+
+        /// <summary>
+        /// Gets the source matter for the element.
+        /// </summary>
+        public Matter Source
+        {
+            get
+            {
+                return this._Source;
+            }
+        }
+
+        public override Matter Update(Matter Environment, double Time)
+        {
+            return this._Source.Update(Environment.Apply(this._Transform.Inverse), Time).Apply(this._Transform);
+        }
+
+        public override Matter Apply(Transform Transform)
+        {
+            return new Element(this._Source, Transform.Apply(this._Transform));
+        }
+
+        private Transform _Transform;
+        private Matter _Source;
     }
 }
