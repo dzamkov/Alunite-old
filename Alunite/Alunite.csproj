@@ -40,6 +40,7 @@
   -->
   <ItemGroup>
     <Compile Include="Matter.cs" />
+    <Compile Include="Particle.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Quaternion.cs" />
     <Compile Include="Vector.cs" />
