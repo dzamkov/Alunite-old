@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using OpenTKGUI;
+
 namespace Alunite
 {
     /// <summary>
@@ -15,6 +17,17 @@ namespace Alunite
         /// force at every scale, including gravity and electromagnetism.
         /// </summary>
         ISubstance Update(Matter Environment, double Time, ref Vector Position, ref Vector Velocity, ref Quaternion Orientation, ref double Mass);
+    }
+
+    /// <summary>
+    /// A substance with some visual properties.
+    /// </summary>
+    public interface IVisualSubstance : ISubstance
+    {
+        /// <summary>
+        /// Gets the color this substance should be displayed with.
+        /// </summary>
+        Color Color { get; }
     }
 
     /// <summary>

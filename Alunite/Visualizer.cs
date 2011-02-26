@@ -44,10 +44,16 @@ namespace Alunite
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             GL.PointSize(5.0f);
-            GL.Color4(0.0, 0.5, 1.0, 1.0);
             GL.Begin(BeginMode.Points);
             foreach (Particle p in this._Matter.Particles)
             {
+                Color col = Color.RGB(1.0, 1.0, 1.0);
+                IVisualSubstance vissub = p.Substance as IVisualSubstance;
+                if (vissub != null)
+                {
+                    col = vissub.Color;
+                }
+                GL.Color4(col);
                 GL.Vertex3(p.Position);
             }
             GL.End();

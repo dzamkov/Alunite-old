@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using OpenTKGUI;
+
 namespace Alunite
 {
     /// <summary>
@@ -17,13 +19,32 @@ namespace Alunite
             return new _Substance();
         }
 
-        private class _Substance : ISubstance
+        private class _Substance : IVisualSubstance
         {
             public ISubstance Update(Matter Environment, double Time, ref Vector Position, ref Vector Velocity, ref Quaternion Orientation, ref double Mass)
             {
-                Velocity.Z -= 0.1 * Time;
+                // Loop through particles in the environment to find forces
+                Vector force = new Vector(0.0, 0.0, 0.0);
+                foreach (Particle p in Environment.Particles)
+                {
+                    Vector to = p.Position - Position;
+                    double dis = to.Length;
+
+                    // Gravity
+                    force += to * (Particle.G * (p.Mass + Mass) / (dis * dis * dis));
+                }
+
+                Velocity += force * Time;
                 Position += Velocity * Time;
                 return this;
+            }
+
+            public Color Color
+            {
+                get
+                {
+                    return Color.RGB(0.0, 0.5, 1.0);
+                }
             }
         }
     }

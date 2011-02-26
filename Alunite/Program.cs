@@ -20,6 +20,8 @@ namespace Alunite
 
             // Create a test world
             Random r = new Random();
+
+            // Water
             List<Matter> elems = new List<Matter>();
             for (int t = 0; t < 100; t++)
             {
@@ -29,6 +31,14 @@ namespace Alunite
                     Quaternion.Identity,
                     0.01, Fluid.GetSubstance()).Matter);
             }
+
+            // "Earth"
+            elems.Add(new Particle(
+                new Vector(0.0, 0.0, -6.3675e6),
+                new Vector(0.0, 0.0, 0.0),
+                Quaternion.Identity,
+                5.9721e24, new Adminium()).Matter);
+
             Matter world = CompositeMatter.Create(elems);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
