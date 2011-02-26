@@ -16,27 +16,36 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            double gforce = 5.9e24 / Math.Pow(6.367e6, 2.0) * Particle.G;
-
             // Create a test world
             Random r = new Random();
+            List<Matter> elems = new List<Matter>();
+            BlobMatter worldblob = new BlobMatter(0.1);
 
             // Water
-            List<Matter> elems = new List<Matter>();
-            for (int t = 0; t < 100; t++)
+            for (int t = 0; t < 500; t++)
             {
-                elems.Add(new Particle(
-                    new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()),
-                    new Vector(0.0, 0.0, 0.0),
-                    Quaternion.Identity,
-                    0.01, Fluid.GetSubstance()).Matter);
+                worldblob.Add(new Particle(
+                    new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble() * 0.5),
+                    0.01, Fluid.GetSubstance()));
+            }
+
+            // Adminium walls
+            for (double x = 0.0; x <= 1.0; x += 0.04)
+            {
+                for (double y = 0.0; y <= 1.0; y += 0.04)
+                {
+                    worldblob.Add(new Particle(new Vector(x, y, 0.0), 0.01, new Adminium()));
+                    worldblob.Add(new Particle(new Vector(x, 0.0, y), 0.01, new Adminium()));
+                    worldblob.Add(new Particle(new Vector(0.0, x, y), 0.01, new Adminium()));
+                    worldblob.Add(new Particle(new Vector(x, 1.0, y), 0.01, new Adminium()));
+                    worldblob.Add(new Particle(new Vector(1.0, x, y), 0.01, new Adminium()));
+                }
             }
 
             // "Earth"
+            elems.Add(worldblob);
             elems.Add(new Particle(
                 new Vector(0.0, 0.0, -6.3675e6),
-                new Vector(0.0, 0.0, 0.0),
-                Quaternion.Identity,
                 5.9721e24, new Adminium()).Matter);
 
             Matter world = CompositeMatter.Create(elems);

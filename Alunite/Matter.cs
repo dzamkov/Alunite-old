@@ -5,7 +5,8 @@ using System.Linq;
 namespace Alunite
 {
     /// <summary>
-    /// Represents an untransformed object that can participate in physical interactions.
+    /// Represents an untransformed object that can participate in physical interactions. Note that all operations
+    /// on matter use units of meters, seconds, kilograms and kelvin.
     /// </summary>
     public abstract class Matter
     {
@@ -27,6 +28,39 @@ namespace Alunite
         /// in the frame of reference of the matter in question) by a given amount of time in seconds.
         /// </summary>
         public abstract Matter Update(Matter Environment, double Time);
+
+        /// <summary>
+        /// Gets the gravitational force that would act on an object of the given mass and at the specified offset from this matter.
+        /// </summary>
+        public virtual Vector GetGravityForce(Vector Position, double Mass)
+        {
+            Vector force = new Vector(0.0, 0.0, 0.0);
+            foreach (Particle p in this.Particles)
+            {
+                Vector to = p.Position - Position;
+                double dis = to.Length;
+                force += to * (Matter.G * (p.Mass + Mass) / (dis * dis * dis));
+            }
+            return force;
+        }
+
+        /// <summary>
+        /// Gets particles in this matter within a certain distance of the given position.
+        /// </summary>
+        public virtual IEnumerable<Particle> GetParticles(Vector Position, double Distance)
+        {
+            double dd = Distance * Distance;
+            return
+                from p in this.Particles
+                where (p.Position - Position).SquareLength <= dd
+                select p;
+        }
+
+        /// <summary>
+        /// The gravitational constant which satisfies F = G * (M1 + M2) / (R * R) with F being the force of gravity in newtons, M1 and M2 the mass of the objects
+        /// in kilograms and R the distance between them in meters.
+        /// </summary>
+        public static double G = 6.67428e-11;
 
         /// <summary>
         /// Gets the particles in this matter.
@@ -57,6 +91,16 @@ namespace Alunite
         /// Gets the pieces of matter that makes up this matter. The order should not matter (lol).
         /// </summary>
         public abstract IEnumerable<Matter> Elements { get; }
+
+        public override Vector GetGravityForce(Vector Position, double Mass)
+        {
+            Vector force = new Vector(0.0, 0.0, 0.0);
+            foreach (Matter e in this.Elements)
+            {
+                force += e.GetGravityForce(Position, Mass);
+            }
+            return force;
+        }
 
         /// <summary>
         /// Creates composite matter from the specified elements.
@@ -101,6 +145,14 @@ namespace Alunite
                 res.Add(curmat.Update(Create(elems), Time));
                 elems.AddFirst(curmat);
                 cur = next;
+            }
+            if (res.Count == 0)
+            {
+                return Matter.Null;
+            }
+            if (res.Count == 1)
+            {
+                return res[0];
             }
             return Create(res);
         }

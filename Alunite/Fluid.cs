@@ -23,15 +23,14 @@ namespace Alunite
         {
             public ISubstance Update(Matter Environment, double Time, ref Vector Position, ref Vector Velocity, ref Quaternion Orientation, ref double Mass)
             {
-                // Loop through particles in the environment to find forces
-                Vector force = new Vector(0.0, 0.0, 0.0);
-                foreach (Particle p in Environment.Particles)
-                {
-                    Vector to = p.Position - Position;
-                    double dis = to.Length;
+                Vector force = Environment.GetGravityForce(Position, Mass);
 
-                    // Gravity
-                    force += to * (Particle.G * (p.Mass + Mass) / (dis * dis * dis));
+                double h = 0.1;
+                foreach (Particle p in Environment.GetParticles(Position, h))
+                {
+                    Vector away = Position - p.Position;
+                    double dis = away.Length;
+                    force += away * (0.1 / (dis * dis * dis));
                 }
 
                 Velocity += force * Time;

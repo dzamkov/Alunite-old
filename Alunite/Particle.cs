@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using OpenTKGUI;
 
@@ -12,8 +13,7 @@ namespace Alunite
     public interface ISubstance
     {
         /// <summary>
-        /// Updates a particle of this substance by the specified amount of time in seconds in the given environment. Assume
-        /// that the units used in the Environment are consistent with those used for particles (meters, seconds, kilograms). This function should account for every
+        /// Updates a particle of this substance by the specified amount of time in seconds in the given environment. This function should account for every
         /// force at every scale, including gravity and electromagnetism.
         /// </summary>
         ISubstance Update(Matter Environment, double Time, ref Vector Position, ref Vector Velocity, ref Quaternion Orientation, ref double Mass);
@@ -40,6 +40,15 @@ namespace Alunite
             this.Position = Position;
             this.Velocity = Velocity;
             this.Orientation = Orientation;
+            this.Mass = Mass;
+            this.Substance = Substance;
+        }
+
+        public Particle(Vector Position, double Mass, ISubstance Substance)
+        {
+            this.Position = Position;
+            this.Velocity = new Vector(0.0, 0.0, 0.0);
+            this.Orientation = Quaternion.Identity;
             this.Mass = Mass;
             this.Substance = Substance;
         }
@@ -85,12 +94,6 @@ namespace Alunite
         {
             return new Particle(Transform.ApplyTo(this.Transform), this.Mass, this.Substance);
         }
-
-        /// <summary>
-        /// The gravitational constant which satisfies F = G * (M1 + M2) / (R * R) with F being the force of gravity in newtons, M1 and M2 the mass of the objects
-        /// in kilograms and R the distance between them in meters.
-        /// </summary>
-        public static double G = 6.67428e-11;
 
         /// <summary>
         /// The relative location of the particle in meters.

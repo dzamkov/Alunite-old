@@ -33,13 +33,15 @@ namespace Alunite
         {
             Vector3d up = new Vector3d(0.0, 0.0, 1.0);
             Matrix4d proj = Matrix4d.CreatePerspectiveFieldOfView(Math.Sin(Math.PI / 8.0), this.Size.AspectRatio, 0.1, 100.0);
-            Matrix4d view = Matrix4d.LookAt(new Vector(3.0, 3.0, 3.0), new Vector(0.0, 0.0, 0.0), up);
+            Vector lookpos = new Vector(0.5, 0.5, 0.5);
+            Matrix4d view = Matrix4d.LookAt(new Vector(3.0 * Math.Sin(this._Time), 3.0 * Math.Cos(this._Time), 3.0) + lookpos, lookpos, up);
             GL.MultMatrix(ref proj);
             GL.MultMatrix(ref view);
         }
 
         public override void RenderScene()
         {
+            GL.Enable(EnableCap.DepthTest);
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -57,13 +59,16 @@ namespace Alunite
                 GL.Vertex3(p.Position);
             }
             GL.End();
+            GL.Disable(EnableCap.DepthTest);
         }
 
         public override void Update(GUIControlContext Context, double Time)
         {
-            this._Matter = this._Matter.Update(Matter.Null, Time);
+            this._Time += Time * 0.2;
+            this._Matter = this._Matter.Update(Matter.Null, Time * 0.01);
         }
 
+        private double _Time;
         private Matter _Matter;
     }
 }
