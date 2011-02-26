@@ -10,11 +10,11 @@ namespace Alunite
     public interface ISubstance
     {
         /// <summary>
-        /// Updates a particle of this substance by the specified amount of time in seconds in the given environment (which is orientated to the particle). Assume
+        /// Updates a particle of this substance by the specified amount of time in seconds in the given environment. Assume
         /// that the units used in the Environment are consistent with those used for particles (meters, seconds, kilograms). This function should account for every
         /// force at every scale, including gravity and electromagnetism.
         /// </summary>
-        ISubstance Update(Matter Environment, double Time, out Vector DPosition, out Vector DVelocity, out Quaternion DOrientation, ref double Mass);
+        ISubstance Update(Matter Environment, double Time, ref Vector Position, ref Vector Velocity, ref Quaternion Orientation, ref double Mass);
     }
 
     /// <summary>
@@ -153,15 +153,15 @@ namespace Alunite
 
         public override Matter Update(Matter Environment, double Time)
         {
-            Vector dpos;
-            Vector dvel;
-            Quaternion dort;
+            Vector pos = new Vector(0.0, 0.0, 0.0);
+            Vector vel = new Vector(0.0, 0.0, 0.0);
+            Quaternion ort = Quaternion.Identity;
             double mass = this._Mass;
-            ISubstance nsub = this._Substance.Update(Environment, Time, out dpos, out dvel, out dort, ref mass);
+            ISubstance nsub = this._Substance.Update(Environment, Time, ref pos, ref vel, ref ort, ref mass);
             return
                 new TransformMatter(
                     new ParticleMatter(nsub, mass),
-                    new Transform(dpos, dvel, dort));
+                    new Transform(pos, vel, ort));
         }
 
         private ISubstance _Substance;

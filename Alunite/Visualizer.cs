@@ -53,6 +53,11 @@ namespace Alunite
             GL.End();
         }
 
+        public override void Update(GUIControlContext Context, double Time)
+        {
+            this._Matter = this._Matter.Update(Matter.Null, Time);
+        }
+
         private Matter _Matter;
     }
 }

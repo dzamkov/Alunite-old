@@ -9,6 +9,19 @@ namespace Alunite
     /// </summary>
     public abstract class Matter
     {
+        private class _NullMatter : Matter
+        {
+            public override Matter Update(Matter Environment, double Time)
+            {
+                return this;
+            }
+        }
+
+        /// <summary>
+        /// Gets a matter that has no effects or interactions.
+        /// </summary>
+        public static readonly Matter Null = new _NullMatter();
+
         /// <summary>
         /// Creates the updated form of this matter given the environment (which is all matter in the world excluding, and given 
         /// in the frame of reference of the matter in question) by a given amount of time in seconds.
@@ -87,6 +100,7 @@ namespace Alunite
 
                 res.Add(curmat.Update(Create(elems), Time));
                 elems.AddFirst(curmat);
+                cur = next;
             }
             return Create(res);
         }
@@ -195,7 +209,9 @@ namespace Alunite
 
         public override Matter Update(Matter Environment, double Time)
         {
-            return this._Source.Update(Environment.Apply(this._Transform.Inverse), Time).Apply(this._Transform);
+            Transform ntrans = this._Transform;
+            ntrans.Offset += ntrans.VelocityOffset * Time;
+            return this._Source.Update(Environment.Apply(this._Transform.Inverse), Time).Apply(ntrans);
         }
 
         public override Matter Apply(Transform Transform)

@@ -27,7 +27,7 @@ namespace Alunite
                     new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()),
                     new Vector(0.0, 0.0, 0.0),
                     Quaternion.Identity,
-                    0.01, null).Matter);
+                    0.01, Fluid.GetSubstance()).Matter);
             }
             Matter world = CompositeMatter.Create(elems);
 
