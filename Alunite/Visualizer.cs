@@ -65,7 +65,7 @@ namespace Alunite
         public override void Update(GUIControlContext Context, double Time)
         {
             this._Time += Time * 0.2;
-            this._Matter = this._Matter.Update(Matter.Null, Time * 0.01);
+            this._Matter = this._Matter.Update(Matter.Null, Time * 0.1);
         }
 
         private double _Time;

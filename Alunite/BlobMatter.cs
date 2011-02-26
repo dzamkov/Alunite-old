@@ -8,7 +8,7 @@ namespace Alunite
     /// Matter composed of efficently organized particles that can only interact in a limited range. Note that it
     /// is assumed that the "blob" is too light to create a gravitational force.
     /// </summary>
-    public class BlobMatter : Matter
+    public class BlobMatter : CompositeMatter
     {
         public BlobMatter(double GridSize)
         {
@@ -42,6 +42,16 @@ namespace Alunite
                     from pl in this._Grid.Values
                     from p in pl
                     select p;
+            }
+        }
+
+        public override IEnumerable<Matter> Elements
+        {
+            get
+            {
+                return
+                    from p in this.Particles
+                    select p.Matter;
             }
         }
 
@@ -91,7 +101,7 @@ namespace Alunite
                         SurrondUnit = surrondunit
                     };
                     p.Substance = p.Substance.Update(
-                        CompositeMatter.Create(new Matter[] { e, Environment }),
+                        BinaryMatter.Create(Environment, e),
                         Time,
                         ref p.Position,
                         ref p.Velocity,

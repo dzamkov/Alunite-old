@@ -40,6 +40,7 @@
   -->
   <ItemGroup>
     <Compile Include="Adminium.cs" />
+    <Compile Include="BinaryMatter.cs" />
     <Compile Include="BlobMatter.cs" />
     <Compile Include="Fluid.cs" />
     <Compile Include="Matter.cs" />
