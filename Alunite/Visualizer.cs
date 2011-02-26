@@ -16,17 +16,6 @@ namespace Alunite
         public Visualizer(Matter Matter)
         {
             this._Matter = Matter;
-            this._Particles = new List<_Particle>();
-
-            Random r = new Random();
-            for (int t = 0; t < 100; t++)
-            {
-                this._Particles.Add(new _Particle()
-                {
-                    Position = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()),
-                    Velocity = new Vector(0.0, 0.0, 0.0)
-                });
-            }
         }
 
         /// <summary>
@@ -57,63 +46,13 @@ namespace Alunite
             GL.PointSize(5.0f);
             GL.Color4(0.0, 0.5, 1.0, 1.0);
             GL.Begin(BeginMode.Points);
-            foreach (_Particle pt in this._Particles)
+            foreach (Particle p in this._Matter.Particles)
             {
-                GL.Vertex3(pt.Position);
+                GL.Vertex3(p.Position);
             }
             GL.End();
         }
 
-        public override void Update(GUIControlContext Context, double Time)
-        {
-            List<_Particle> nparts = new List<_Particle>(this._Particles.Count);
-            for(int t = 0; t < this._Particles.Count; t++)
-            {
-                _Particle pt = this._Particles[t];
-                Vector pos = pt.Position;
-                Vector vel = pt.Velocity;
-
-                // Make force vector
-                Vector force = new Vector(0.0, 0.0, -1.0);
-                for(int i = 0; i < this._Particles.Count; i++)
-                {
-                    _Particle opt = this._Particles[i];
-                    if (t != i)
-                    {
-                        Vector away = pos - opt.Position;
-                        double len = Math.Max(away.Length, 0.001);
-                        Vector awayforce = away * (0.001 / (len * len * len));
-                        force += awayforce;
-                    }
-                }
-
-                vel += force * Time;
-                pos += vel * Time;
-
-                double rest = 0.2;
-                if (pos.X > 1.0) { pos.X = 1.0; vel.X = -Math.Abs(vel.X) * rest; }
-                if (pos.Y > 1.0) { pos.Y = 1.0; vel.Y = -Math.Abs(vel.Y) * rest; }
-                if (pos.Z > 1.0) { pos.Z = 1.0; vel.Z = -Math.Abs(vel.Z) * rest; }
-                if (pos.X < 0.0) { pos.X = 0.0; vel.X = Math.Abs(vel.X) * rest; }
-                if (pos.Y < 0.0) { pos.Y = 0.0; vel.Y = Math.Abs(vel.Y) * rest; }
-                if (pos.Z < 0.0) { pos.Z = 0.0; vel.Z = Math.Abs(vel.Z) * rest; }
-
-                nparts.Add(new _Particle()
-                {
-                    Position = pos,
-                    Velocity = vel
-                });
-            }
-            this._Particles = nparts;
-        }
-
-        private struct _Particle
-        {
-            public Vector Velocity;
-            public Vector Position;
-        }
-
-        private List<_Particle> _Particles;
         private Matter _Matter;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Alunite
 {
@@ -15,11 +16,22 @@ namespace Alunite
         public abstract Matter Update(Matter Environment, double Time);
 
         /// <summary>
+        /// Gets the particles in this matter.
+        /// </summary>
+        public virtual IEnumerable<Particle> Particles
+        {
+            get
+            {
+                return new Particle[0];
+            }
+        }
+
+        /// <summary>
         /// Applies a transform to this matter.
         /// </summary>
         public virtual Matter Apply(Transform Transform)
         {
-            return new Element(this, Transform);
+            return new TransformMatter(this, Transform);
         }
     }
 
@@ -32,6 +44,63 @@ namespace Alunite
         /// Gets the pieces of matter that makes up this matter. The order should not matter (lol).
         /// </summary>
         public abstract IEnumerable<Matter> Elements { get; }
+
+        /// <summary>
+        /// Creates composite matter from the specified elements.
+        /// </summary>
+        public static CompositeMatter Create(IEnumerable<Matter> Elements)
+        {
+            return new _Concrete(Elements);
+        }
+
+        private class _Concrete : CompositeMatter
+        {
+            public _Concrete(IEnumerable<Matter> Elements)
+            {
+                this._Elements = Elements;
+            }
+
+            public override IEnumerable<Matter> Elements
+            {
+                get
+                {
+                    return this._Elements;
+                }
+            }
+
+            private IEnumerable<Matter> _Elements;
+        }
+
+        public override Matter Update(Matter Environment, double Time)
+        {
+            LinkedList<Matter> elems = new LinkedList<Matter>(this.Elements);
+            List<Matter> res = new List<Matter>(elems.Count);
+
+            LinkedListNode<Matter> cur = elems.First;
+            elems.AddFirst(Environment);
+
+            while (cur != null)
+            {
+                Matter curmat = cur.Value;
+                LinkedListNode<Matter> next = cur.Next;
+                elems.Remove(cur);
+
+                res.Add(curmat.Update(Create(elems), Time));
+                elems.AddFirst(curmat);
+            }
+            return Create(res);
+        }
+
+        public override IEnumerable<Particle> Particles
+        {
+            get
+            {
+                return
+                    from e in this.Elements
+                    from p in e.Particles
+                    select p;
+            }
+        }
     }
 
     /// <summary>
@@ -49,7 +118,7 @@ namespace Alunite
         /// <summary>
         /// Applies this transform to another, in effect combining them.
         /// </summary>
-        public Transform Apply(Transform Transform)
+        public Transform ApplyTo(Transform Transform)
         {
             return new Transform(
                 this.Offset + this.Rotation.Rotate(Transform.Offset),
@@ -94,16 +163,16 @@ namespace Alunite
     /// <summary>
     /// A piece of transformed matter.
     /// </summary>
-    public class Element : Matter
+    public class TransformMatter : Matter
     {
-        public Element(Matter Source, Transform Transform)
+        public TransformMatter(Matter Source, Transform Transform)
         {
             this._Source = Source;
             this._Transform = Transform;
         }
 
         /// <summary>
-        /// Gets the transform of the element.
+        /// Gets the transform of the source matter.
         /// </summary>
         public Transform Transform
         {
@@ -114,7 +183,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the source matter for the element.
+        /// Gets the source matter .
         /// </summary>
         public Matter Source
         {
@@ -131,7 +200,17 @@ namespace Alunite
 
         public override Matter Apply(Transform Transform)
         {
-            return new Element(this._Source, Transform.Apply(this._Transform));
+            return new TransformMatter(this._Source, Transform.ApplyTo(this._Transform));
+        }
+
+        public override IEnumerable<Particle> Particles
+        {
+            get
+            {
+                return
+                    from p in this._Source.Particles
+                    select p.Apply(this._Transform);
+            }
         }
 
         private Transform _Transform;

@@ -14,7 +14,7 @@ namespace Alunite
         /// that the units used in the Environment are consistent with those used for particles (meters, seconds, kilograms). This function should account for every
         /// force at every scale, including gravity and electromagnetism.
         /// </summary>
-        void Update(Matter Environment, double Time, out Vector DPosition, out Vector DVelocity, out Quaternion DOrientation, ref double Mass);
+        ISubstance Update(Matter Environment, double Time, out Vector DPosition, out Vector DVelocity, out Quaternion DOrientation, ref double Mass);
     }
 
     /// <summary>
@@ -29,6 +29,48 @@ namespace Alunite
             this.Orientation = Orientation;
             this.Mass = Mass;
             this.Substance = Substance;
+        }
+
+        public Particle(Transform Transform, double Mass, ISubstance Substance)
+        {
+            this.Position = Transform.Offset;
+            this.Velocity = Transform.VelocityOffset;
+            this.Orientation = Transform.Rotation;
+            this.Mass = Mass;
+            this.Substance = Substance;
+        }
+
+        /// <summary>
+        /// Gets the transform of the particle from the origin.
+        /// </summary>
+        public Transform Transform
+        {
+            get
+            {
+                return new Transform(
+                    this.Position,
+                    this.Velocity,
+                    this.Orientation);
+            }
+        }
+
+        /// <summary>
+        /// Gets a matter representation of this particle.
+        /// </summary>
+        public Matter Matter
+        {
+            get
+            {
+                return new ParticleMatter(this.Substance, this.Mass).Apply(this.Transform);
+            }
+        }
+
+        /// <summary>
+        /// Gets the particle with a transform applied to it.
+        /// </summary>
+        public Particle Apply(Transform Transform)
+        {
+            return new Particle(Transform.ApplyTo(this.Transform), this.Mass, this.Substance);
         }
 
         /// <summary>
@@ -62,5 +104,67 @@ namespace Alunite
         /// Gets the substance of the particle, which describes the particles properties.
         /// </summary>
         public ISubstance Substance;
+    }
+
+    /// <summary>
+    /// Matter containing a single unoriented particle.
+    /// </summary>
+    public class ParticleMatter : Matter
+    {
+        public ParticleMatter(ISubstance Substance, double Mass)
+        {
+            this._Substance = Substance;
+            this._Mass = Mass;
+        }
+
+        /// <summary>
+        /// Gets the substance of the particle.
+        /// </summary>
+        public ISubstance Substance
+        {
+            get
+            {
+                return this._Substance;
+            }
+        }
+
+        /// <summary>
+        /// Gets the mass of the particle.
+        /// </summary>
+        public double Mass
+        {
+            get
+            {
+                return this._Mass;
+            }
+        }
+
+        public override IEnumerable<Particle> Particles
+        {
+            get
+            {
+                return new Particle[1]
+                {
+                    new Particle(new Vector(0.0, 0.0, 0.0), new Vector(0.0, 0.0, 0.0), Quaternion.Identity, this._Mass, this._Substance)
+                };
+            }
+        }
+
+
+        public override Matter Update(Matter Environment, double Time)
+        {
+            Vector dpos;
+            Vector dvel;
+            Quaternion dort;
+            double mass = this._Mass;
+            ISubstance nsub = this._Substance.Update(Environment, Time, out dpos, out dvel, out dort, ref mass);
+            return
+                new TransformMatter(
+                    new ParticleMatter(nsub, mass),
+                    new Transform(dpos, dvel, dort));
+        }
+
+        private ISubstance _Substance;
+        private double _Mass;
     }
 }

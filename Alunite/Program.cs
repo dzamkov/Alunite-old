@@ -16,13 +16,24 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            Transform a = new Transform(new Vector(0.7, 0.4, 1.0), new Vector(0.8, 0.1, 1.0), new Quaternion(new Vector(0.0, 1.0, 0.0), Math.PI / 3.0));
-            Transform b = new Transform(new Vector(0.3, 1.0, 0.4), new Vector(0.3, 0.2, 1.0), new Quaternion(new Vector(0.0, 0.0, 1.0), Math.PI / 7.0));
-            a = a.Apply(b).Apply(b.Inverse.Apply(a.Inverse));
+            double gforce = 5.9e24 / Math.Pow(6.367e6, 2.0) * Particle.G;
+
+            // Create a test world
+            Random r = new Random();
+            List<Matter> elems = new List<Matter>();
+            for (int t = 0; t < 100; t++)
+            {
+                elems.Add(new Particle(
+                    new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()),
+                    new Vector(0.0, 0.0, 0.0),
+                    Quaternion.Identity,
+                    0.01, null).Matter);
+            }
+            Matter world = CompositeMatter.Create(elems);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;
-            hw.Control = new Visualizer(null);
+            hw.Control = new Visualizer(world);
             hw.Run(60.0);
         }
     }
