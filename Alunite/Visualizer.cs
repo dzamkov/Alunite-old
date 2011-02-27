@@ -45,7 +45,7 @@ namespace Alunite
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            GL.PointSize(5.0f);
+            GL.PointSize(2.0f);
             GL.Begin(BeginMode.Points);
             foreach (Particle p in this._Matter.Particles)
             {
@@ -65,7 +65,7 @@ namespace Alunite
         public override void Update(GUIControlContext Context, double Time)
         {
             this._Time += Time * 0.2;
-            this._Matter = this._Matter.Update(Matter.Null, Time * 0.1);
+            //this._Matter = this._Matter.Update(Matter.Null, Time * 0.1);
         }
 
         private double _Time;
