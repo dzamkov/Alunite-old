@@ -52,7 +52,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates an OSP node of the specified leaf nodes.
+        /// Creates a (near) OSP node of the specified leaf nodes.
         /// </summary>
         public static TNode Create<TInput, TNode, TScalar>(TInput Input, IEnumerable<TNode> Nodes)
             where TInput : IOSPInput<TNode, TScalar>
@@ -74,6 +74,7 @@ namespace Alunite
         /// <summary>
         /// Combines two OSP nodes. This function will be faster if A is the more complex node.
         /// </summary>
+        /// <remarks>The resulting node may not be OSP, but it will be well-balanced.</remarks>
         public static TNode Combine<TInput, TNode, TScalar>(TInput Input, TNode A, TNode B)
             where TInput : IOSPInput<TNode, TScalar>
         {
@@ -94,15 +95,8 @@ namespace Alunite
                 B = temp;
             }
 
-            // If the distance between them is greater than either diameter, the node containing both must be OSP
-            TScalar dis = Input.GetShortDistance(A, B);
-            if (Input.Greater(dis, Input.GetDiameter(A)) && Input.Greater(dis, Input.GetDiameter(B)))
-            {
-                return Input.CreateCompound(A, B);
-            }
-
             // Create a node between C, D and B with the smallest possible diameter
-            TScalar cddis = Input.GetLongDistance(subc, subd);
+            TScalar cddis = Input.GetDiameter(A);
             TScalar cbdis = Input.GetLongDistance(subc, B);
             TScalar dbdis = Input.GetLongDistance(subd, B);
             if (Input.Greater(cbdis, cddis))

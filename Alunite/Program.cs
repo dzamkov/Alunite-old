@@ -20,7 +20,7 @@ namespace Alunite
 
             // OSP test
             List<_OSPNode> nodes = new List<_OSPNode>();
-            for (int t = 0; t < 10000; t++)
+            for (int t = 0; t < 100000; t++)
             {
                 nodes.Add(new _OSPNode(r.NextDouble() * 0.01, new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble())));
             }
