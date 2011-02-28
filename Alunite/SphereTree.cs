@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// Partions and organizes spherical nodes containing data into a bounding volume hierarchy.
+    /// Partions and organizes spherical nodes containing data into a bounding volume hierarchy. Note that this object does not contain
+    /// an actual tree, just the properties of the tree's its nodes make.
     /// </summary>
     public abstract class SphereTree<TNode>
     {
@@ -22,6 +23,72 @@ namespace Alunite
         /// Creates a compound node containing the two specified subnodes.
         /// </summary>
         public abstract TNode CreateCompound(TNode A, TNode B);
+
+        /// <summary>
+        /// Creates a well-balanced tree containing the given nodes.
+        /// </summary>
+        public TNode Create(IEnumerable<TNode> Nodes)
+        {
+            TNode cur = default(TNode);
+            IEnumerator<TNode> e = Nodes.GetEnumerator();
+            if (e.MoveNext())
+            {
+                cur = e.Current;
+                while (e.MoveNext())
+                {
+                    cur = this.Insert(cur, e.Current);
+                }
+            }
+            return cur;
+        }
+
+        /// <summary>
+        /// Inserts node B into tree A leaving them well-balanced.
+        /// </summary>
+        public TNode Insert(TNode A, TNode B)
+        {
+            TNode suba = default(TNode);
+            TNode subb = default(TNode);
+            if (!this.GetSubnodes(A, ref suba, ref subb))
+            {
+                return this.CreateCompound(A, B);
+            }
+
+            Vector possuba; double radsuba;
+            Vector possubb; double radsubb;
+            Vector posb; double radb;
+            Vector posa; double rada;
+            this.GetBound(suba, out possuba, out radsuba);
+            this.GetBound(subb, out possubb, out radsubb);
+            this.GetBound(A, out posa, out rada);
+            this.GetBound(B, out posb, out radb);
+
+            double subdis = rada * 2.0;
+            double subadis = (possuba - posb).Length + radsuba + radb;
+            double subbdis = (possubb - posb).Length + radsubb + radb;
+            if (subdis < subadis)
+            {
+                if (subdis < subbdis)
+                {
+                    return this.CreateCompound(A, B);
+                }
+                else
+                {
+                    return this.CreateCompound(this.Insert(subb, B), suba);
+                }
+            }
+            else
+            {
+                if (subadis < subbdis)
+                {
+                    return this.CreateCompound(this.Insert(suba, B), subb);
+                }
+                else
+                {
+                    return this.CreateCompound(this.Insert(subb, B), suba);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -70,12 +137,15 @@ namespace Alunite
             double dis = dir.Length;
             dir *= 1.0 / dis;
 
+            double rad = (dis + rada + radb) * 0.5;
+            Vector pos = posa + dir * (rad - rada);
+
             return new SimpleSphereTreeNode<TLeaf>._Compound()
             {
                 A = A,
                 B = B,
-                Radius = (dis + rada + radb) * 0.5,
-                Position = posa + dir * (dis * 0.5 + rada)
+                Radius = rad,
+                Position = pos
             };
         }
     }
