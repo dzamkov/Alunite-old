@@ -11,7 +11,7 @@ namespace Alunite
     /// <summary>
     /// A visualizer for matter.
     /// </summary>
-    public class Visualizer : Render3DControl
+    /*public class Visualizer : Render3DControl
     {
         public Visualizer(Matter Matter)
         {
@@ -70,5 +70,5 @@ namespace Alunite
 
         private double _Time;
         private Matter _Matter;
-    }
+    }*/
 }

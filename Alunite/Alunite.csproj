@@ -39,16 +39,12 @@
   </Target>
   -->
   <ItemGroup>
-    <Compile Include="Adminium.cs" />
-    <Compile Include="BinaryMatter.cs" />
-    <Compile Include="BlobMatter.cs" />
-    <Compile Include="Fluid.cs" />
     <Compile Include="Matter.cs" />
     <Compile Include="Particle.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Quaternion.cs" />
     <Compile Include="Reduce.cs" />
-    <Compile Include="OSP.cs" />
+    <Compile Include="SphereTree.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="Visualizer.cs" />
   </ItemGroup>

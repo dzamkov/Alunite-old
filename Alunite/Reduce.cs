@@ -9,6 +9,6 @@ namespace Alunite
     /// </summary>
     public static class Reduce
     {
-
+    
     }
 }
