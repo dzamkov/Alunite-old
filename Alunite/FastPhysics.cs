@@ -22,7 +22,7 @@ namespace Alunite
 
         public FastPhysicsMatter Update(FastPhysicsMatter Matter, FastPhysicsMatter Environment, double Time)
         {
-            throw new NotImplementedException();
+            return Matter.Update(this, Environment, Time);
         }
 
         public FastPhysicsMatter Compose(IEnumerable<FastPhysicsMatter> Matter)
@@ -59,6 +59,14 @@ namespace Alunite
                 Source = this,
                 Transform = Transform
             };
+        }
+
+        /// <summary>
+        /// Gets the updated form of this matter in the specified environment after the given time.
+        /// </summary>
+        public virtual FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
+        {
+            return null;
         }
 
         /// <summary>
