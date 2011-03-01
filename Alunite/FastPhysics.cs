@@ -12,12 +12,12 @@ namespace Alunite
     {
         public FastPhysicsMatter Create(Particle<FastPhysicsSubstance> Particle)
         {
-            throw new NotImplementedException();
+            return FastPhysicsMatter.Particle(this, Particle);
         }
 
         public FastPhysicsMatter Transform(FastPhysicsMatter Matter, Transform Transform)
         {
-            throw new NotImplementedException();
+            return Matter.Apply(this, Transform);
         }
 
         public FastPhysicsMatter Update(FastPhysicsMatter Matter, FastPhysicsMatter Environment, double Time)
@@ -29,14 +29,93 @@ namespace Alunite
         {
             throw new NotImplementedException();
         }
+
+        public FastPhysicsMatter Null
+        {
+            get
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>
     /// Matter in a fast physics system.
     /// </summary>
-    public class FastPhysicsMatter : IMatter
+    public abstract class FastPhysicsMatter : IMatter
     {
+        private FastPhysicsMatter()
+        {
 
+        }
+
+        /// <summary>
+        /// Applies a transform to this matter.
+        /// </summary>
+        public virtual FastPhysicsMatter Apply(FastPhysics Physics, Transform Transform)
+        {
+            return new _Transformed()
+            {
+                Source = this,
+                Transform = Transform
+            };
+        }
+
+        /// <summary>
+        /// Creates matter for a particle.
+        /// </summary>
+        public static FastPhysicsMatter Particle(FastPhysics Physics, Particle<FastPhysicsSubstance> Particle)
+        {
+            return new _Transformed()
+            {
+                Transform = new Transform(Particle.Position, Particle.Velocity, Particle.Orientation),
+                Source = new _Particle()
+                {
+                    Mass = Particle.Mass,
+                    Spin = Particle.Spin,
+                    Substance = Particle.Substance
+                }
+            };
+        }
+
+        /// <summary>
+        /// Matter containing a single particle.
+        /// </summary>
+        internal class _Particle : FastPhysicsMatter
+        {
+            public ISubstance Substance;
+            public double Mass;
+            public Quaternion Spin;
+        }
+
+        /// <summary>
+        /// Matter created by transforming some source matter.
+        /// </summary>
+        internal class _Transformed : FastPhysicsMatter
+        {
+            public override FastPhysicsMatter Apply(FastPhysics Physics, Transform Transform)
+            {
+                return new _Transformed()
+                {
+                    Source = this.Source,
+                    Transform = Transform.ApplyTo(this.Transform)
+                };
+            }
+
+            public FastPhysicsMatter Source;
+            public Transform Transform;
+        }
+
+        /// <summary>
+        /// Matter created by the combination of some untransformed matter and some
+        /// transformed matter.
+        /// </summary>
+        internal class _Binary : FastPhysicsMatter
+        {
+            public FastPhysicsMatter A;
+            public FastPhysicsMatter B;
+            public Transform AToB;
+        }
     }
 
     /// <summary>

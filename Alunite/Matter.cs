@@ -20,6 +20,11 @@ namespace Alunite
         /// Creates some matter that is the physical composition of other matter.
         /// </summary>
         TMatter Compose(IEnumerable<TMatter> Matter);
+
+        /// <summary>
+        /// Gets matter that has no affect or interaction in the physics system.
+        /// </summary>
+        TMatter Null { get; }
     }
 
     /// <summary>
