@@ -10,6 +10,18 @@ namespace Alunite
     public abstract class SphereTree<TNode>
     {
         /// <summary>
+        /// Gets the position and radius of a sphere that encloses two other spheres.
+        /// </summary>
+        public static void Enclose(Vector PosA, double RadA, Vector PosB, double RadB, out Vector Pos, out double Rad)
+        {
+            Vector dir = PosB - PosA;
+            double dis = dir.Length;
+            dir *= 1.0 / dis;
+            Rad = (dis + RadA + RadB) * 0.5;
+            Pos = PosA + dir * (Rad - RadA);
+        }
+
+        /// <summary>
         /// Gets the position and radius of the specified node.
         /// </summary>
         public abstract void GetBound(TNode Node, out Vector Position, out double Radius);
@@ -133,12 +145,8 @@ namespace Alunite
         {
             Vector posa; double rada; this.GetBound(A, out posa, out rada);
             Vector posb; double radb; this.GetBound(B, out posb, out radb);
-            Vector dir = posb - posa;
-            double dis = dir.Length;
-            dir *= 1.0 / dis;
-
-            double rad = (dis + rada + radb) * 0.5;
-            Vector pos = posa + dir * (rad - rada);
+            Vector pos; double rad; Enclose(posa, rada, posb, radb, out pos, out rad);
+            
 
             return new SimpleSphereTreeNode<TLeaf>._Compound()
             {

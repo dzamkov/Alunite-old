@@ -39,6 +39,7 @@
   </Target>
   -->
   <ItemGroup>
+    <Compile Include="Approximate.cs" />
     <Compile Include="FastPhysics.cs" />
     <Compile Include="Matter.cs" />
     <Compile Include="Particle.cs" />

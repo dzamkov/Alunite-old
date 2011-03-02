@@ -71,6 +71,22 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Applies this transform to an offset vector.
+        /// </summary>
+        public Vector ApplyToOffset(Vector Offset)
+        {
+            return this.Offset + this.Rotation.Rotate(Offset);
+        }
+
+        /// <summary>
+        /// Applies a transform to this transform.
+        /// </summary>
+        public Transform Apply(Transform Transform)
+        {
+            return Transform.ApplyTo(this);
+        }
+
+        /// <summary>
         /// Gets the inverse of this transform.
         /// </summary>
         public Transform Inverse

@@ -62,6 +62,14 @@ namespace Alunite
             return this.X.ToString() + ", " + this.Y.ToString() + ", " + this.Z.ToString();
         }
 
+        public override int GetHashCode()
+        {
+            int xhash = this.X.GetHashCode();
+            int yhash = this.Y.GetHashCode();
+            int zhash = this.Z.GetHashCode();
+            return unchecked(xhash ^ (yhash + 0x1337BED5) ^ (zhash + 0x2B50CDF1) ^ (yhash << 3) ^ (yhash >> 3) ^ (zhash << 7) ^ (zhash >> 7));
+        }
+
         /// <summary>
         /// Gets the cross product of two vectors.
         /// </summary>
