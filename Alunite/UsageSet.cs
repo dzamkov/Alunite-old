@@ -53,6 +53,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets an approximation of the size of the usage set (this may change often).
+        /// </summary>
+        public int Size
+        {
+            get
+            {
+                return this._Set.Count;
+            }
+        }
+
+        /// <summary>
         /// Adds (or rather, makes informed) a usage to the usage set.
         /// </summary>
         public Index Add(TUsage Usage)

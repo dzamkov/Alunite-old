@@ -50,6 +50,20 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Estimates the complexity of this matter by getting the amount of unique bits of matter used to
+        /// describe it.
+        /// </summary>
+        public int Complexity
+        {
+            get
+            {
+                HashSet<FastPhysicsMatter> used = new HashSet<FastPhysicsMatter>();
+                this._GetUsed(used);
+                return used.Count;
+            }
+        }
+
+        /// <summary>
         /// Gets the bounding sphere for this matter. The bounding sphere encloses all mass within the matter and does not
         /// have any correlation to where the matter can apply force.
         /// </summary>
@@ -115,20 +129,64 @@ namespace Alunite
                 A = atrans.Source;
             }
 
-            // Create binary matter
-            FastPhysicsMatter._Binary bin = new _Binary()
+            // Check usages of elements to see if this binary matter already exists
+            FastPhysicsMatter res = null;
+            UsageSet<_Binary> usages = A._Usages.Size > B._Usages.Size ? B._Usages : A._Usages;
+            Similarity transsimthreshold = 0.01;
+            foreach (var ind in usages.Usages)
             {
-                A = A,
-                B = B,
-                AToB = atob
-            };
-            Vector posa; double rada; A.GetBoundingSphere(out posa, out rada);
-            Vector posb; double radb; B.GetBoundingSphere(out posb, out radb); posb = atob.ApplyToOffset(posb);
-            SphereTree<FastPhysicsMatter>.Enclose(posa, rada, posb, radb, out bin.BoundCenter, out bin.BoundRadius);
+                _Binary testbin = ind.Value;
+                if (testbin.A == A && testbin.B == B)
+                {
+                    if (testbin.AToB.GetSimilarity(atob, 1.0, 1.0, 1.0) > transsimthreshold)
+                    {
+                        res = testbin;
+                        usages.Accept(ind);
+                        break;
+                    }
+                }
+                if (testbin.B == A && testbin.A == B)
+                {
+                    Transform natob = atob.Inverse;
+                    if (testbin.AToB.GetSimilarity(natob, 1.0, 1.0, 1.0) > transsimthreshold)
+                    {
+                        res = testbin;
+
+                        // Since the elements are swapped, correct transforms
+                        if (full != null)
+                        {
+                            full = full.Value.Apply(atob);
+                        }
+                        else
+                        {
+                            full = atob;
+                        }
+
+                        usages.Accept(ind);
+                        break;
+                    }
+                }
+            }
+
+            // Create binary matter
+            if (res == null)
+            {
+                FastPhysicsMatter._Binary bin = new _Binary()
+                {
+                    A = A,
+                    B = B,
+                    AToB = atob
+                };
+                res = bin;
+                Vector posa; double rada; A.GetBoundingSphere(out posa, out rada);
+                Vector posb; double radb; B.GetBoundingSphere(out posb, out radb); posb = atob.ApplyToOffset(posb);
+                SphereTree<FastPhysicsMatter>.Enclose(posa, rada, posb, radb, out bin.BoundCenter, out bin.BoundRadius);
+                A._Usages.Add(bin);
+                B._Usages.Add(bin);
+            }
 
 
             // Retransform (if needed)
-            FastPhysicsMatter res = bin;
             if (full != null)
             {
                 res = new _Transformed()
@@ -174,6 +232,15 @@ namespace Alunite
         internal virtual bool _GetSubnodes(FastPhysics Physics, ref FastPhysicsMatter A, ref FastPhysicsMatter B)
         {
             return false;
+        }
+
+        /// <summary>
+        /// Gets all the matter used to make up this matter, that is, all the matter needed to give this matter meaning, including
+        /// this matter itself.
+        /// </summary>
+        internal virtual void _GetUsed(HashSet<FastPhysicsMatter> Elements)
+        {
+            Elements.Add(this);
         }
 
         /// <summary>
@@ -228,6 +295,12 @@ namespace Alunite
                 return false;
             }
 
+            internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
+            {
+                Elements.Add(this);
+                this.Source._GetUsed(Elements);
+            }
+
             public FastPhysicsMatter Source;
             public Transform Transform;
         }
@@ -249,6 +322,13 @@ namespace Alunite
                 A = this.A;
                 B = this.B.Apply(Physics, this.AToB);
                 return true;
+            }
+
+            internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
+            {
+                Elements.Add(this);
+                this.A._GetUsed(Elements);
+                this.B._GetUsed(Elements);
             }
 
             public Vector BoundCenter;

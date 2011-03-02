@@ -38,6 +38,15 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the similarity between this and another quaternion when they are used to represent rotation.
+        /// </summary>
+        public Similarity GetRotationSimilarity(Quaternion Other)
+        {
+            // Too much work for now
+            return 0.0001;
+        }
+
+        /// <summary>
         /// Gets the identity quaternion.
         /// </summary>
         public static Quaternion Identity

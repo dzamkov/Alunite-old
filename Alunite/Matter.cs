@@ -115,6 +115,14 @@ namespace Alunite
             }
         }
 
+        public Similarity GetSimilarity(Transform Other, double OffsetWeight, double VelocityWeight, double RotationWeight)
+        {
+            return
+                this.Offset.GetOffsetSimilarity(Other.Offset).Weigh(OffsetWeight) +
+                this.VelocityOffset.GetOffsetSimilarity(Other.VelocityOffset).Weigh(VelocityWeight) +
+                this.Rotation.GetRotationSimilarity(Other.Rotation).Weigh(RotationWeight);
+        }
+
         public Vector Offset;
         public Vector VelocityOffset;
         public Quaternion Rotation;
