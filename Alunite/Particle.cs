@@ -82,5 +82,18 @@ namespace Alunite
         /// Updates a particle of this kind of substance in the given environment.
         /// </summary>
         void Update(TPhysics Physics, TMatter Environment, double Time, ref Particle<TSubstance> Particle);
+
+        /// <summary>
+        /// Gets the complex disparity created if a particle of this substance was replaced with a new particle with the described
+        /// properties.
+        /// </summary>
+        MatterDisparity GetDisparity(
+            TPhysics Physics, TMatter Environment,
+            double OldMass, double NewMass,
+            ISubstance NewSubstance,
+            Vector DeltaPosition,
+            Vector DeltaVelocity,
+            Quaternion DeltaOrientation,
+            AxisAngle OldSpin, AxisAngle NewSpin);
     }
 }

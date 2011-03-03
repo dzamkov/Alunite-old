@@ -48,6 +48,60 @@ namespace Alunite
     }
 
     /// <summary>
+    /// Describes the difference between two pieces of matter.
+    /// </summary>
+    /// <remarks>The "simple matter disparity" does not take into account forces to external matter while the "complex matter disparity" does. Note that
+    /// matter disparity is for the most part an approximation used for optimizations.</remarks>
+    public struct MatterDisparity
+    {
+        public MatterDisparity(double Movement, double Translation, double Mass)
+        {
+            this.Movement = Movement;
+            this.Translation = Translation;
+            this.Mass = Mass;
+        }
+
+        /// <summary>
+        /// Gets the matter disparity between two identical pieces of matter.
+        /// </summary>
+        public static MatterDisparity Identical
+        {
+            get
+            {
+                return new MatterDisparity(0.0, 0.0, 0.0);
+            }
+        }
+        
+        /// <summary>
+        /// Gets the simple matter disparity between two particles.
+        /// </summary>
+        public static MatterDisparity BetweenParticles(double MassA, Vector PosA, Vector VelA, double MassB, Vector PosB, Vector VelB)
+        {
+            return new MatterDisparity(
+                (MassA + MassB) * (VelA - VelB).Length, 
+                (MassA + MassB) * (PosA - PosB).Length, 
+                Math.Abs(MassA - MassB));
+        }
+
+        /// <summary>
+        /// The amount of mass, course deviation that would be caused if the compared pieces of matter were swapped in usage, measured in
+        /// kilograms meters per second. Note that if this is for "complex matter disparity", this should take into account external
+        /// matter and forces.
+        /// </summary>
+        public double Movement;
+
+        /// <summary>
+        /// The amount of mass that is immediately translated between the two compared pieces of matter, measured in kilogram meters.
+        /// </summary>
+        public double Translation;
+
+        /// <summary>
+        /// The difference in mass of the two compared pieces of matter measured in kilograms.
+        /// </summary>
+        public double Mass;
+    }
+
+    /// <summary>
     /// Represents a possible the orientation, translation and velocity offset for matter.
     /// </summary>
     public struct Transform
@@ -115,13 +169,6 @@ namespace Alunite
             }
         }
 
-        public Similarity GetSimilarity(Transform Other, double OffsetWeight, double VelocityWeight, double RotationWeight)
-        {
-            return
-                this.Offset.GetOffsetSimilarity(Other.Offset).Weigh(OffsetWeight) +
-                this.VelocityOffset.GetOffsetSimilarity(Other.VelocityOffset).Weigh(VelocityWeight) +
-                this.Rotation.GetRotationSimilarity(Other.Rotation).Weigh(RotationWeight);
-        }
 
         public Vector Offset;
         public Vector VelocityOffset;

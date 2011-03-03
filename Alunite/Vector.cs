@@ -71,14 +71,6 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the similarity between this vector and another if the vector is used as an offset or position.
-        /// </summary>
-        public Similarity GetOffsetSimilarity(Vector Other)
-        {
-            return (this - Other).Length;
-        }
-
-        /// <summary>
         /// Gets the cross product of two vectors.
         /// </summary>
         public static Vector Cross(Vector A, Vector B)

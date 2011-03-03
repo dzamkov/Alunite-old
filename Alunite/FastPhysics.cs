@@ -131,8 +131,7 @@ namespace Alunite
 
             // Check usages of elements to see if this binary matter already exists
             FastPhysicsMatter res = null;
-            UsageSet<_Binary> usages = A._Usages.Size > B._Usages.Size ? B._Usages : A._Usages;
-            Similarity transsimthreshold = 0.01;
+            /*UsageSet<_Binary> usages = A._Usages.Size > B._Usages.Size ? B._Usages : A._Usages;
             foreach (var ind in usages.Usages)
             {
                 _Binary testbin = ind.Value;
@@ -166,7 +165,7 @@ namespace Alunite
                         break;
                     }
                 }
-            }
+            }*/
 
             // Create binary matter
             if (res == null)
@@ -359,6 +358,18 @@ namespace Alunite
         public void Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time, ref Particle<FastPhysicsSubstance> Particle)
         {
             Particle.Update(Time);
+        }
+
+        public MatterDisparity GetDisparity(
+            FastPhysics Physics, FastPhysicsMatter Environment, 
+            double OldMass, double NewMass, 
+            ISubstance NewSubstance, 
+            Vector DeltaPosition, 
+            Vector DeltaVelocity, 
+            Quaternion DeltaOrientation, 
+            AxisAngle OldSpin, AxisAngle NewSpin)
+        {
+            throw new NotImplementedException();
         }
 
         private UsageSet<FastPhysicsMatter._Particle> _Usages;

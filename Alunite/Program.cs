@@ -11,18 +11,39 @@ namespace Alunite
     /// </summary>
     public static class Program
     {
+        private class _Person
+        {
+
+        }
+
+        private class _AngryPerson : _Person
+        {
+
+        }
+
+        private class _SadPerson : _Person
+        {
+
+        }
+
+        private class _HappyPerson : _Person
+        {
+
+        }
+
         /// <summary>
         /// Program main entry-point.
         /// </summary>
         public static void Main(string[] Args)
         {
-            // Quaternion test
-            Vector a = new Vector(0.0, 0.0, 1.0);
-            Vector b = new Vector(0.0, 0.3, 1.0);
-            a.Normalize();
-            b.Normalize();
-            Quaternion between = Quaternion.AngleBetween(a, b);
-            a = between.Rotate(a);
+            // Match matrix test
+            MatchMatrix<_Person, bool> getsalongwith = new MatchMatrix<_Person, bool>((a, b) => true);
+            getsalongwith.AddRule<_AngryPerson, _Person>((a, b) => false);
+            getsalongwith.AddRule<_SadPerson, _HappyPerson>((a, b) => false);
+
+            bool testa = getsalongwith.GetResult(new _HappyPerson(), new _AngryPerson());
+            bool testb = getsalongwith.GetResult(new _HappyPerson(), new _SadPerson());
+            bool testc = getsalongwith.GetResult(new _HappyPerson(), new _HappyPerson());
 
             // Set up a world
             FastPhysics fp = new FastPhysics();

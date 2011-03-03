@@ -39,9 +39,9 @@
   </Target>
   -->
   <ItemGroup>
-    <Compile Include="Similarity.cs" />
     <Compile Include="FastPhysics.cs" />
-    <Compile Include="Matter.cs" />
+    <Compile Include="MatchMatrix.cs" />
+    <Compile Include="Physics.cs" />
     <Compile Include="Particle.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Quaternion.cs" />
