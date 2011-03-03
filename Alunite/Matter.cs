@@ -67,7 +67,7 @@ namespace Alunite
             return new Transform(
                 this.Offset + this.Rotation.Rotate(Transform.Offset),
                 this.VelocityOffset + this.Rotation.Rotate(Transform.VelocityOffset),
-                this.Rotation * Transform.Rotation);
+                this.Rotation.ApplyTo(Transform.Rotation));
         }
 
         /// <summary>

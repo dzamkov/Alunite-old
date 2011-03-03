@@ -45,7 +45,7 @@ namespace Alunite
         /// <summary>
         /// The angular velocity of the particle.
         /// </summary>
-        public Quaternion Spin;
+        public AxisAngle Spin;
 
         /// <summary>
         /// The mass of the particle in kilograms.
@@ -58,6 +58,7 @@ namespace Alunite
         public void Update(double Time)
         {
             this.Position += this.Velocity * Time;
+            this.Orientation.Apply(this.Spin * Time);
         }
     }
 

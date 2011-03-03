@@ -16,6 +16,14 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
+            // Quaternion test
+            Vector a = new Vector(0.0, 0.0, 1.0);
+            Vector b = new Vector(0.0, 0.3, 1.0);
+            a.Normalize();
+            b.Normalize();
+            Quaternion between = Quaternion.AngleBetween(a, b);
+            a = between.Rotate(a);
+
             // Set up a world
             FastPhysics fp = new FastPhysics();
             List<FastPhysicsMatter> elems = new List<FastPhysicsMatter>();
@@ -29,7 +37,7 @@ namespace Alunite
                     Position = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()),
                     Velocity = new Vector(0.0, 0.0, 0.0),
                     Orientation = Quaternion.Identity,
-                    Spin = Quaternion.Identity
+                    Spin = AxisAngle.Identity
                 }));
             }
             FastPhysicsMatter world = fp.Compose(elems);
