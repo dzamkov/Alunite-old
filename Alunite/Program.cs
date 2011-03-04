@@ -28,19 +28,25 @@ namespace Alunite
             List<FastPhysicsMatter> elems = new List<FastPhysicsMatter>();
             Random r = new Random(2);
             List<Vector> pointset = new List<Vector>();
-            for(int t = 0; t < 1000; t++)
+            for(double x = 0.05; x < 1.0; x += 0.1)
             {
-                Vector pos = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble());
-                elems.Add(fp.Create(new Particle<FastPhysicsSubstance>()
+                for (double y = 0.05; y < 1.0; y += 0.1)
                 {
-                    Substance = FastPhysicsSubstance.Default,
-                    Mass = 1.0,
-                    Position = pos,
-                    Velocity = new Vector(0.0, 0.0, 0.0),
-                    Orientation = Quaternion.Identity,
-                    Spin = AxisAngle.Identity
-                }));
-                pointset.Add(pos);
+                    for (double z = 0.05; z < 1.0; z += 0.1)
+                    {
+                        Vector pos = new Vector(x + r.NextDouble() * 0.001, y + r.NextDouble() * 0.001, z + r.NextDouble() * 0.001);
+                        elems.Add(fp.Create(new Particle<FastPhysicsSubstance>()
+                        {
+                            Substance = FastPhysicsSubstance.Default,
+                            Mass = 1.0,
+                            Position = pos,
+                            Velocity = new Vector(0.0, 0.0, 0.0),
+                            Orientation = Quaternion.Identity,
+                            Spin = AxisAngle.Identity
+                        }));
+                        pointset.Add(pos);
+                    }
+                }
             }
             FastPhysicsMatter world = fp.Compose(elems);
 

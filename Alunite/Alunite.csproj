@@ -46,6 +46,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Quaternion.cs" />
     <Compile Include="SphereTree.cs" />
+    <Compile Include="Transform.cs" />
     <Compile Include="UsageSet.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="Visualizer.cs" />

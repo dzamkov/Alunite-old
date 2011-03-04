@@ -364,7 +364,7 @@ namespace Alunite
 
             internal override void _GetParticles(Transform Transform, List<Vector> Particles)
             {
-                this.Source._GetParticles(Transform.ApplyTo(this.Transform), Particles);
+                this.Source._GetParticles(this.Transform.Apply(Transform), Particles);
             }
 
             public FastPhysicsMatter Source;
