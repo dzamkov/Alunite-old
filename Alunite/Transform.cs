@@ -16,6 +16,13 @@ namespace Alunite
             this.Rotation = Rotation;
         }
 
+        public Transform(Vector Offset)
+        {
+            this.Offset = Offset;
+            this.VelocityOffset = new Vector(0.0, 0.0, 0.0);
+            this.Rotation = Quaternion.Identity;
+        }
+
         /// <summary>
         /// Applies this transform to another, in effect combining them.
         /// </summary>

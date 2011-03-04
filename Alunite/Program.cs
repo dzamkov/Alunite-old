@@ -25,34 +25,19 @@ namespace Alunite
 
             // Set up a world
             FastPhysics fp = new FastPhysics();
-            List<FastPhysicsMatter> elems = new List<FastPhysicsMatter>();
-            Random r = new Random(2);
-            List<Vector> pointset = new List<Vector>();
-            for(double x = 0.05; x < 1.0; x += 0.1)
-            {
-                for (double y = 0.05; y < 1.0; y += 0.1)
-                {
-                    for (double z = 0.05; z < 1.0; z += 0.1)
-                    {
-                        Vector pos = new Vector(x + r.NextDouble() * 0.001, y + r.NextDouble() * 0.001, z + r.NextDouble() * 0.001);
-                        elems.Add(fp.Create(new Particle<FastPhysicsSubstance>()
+            FastPhysicsMatter world = FastPhysicsMatter.CreateLattice(fp, 4, fp.Create(new Particle<FastPhysicsSubstance>()
                         {
                             Substance = FastPhysicsSubstance.Default,
                             Mass = 1.0,
-                            Position = pos,
+                            Position = new Vector(0.0, 0.0, 0.0),
                             Velocity = new Vector(0.0, 0.0, 0.0),
                             Orientation = Quaternion.Identity,
                             Spin = AxisAngle.Identity
-                        }));
-                        pointset.Add(pos);
-                    }
-                }
-            }
-            FastPhysicsMatter world = fp.Compose(elems);
+                        }), 0.1);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;
-            hw.Control = new Visualizer(world.Particles, pointset);
+            hw.Control = new Visualizer(world.Particles);
             hw.Run(60.0);
         }
     }

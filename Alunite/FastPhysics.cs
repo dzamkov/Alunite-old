@@ -122,6 +122,65 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Quickly creates a lattice with a power of two size of the specified object.
+        /// </summary>
+        public static FastPhysicsMatter CreateLattice(FastPhysics Physics, int LogSize, FastPhysicsMatter Object, double Spacing)
+        {
+            // Get "major" spacing
+            Spacing = Spacing * Math.Pow(2.0, LogSize - 1);
+
+            // Extract transform
+            _Transformed trans = Object as _Transformed;
+            if (trans != null)
+            {
+                Object = trans.Source;
+                return _CreateLattice(Physics, LogSize, Object, Spacing).Apply(Physics, trans.Transform);
+            }
+            else
+            {
+                return _CreateLattice(Physics, LogSize, Object, Spacing);
+            }
+        }
+
+        private static FastPhysicsMatter _CreateLattice(FastPhysics Physics, int LogSize, FastPhysicsMatter Object, double MajorSpacing)
+        {
+            if (LogSize <= 0)
+            {
+                return Object;
+            }
+            if (LogSize > 1)
+            {
+                Object = _CreateLattice(Physics, LogSize - 1, Object, MajorSpacing * 0.5);
+            }
+            _Binary bina = _QuickCombine(Physics, Object, Object, new Transform(new Vector(MajorSpacing, 0.0, 0.0)));
+            _Binary binb = _QuickCombine(Physics, bina, bina, new Transform(new Vector(0.0, MajorSpacing, 0.0)));
+            _Binary binc = _QuickCombine(Physics, binb, binb, new Transform(new Vector(0.0, 0.0, MajorSpacing)));
+            return binc;
+        }
+
+        /// <summary>
+        /// Combines two "bits" of matter into one without searching through cached compounds.
+        /// </summary>
+        private static FastPhysicsMatter._Binary _QuickCombine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B, Transform AToB)
+        {
+            FastPhysicsMatter._Binary bin = new _Binary()
+            {
+                A = A,
+                B = B,
+                AToB = AToB
+            };
+            Vector posa; double rada; A.GetBoundingSphere(out posa, out rada);
+            Vector posb; double radb; B.GetBoundingSphere(out posb, out radb); posb = AToB.ApplyToOffset(posb);
+            SphereTree<FastPhysicsMatter>.Enclose(posa, rada, posb, radb, out bin.BoundCenter, out bin.BoundRadius);
+            A._Usages.Add(bin);
+            if (A != B)
+            {
+                B._Usages.Add(bin);
+            }
+            return bin;
+        }
+
+        /// <summary>
         /// Combines two "bits" of matter into one.
         /// </summary>
         public static FastPhysicsMatter Combine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B)
@@ -193,18 +252,7 @@ namespace Alunite
             // Create binary matter
             if (res == null)
             {
-                FastPhysicsMatter._Binary bin = new _Binary()
-                {
-                    A = A,
-                    B = B,
-                    AToB = atob
-                };
-                res = bin;
-                Vector posa; double rada; A.GetBoundingSphere(out posa, out rada);
-                Vector posb; double radb; B.GetBoundingSphere(out posb, out radb); posb = atob.ApplyToOffset(posb);
-                SphereTree<FastPhysicsMatter>.Enclose(posa, rada, posb, radb, out bin.BoundCenter, out bin.BoundRadius);
-                A._Usages.Add(bin);
-                B._Usages.Add(bin);
+                res = _QuickCombine(Physics, A, B, atob);
             }
 
 

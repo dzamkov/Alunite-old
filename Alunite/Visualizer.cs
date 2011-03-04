@@ -13,10 +13,9 @@ namespace Alunite
     /// </summary>
     public class Visualizer : Render3DControl
     {
-        public Visualizer(IEnumerable<Vector> PointSetA, IEnumerable<Vector> PointSetB)
+        public Visualizer(IEnumerable<Vector> PointSetA)
         {
             this._PointSetA = PointSetA;
-            this._PointSetB = PointSetB;
         }
 
         public override void SetupProjection(Point Viewsize)
@@ -42,11 +41,6 @@ namespace Alunite
             {
                 GL.Vertex3(v);
             }
-            GL.Color4(Color.RGB(1.0, 0.5, 0.0));
-            foreach (Vector v in this._PointSetB)
-            {
-                GL.Vertex3(v);
-            }
             GL.End();
             GL.Disable(EnableCap.DepthTest);
         }
@@ -57,7 +51,6 @@ namespace Alunite
         }
 
         private IEnumerable<Vector> _PointSetA;
-        private IEnumerable<Vector> _PointSetB;
         private double _Time;
     }
 }
