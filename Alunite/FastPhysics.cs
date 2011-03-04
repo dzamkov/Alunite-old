@@ -76,14 +76,6 @@ namespace Alunite
             }
         }
 
-
-
-        /// <summary>
-        /// Gets the bounding sphere for this matter. The bounding sphere encloses all mass within the matter and does not
-        /// have any correlation to where the matter can apply force.
-        /// </summary>
-        public abstract void GetBoundingSphere(out Vector Position, out double Radius);
-
         /// <summary>
         /// Applies a transform to this matter.
         /// </summary>
@@ -152,30 +144,16 @@ namespace Alunite
             {
                 Object = _CreateLattice(Physics, LogSize - 1, Object, MajorSpacing * 0.5);
             }
-            _Binary bina = _Combine(Physics, Object, Object, new Transform(new Vector(MajorSpacing, 0.0, 0.0)));
-            _Binary binb = _Combine(Physics, bina, bina, new Transform(new Vector(0.0, MajorSpacing, 0.0)));
-            _Binary binc = _Combine(Physics, binb, binb, new Transform(new Vector(0.0, 0.0, MajorSpacing)));
+            _Binary bina = new _Binary(Object, Object, new Transform(new Vector(MajorSpacing, 0.0, 0.0)));
+            _Binary binb = new _Binary(bina, bina, new Transform(new Vector(0.0, MajorSpacing, 0.0)));
+            _Binary binc = new _Binary(binb, binb, new Transform(new Vector(0.0, 0.0, MajorSpacing)));
             return binc;
         }
 
         /// <summary>
-        /// Combines two "bits" of matter into one without searching through cached compounds.
+        /// Gets the mass, center of mass, and extent (distance from the center of mass to the farthest piece of matter) for this matter.
         /// </summary>
-        private static FastPhysicsMatter._Binary _Combine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B, Transform AToB)
-        {
-            FastPhysicsMatter._Binary bin = new _Binary()
-            {
-                A = A,
-                B = B,
-                AToB = AToB
-            };
-            A._Usages.Add(bin);
-            if (A != B)
-            {
-                B._Usages.Add(bin);
-            }
-            return bin;
-        }
+        public abstract void GetMass(out double Mass, out Vector CenterOfMass, out double Extent);
 
         /// <summary>
         /// Gets all the matter used to make up this matter, that is, all the matter needed to give this matter meaning, including
@@ -202,17 +180,18 @@ namespace Alunite
             /// <summary>
             /// Default particle.
             /// </summary>
-            public static readonly _Particle Default = new _Particle();
-
-            public override void GetBoundingSphere(out Vector Position, out double Radius)
-            {
-                Position = new Vector(0.0, 0.0, 0.0);
-                Radius = 0.0;
-            }
+            public static readonly _Particle Default = new _Particle() { Mass = 1.0 };
 
             internal override void _GetParticles(Transform Transform, List<Vector> Particles)
             {
                 Particles.Add(Transform.Offset);
+            }
+
+            public override void GetMass(out double Mass, out Vector CenterOfMass, out double Extent)
+            {
+                Mass = this.Mass;
+                CenterOfMass = new Vector(0.0, 0.0, 0.0);
+                Extent = 0.0;
             }
 
             public ISubstance Substance;
@@ -234,12 +213,6 @@ namespace Alunite
                 };
             }
 
-            public override void GetBoundingSphere(out Vector Position, out double Radius)
-            {
-                Source.GetBoundingSphere(out Position, out Radius);
-                Position = Transform.Offset + Transform.Rotation.Rotate(Position);
-            }
-
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
             {
                 Elements.Add(this);
@@ -249,6 +222,12 @@ namespace Alunite
             internal override void _GetParticles(Transform Transform, List<Vector> Particles)
             {
                 this.Source._GetParticles(this.Transform.Apply(Transform), Particles);
+            }
+
+            public override void GetMass(out double Mass, out Vector CenterOfMass, out double Extent)
+            {
+                this.Source.GetMass(out Mass, out CenterOfMass, out Extent);
+                CenterOfMass = this.Transform.ApplyToOffset(CenterOfMass);
             }
 
             public FastPhysicsMatter Source;
@@ -261,10 +240,26 @@ namespace Alunite
         /// </summary>
         internal class _Binary : FastPhysicsMatter
         {
-            public override void GetBoundingSphere(out Vector Position, out double Radius)
+            public _Binary(FastPhysicsMatter A, FastPhysicsMatter B, Transform AToB)
             {
-                Position = this.BoundCenter;
-                Radius = this.BoundRadius;
+                this.A = A;
+                this.B = B;
+                this.AToB = AToB;
+
+                double amass; Vector acen; double aext; A.GetMass(out amass, out acen, out aext);
+                double bmass; Vector bcen; double bext; B.GetMass(out bmass, out bcen, out bext); bcen = this.AToB.ApplyToOffset(bcen);
+                this.Mass = amass + bmass;
+                this.CenterOfMass = acen * (amass / this.Mass) + bcen * (bmass / this.Mass);
+
+                double alen = (acen - this.CenterOfMass).Length + aext;
+                double blen = (bcen - this.CenterOfMass).Length + bext;
+                this.Extent = Math.Max(alen, blen);
+
+                A._Usages.Add(this);
+                if (A != B)
+                {
+                    B._Usages.Add(this);
+                }
             }
 
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
@@ -280,8 +275,16 @@ namespace Alunite
                 this.B._GetParticles(this.AToB.Apply(Transform), Particles);
             }
 
-            public Vector BoundCenter;
-            public double BoundRadius;
+            public override void GetMass(out double Mass, out Vector CenterOfMass, out double Extent)
+            {
+                Mass = this.Mass;
+                CenterOfMass = this.CenterOfMass;
+                Extent = this.Extent;
+            }
+
+            public double Mass;
+            public Vector CenterOfMass;
+            public double Extent;
             public FastPhysicsMatter A;
             public FastPhysicsMatter B;
             public Transform AToB;
