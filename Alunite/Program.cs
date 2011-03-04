@@ -11,68 +11,43 @@ namespace Alunite
     /// </summary>
     public static class Program
     {
-        private class _Person
-        {
-
-        }
-
-        private class _AngryPerson : _Person
-        {
-
-        }
-
-        private class _SadPerson : _Person
-        {
-
-        }
-
-        private class _HappyPerson : _Person
-        {
-
-        }
-
         /// <summary>
         /// Program main entry-point.
         /// </summary>
         public static void Main(string[] Args)
         {
-            // Match matrix test
-            MatchMatrix<_Person, bool> getsalongwith = new MatchMatrix<_Person, bool>((a, b) => true);
-            getsalongwith.AddRule<_AngryPerson, _Person>((a, b) => false);
-            getsalongwith.AddRule<_SadPerson, _HappyPerson>((a, b) => false);
+            Transform testa = new Transform(
+                new Vector(1.0, 0.5, 0.3),
+                new Vector(1.0, 0.5, 0.3),
+                Quaternion.AngleBetween(Vector.Normalize(new Vector(0.9, 0.8, 0.7)), new Vector(0.0, 0.0, 1.0)));
+            testa = testa.ApplyTo(testa.Inverse);
 
-            bool testa = getsalongwith.GetResult(new _HappyPerson(), new _AngryPerson());
-            bool testb = getsalongwith.GetResult(new _HappyPerson(), new _SadPerson());
-            bool testc = getsalongwith.GetResult(new _HappyPerson(), new _HappyPerson());
 
             // Set up a world
             FastPhysics fp = new FastPhysics();
             List<FastPhysicsMatter> elems = new List<FastPhysicsMatter>();
-            Random r = new Random();
+            Random r = new Random(2);
+            List<Vector> pointset = new List<Vector>();
             for(int t = 0; t < 1000; t++)
             {
+                Vector pos = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble());
                 elems.Add(fp.Create(new Particle<FastPhysicsSubstance>()
                 {
                     Substance = FastPhysicsSubstance.Default,
                     Mass = 1.0,
-                    Position = new Vector(r.NextDouble(), r.NextDouble(), r.NextDouble()),
+                    Position = pos,
                     Velocity = new Vector(0.0, 0.0, 0.0),
                     Orientation = Quaternion.Identity,
                     Spin = AxisAngle.Identity
                 }));
+                pointset.Add(pos);
             }
             FastPhysicsMatter world = fp.Compose(elems);
 
-            for (int t = 0; t < 10; t++)
-            {
-                world = fp.Update(world, fp.Null, 0.1);
-            }
-
-            /*
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;
-            hw.Control = new Visualizer(world);
-            hw.Run(60.0);*/
+            hw.Control = new Visualizer(world.Particles, pointset);
+            hw.Run(60.0);
         }
     }
 }

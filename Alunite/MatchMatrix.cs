@@ -17,7 +17,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Symmetrically adds a rule for the matrix for the two specialized types. The most recently added rules have the highest priority.
+        /// Adds a symmetric rule for the matrix for the two specialized types. The most recently added rules have the highest priority.
         /// </summary>
         public void AddRule<TA, TB>(Match<TA, TB> Rule)
             where TA : class, TBase

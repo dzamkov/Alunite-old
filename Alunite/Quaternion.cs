@@ -92,6 +92,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the absolute value of the quaternion.
+        /// </summary>
+        public double Abs
+        {
+            get
+            {
+                return Math.Sqrt(this.A * this.A + this.B * this.B + this.C * this.C + this.D * this.D);
+            }
+        }
+
+        /// <summary>
         /// Gets the conjugate of this quaternion.
         /// </summary>
         public Quaternion Conjugate
@@ -107,7 +118,7 @@ namespace Alunite
         /// </summary>
         public Quaternion ApplyTo(Quaternion Other)
         {
-            return this * Other;
+            return Quaternion.Normalize(this * Other);
         }
 
         /// <summary>
@@ -115,7 +126,7 @@ namespace Alunite
         /// </summary>
         public Quaternion Apply(Quaternion Other)
         {
-            return Other * this;
+            return Quaternion.Normalize(Other * this);
         }
 
         /// <summary>
@@ -123,7 +134,7 @@ namespace Alunite
         /// </summary>
         public void Normalize()
         {
-            double d = 1.0 / Math.Sqrt(this.A * this.A + this.B * this.B + this.C * this.C + this.D * this.D);
+            double d = 1.0 / this.Abs;
             this.A *= d;
             this.B *= d;
             this.C *= d;
@@ -153,17 +164,17 @@ namespace Alunite
             double nc = - ta * this.C + tb * this.D + tc * this.A - td * this.B;
             double nd = - ta * this.D - tb * this.C + tc * this.B + td * this.A;
 
-            return (this * new Quaternion(0.0, Point) * this.Conjugate).Imag;
             return new Vector(nb, nc, nd);
         }
 
         public static Quaternion operator *(Quaternion A, Quaternion B)
         {
-            return new Quaternion(
+            Quaternion q = new Quaternion(
                 A.A * B.A - A.B * B.B - A.C * B.C - A.D * B.D,
                 A.A * B.B + A.B * B.A + A.C * B.D - A.D * B.C,
                 A.A * B.C - A.B * B.D + A.C * B.A + A.D * B.B,
                 A.A * B.D + A.B * B.C - A.C * B.B + A.D * B.A);
+            return q;
         }
 
         public double A;

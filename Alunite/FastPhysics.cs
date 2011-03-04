@@ -64,6 +64,21 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the position of all the particles in this matter, for debug purposes.
+        /// </summary>
+        public IEnumerable<Vector> Particles
+        {
+            get
+            {
+                List<Vector> parts = new List<Vector>();
+                this._GetParticles(Transform.Identity, parts);
+                return parts;
+            }
+        }
+
+
+
+        /// <summary>
         /// Gets the bounding sphere for this matter. The bounding sphere encloses all mass within the matter and does not
         /// have any correlation to where the matter can apply force.
         /// </summary>
@@ -124,48 +139,56 @@ namespace Alunite
             if (atrans != null)
             {
                 Transform fullval = atrans.Transform;
-                full = fullval = atrans.Transform;
+                full = fullval;
                 atob = atob.Apply(fullval.Inverse);
                 A = atrans.Source;
             }
 
             // Check usages of elements to see if this binary matter already exists
             FastPhysicsMatter res = null;
-            /*UsageSet<_Binary> usages = A._Usages.Size > B._Usages.Size ? B._Usages : A._Usages;
+            UsageSet<_Binary> usages = A._Usages.Size > B._Usages.Size ? B._Usages : A._Usages;
             foreach (var ind in usages.Usages)
             {
+                Transform dfull;
                 _Binary testbin = ind.Value;
                 if (testbin.A == A && testbin.B == B)
                 {
-                    if (testbin.AToB.GetSimilarity(atob, 1.0, 1.0, 1.0) > transsimthreshold)
+                    if (_TryMatch(A, B, atob, testbin.AToB, out dfull))
                     {
                         res = testbin;
                         usages.Accept(ind);
+                        if(full != null)
+                        {
+                            full = full.Value.ApplyTo(dfull);
+                        }
+                        else
+                        {
+                            full = dfull;
+                        }
                         break;
                     }
                 }
                 if (testbin.B == A && testbin.A == B)
                 {
                     Transform natob = atob.Inverse;
-                    if (testbin.AToB.GetSimilarity(natob, 1.0, 1.0, 1.0) > transsimthreshold)
+                    if (_TryMatch(B, A, natob, testbin.AToB, out dfull))
                     {
                         res = testbin;
+                        usages.Accept(ind);
 
                         // Since the elements are swapped, correct transforms
                         if (full != null)
                         {
-                            full = full.Value.Apply(atob);
+                            full = full.Value.Apply(atob).ApplyTo(dfull);
                         }
                         else
                         {
-                            full = atob;
+                            full = atob.ApplyTo(dfull);
                         }
-
-                        usages.Accept(ind);
                         break;
                     }
                 }
-            }*/
+            }
 
             // Create binary matter
             if (res == null)
@@ -195,6 +218,32 @@ namespace Alunite
                 };
             }
             return res;
+        }
+
+        /// <summary>
+        /// Compares two binary matter with the same elements to and sees if the "Candiate" binary matter can be used in place of the "Current" binary matter, and if
+        /// so, gets the additional transform (to be applied to the binary matter) needed.
+        /// </summary>
+        private static bool _TryMatch(FastPhysicsMatter A, FastPhysicsMatter B, Transform AToBCurrent, Transform AToBCanidate, out Transform Full)
+        {
+            // Find circumcenter vectors
+            Vector bbpos; double bbrad; B.GetBoundingSphere(out bbpos, out bbrad);
+            Vector curvec = AToBCurrent.ApplyToOffset(bbpos); double curvecdis = curvec.Length;
+            Vector canvec = AToBCanidate.ApplyToOffset(bbpos); double canvecdis = canvec.Length;
+            curvec *= 1.0 / curvecdis;
+            canvec *= 1.0 / canvecdis;
+
+            // Check if the distances are anywhere near each other.
+            if (Math.Abs(Math.Sqrt(curvecdis) - Math.Sqrt(canvecdis)) < 0.0001 && A is _Particle && B is _Particle)
+            {
+                // Orient the current matter to the candiate matter
+                Quaternion ort = Quaternion.AngleBetween(canvec, curvec);
+                Full = new Transform(new Vector(0.0, 0.0, 0.0), new Vector(0.0, 0.0, 0.0), ort);
+                return true;
+            }
+
+            Full = Transform.Identity;
+            return false;
         }
 
         /// <summary>
@@ -243,6 +292,14 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Adds all particles in this matter to the given list after applying the specified transform.
+        /// </summary>
+        internal virtual void _GetParticles(Transform Transform, List<Vector> Particles)
+        {
+            
+        }
+
+        /// <summary>
         /// Matter containing a single particle.
         /// </summary>
         internal class _Particle : FastPhysicsMatter
@@ -256,6 +313,11 @@ namespace Alunite
             {
                 Position = new Vector(0.0, 0.0, 0.0);
                 Radius = 0.0;
+            }
+
+            internal override void _GetParticles(Transform Transform, List<Vector> Particles)
+            {
+                Particles.Add(Transform.Offset);
             }
 
             public ISubstance Substance;
@@ -300,6 +362,11 @@ namespace Alunite
                 this.Source._GetUsed(Elements);
             }
 
+            internal override void _GetParticles(Transform Transform, List<Vector> Particles)
+            {
+                this.Source._GetParticles(Transform.ApplyTo(this.Transform), Particles);
+            }
+
             public FastPhysicsMatter Source;
             public Transform Transform;
         }
@@ -328,6 +395,12 @@ namespace Alunite
                 Elements.Add(this);
                 this.A._GetUsed(Elements);
                 this.B._GetUsed(Elements);
+            }
+
+            internal override void _GetParticles(Transform Transform, List<Vector> Particles)
+            {
+                this.A._GetParticles(Transform, Particles);
+                this.B._GetParticles(this.AToB.Apply(Transform), Particles);
             }
 
             public Vector BoundCenter;

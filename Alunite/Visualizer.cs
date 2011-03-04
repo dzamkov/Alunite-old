@@ -11,22 +11,12 @@ namespace Alunite
     /// <summary>
     /// A visualizer for matter.
     /// </summary>
-    /*public class Visualizer : Render3DControl
+    public class Visualizer : Render3DControl
     {
-        public Visualizer(Matter Matter)
+        public Visualizer(IEnumerable<Vector> PointSetA, IEnumerable<Vector> PointSetB)
         {
-            this._Matter = Matter;
-        }
-
-        /// <summary>
-        /// Gets the matter to be visualized.
-        /// </summary>
-        public Matter Matter
-        {
-            get
-            {
-                return this._Matter;
-            }
+            this._PointSetA = PointSetA;
+            this._PointSetB = PointSetB;
         }
 
         public override void SetupProjection(Point Viewsize)
@@ -47,16 +37,15 @@ namespace Alunite
 
             GL.PointSize(2.0f);
             GL.Begin(BeginMode.Points);
-            foreach (Particle p in this._Matter.Particles)
+            GL.Color4(Color.RGB(0.0, 0.5, 1.0));
+            foreach (Vector v in this._PointSetA)
             {
-                Color col = Color.RGB(1.0, 1.0, 1.0);
-                IVisualSubstance vissub = p.Substance as IVisualSubstance;
-                if (vissub != null)
-                {
-                    col = vissub.Color;
-                }
-                GL.Color4(col);
-                GL.Vertex3(p.Position);
+                GL.Vertex3(v);
+            }
+            GL.Color4(Color.RGB(1.0, 0.5, 0.0));
+            foreach (Vector v in this._PointSetB)
+            {
+                GL.Vertex3(v);
             }
             GL.End();
             GL.Disable(EnableCap.DepthTest);
@@ -65,10 +54,10 @@ namespace Alunite
         public override void Update(GUIControlContext Context, double Time)
         {
             this._Time += Time * 0.2;
-            //this._Matter = this._Matter.Update(Matter.Null, Time * 0.1);
         }
 
+        private IEnumerable<Vector> _PointSetA;
+        private IEnumerable<Vector> _PointSetB;
         private double _Time;
-        private Matter _Matter;
-    }*/
+    }
 }
