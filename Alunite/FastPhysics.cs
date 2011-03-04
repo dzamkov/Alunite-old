@@ -27,7 +27,7 @@ namespace Alunite
 
         public FastPhysicsMatter Compose(IEnumerable<FastPhysicsMatter> Matter)
         {
-            return new FastPhysicsMatter._SphereTree(this).Create(Matter);
+            throw new NotImplementedException();
         }
 
         public FastPhysicsMatter Null
@@ -152,16 +152,16 @@ namespace Alunite
             {
                 Object = _CreateLattice(Physics, LogSize - 1, Object, MajorSpacing * 0.5);
             }
-            _Binary bina = _QuickCombine(Physics, Object, Object, new Transform(new Vector(MajorSpacing, 0.0, 0.0)));
-            _Binary binb = _QuickCombine(Physics, bina, bina, new Transform(new Vector(0.0, MajorSpacing, 0.0)));
-            _Binary binc = _QuickCombine(Physics, binb, binb, new Transform(new Vector(0.0, 0.0, MajorSpacing)));
+            _Binary bina = _Combine(Physics, Object, Object, new Transform(new Vector(MajorSpacing, 0.0, 0.0)));
+            _Binary binb = _Combine(Physics, bina, bina, new Transform(new Vector(0.0, MajorSpacing, 0.0)));
+            _Binary binc = _Combine(Physics, binb, binb, new Transform(new Vector(0.0, 0.0, MajorSpacing)));
             return binc;
         }
 
         /// <summary>
         /// Combines two "bits" of matter into one without searching through cached compounds.
         /// </summary>
-        private static FastPhysicsMatter._Binary _QuickCombine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B, Transform AToB)
+        private static FastPhysicsMatter._Binary _Combine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B, Transform AToB)
         {
             FastPhysicsMatter._Binary bin = new _Binary()
             {
@@ -169,165 +169,12 @@ namespace Alunite
                 B = B,
                 AToB = AToB
             };
-            Vector posa; double rada; A.GetBoundingSphere(out posa, out rada);
-            Vector posb; double radb; B.GetBoundingSphere(out posb, out radb); posb = AToB.ApplyToOffset(posb);
-            SphereTree<FastPhysicsMatter>.Enclose(posa, rada, posb, radb, out bin.BoundCenter, out bin.BoundRadius);
             A._Usages.Add(bin);
             if (A != B)
             {
                 B._Usages.Add(bin);
             }
             return bin;
-        }
-
-        /// <summary>
-        /// Combines two "bits" of matter into one.
-        /// </summary>
-        public static FastPhysicsMatter Combine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B)
-        {
-            // Untransform
-            _Transformed atrans = A as _Transformed;
-            _Transformed btrans = B as _Transformed;
-            Transform atob = Transform.Identity;
-            if (btrans != null)
-            {
-                atob = btrans.Transform;
-                B = btrans.Source;
-            }
-            Transform? full = null;
-            if (atrans != null)
-            {
-                Transform fullval = atrans.Transform;
-                full = fullval;
-                atob = atob.Apply(fullval.Inverse);
-                A = atrans.Source;
-            }
-
-            // Check usages of elements to see if this binary matter already exists
-            FastPhysicsMatter res = null;
-            UsageSet<_Binary> usages = A._Usages.Size > B._Usages.Size ? B._Usages : A._Usages;
-            foreach (var ind in usages.Usages)
-            {
-                Transform dfull;
-                _Binary testbin = ind.Value;
-                if (testbin.A == A && testbin.B == B)
-                {
-                    if (_TryMatch(A, B, atob, testbin.AToB, out dfull))
-                    {
-                        res = testbin;
-                        usages.Accept(ind);
-                        if(full != null)
-                        {
-                            full = full.Value.ApplyTo(dfull);
-                        }
-                        else
-                        {
-                            full = dfull;
-                        }
-                        break;
-                    }
-                }
-                if (testbin.B == A && testbin.A == B)
-                {
-                    Transform natob = atob.Inverse;
-                    if (_TryMatch(B, A, natob, testbin.AToB, out dfull))
-                    {
-                        res = testbin;
-                        usages.Accept(ind);
-
-                        // Since the elements are swapped, correct transforms
-                        if (full != null)
-                        {
-                            full = full.Value.Apply(atob).ApplyTo(dfull);
-                        }
-                        else
-                        {
-                            full = atob.ApplyTo(dfull);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            // Create binary matter
-            if (res == null)
-            {
-                res = _QuickCombine(Physics, A, B, atob);
-            }
-
-
-            // Retransform (if needed)
-            if (full != null)
-            {
-                res = new _Transformed()
-                {
-                    Source = res,
-                    Transform = full.Value
-                };
-            }
-            return res;
-        }
-
-        /// <summary>
-        /// Compares two binary matter with the same elements to and sees if the "Candiate" binary matter can be used in place of the "Current" binary matter, and if
-        /// so, gets the additional transform (to be applied to the binary matter) needed.
-        /// </summary>
-        private static bool _TryMatch(FastPhysicsMatter A, FastPhysicsMatter B, Transform AToBCurrent, Transform AToBCanidate, out Transform Full)
-        {
-            // Find circumcenter vectors
-            Vector bbpos; double bbrad; B.GetBoundingSphere(out bbpos, out bbrad);
-            Vector curvec = AToBCurrent.ApplyToOffset(bbpos); double curvecdis = curvec.Length;
-            Vector canvec = AToBCanidate.ApplyToOffset(bbpos); double canvecdis = canvec.Length;
-            curvec *= 1.0 / curvecdis;
-            canvec *= 1.0 / canvecdis;
-
-            // Check if the distances are anywhere near each other.
-            if (Math.Abs(Math.Sqrt(curvecdis) - Math.Sqrt(canvecdis)) < 0.0001 && A is _Particle && B is _Particle)
-            {
-                // Orient the current matter to the candiate matter
-                Quaternion ort = Quaternion.AngleBetween(canvec, curvec);
-                Full = new Transform(new Vector(0.0, 0.0, 0.0), new Vector(0.0, 0.0, 0.0), ort);
-                return true;
-            }
-
-            Full = Transform.Identity;
-            return false;
-        }
-
-        /// <summary>
-        /// A sphere tree for matter.
-        /// </summary>
-        internal class _SphereTree : SphereTree<FastPhysicsMatter>
-        {
-            public _SphereTree(FastPhysics Physics)
-            {
-                this._Physics = Physics;
-            }
-
-            public override FastPhysicsMatter CreateCompound(FastPhysicsMatter A, FastPhysicsMatter B)
-            {
-                return Combine(this._Physics, A, B);
-            }
-
-            public override void GetBound(FastPhysicsMatter Node, out Vector Position, out double Radius)
-            {
-                Node.GetBoundingSphere(out Position, out Radius);
-            }
-
-            public override bool GetSubnodes(FastPhysicsMatter Node, ref FastPhysicsMatter A, ref FastPhysicsMatter B)
-            {
-                return Node._GetSubnodes(this._Physics, ref A, ref B);
-            }
-
-            private FastPhysics _Physics;
-        }
-
-        /// <summary>
-        /// Gets the subnodes for this node for use in a sphere tree.
-        /// </summary>
-        internal virtual bool _GetSubnodes(FastPhysics Physics, ref FastPhysicsMatter A, ref FastPhysicsMatter B)
-        {
-            return false;
         }
 
         /// <summary>
@@ -393,17 +240,6 @@ namespace Alunite
                 Position = Transform.Offset + Transform.Rotation.Rotate(Position);
             }
 
-            internal override bool _GetSubnodes(FastPhysics Physics, ref FastPhysicsMatter A, ref FastPhysicsMatter B)
-            {
-                if (this.Source._GetSubnodes(Physics, ref A, ref B))
-                {
-                    A = A.Apply(Physics, this.Transform);
-                    B = B.Apply(Physics, this.Transform);
-                    return true;
-                }
-                return false;
-            }
-
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
             {
                 Elements.Add(this);
@@ -429,13 +265,6 @@ namespace Alunite
             {
                 Position = this.BoundCenter;
                 Radius = this.BoundRadius;
-            }
-
-            internal override bool _GetSubnodes(FastPhysics Physics, ref FastPhysicsMatter A, ref FastPhysicsMatter B)
-            {
-                A = this.A;
-                B = this.B.Apply(Physics, this.AToB);
-                return true;
             }
 
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
