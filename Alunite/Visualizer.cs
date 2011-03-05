@@ -13,9 +13,10 @@ namespace Alunite
     /// </summary>
     public class Visualizer : Render3DControl
     {
-        public Visualizer(IEnumerable<Vector> PointSetA)
+        public Visualizer(FastPhysics Physics, FastPhysicsMatter World)
         {
-            this._PointSetA = PointSetA;
+            this._Physics = Physics;
+            this._World = World;
         }
 
         public override void SetupProjection(Point Viewsize)
@@ -37,9 +38,9 @@ namespace Alunite
             GL.PointSize(2.0f);
             GL.Begin(BeginMode.Points);
             GL.Color4(Color.RGB(0.0, 0.5, 1.0));
-            foreach (Vector v in this._PointSetA)
+            foreach (Particle<FastPhysicsSubstance> part in this._World.Particles)
             {
-                GL.Vertex3(v);
+                GL.Vertex3(part.Position);
             }
             GL.End();
             GL.Disable(EnableCap.DepthTest);
@@ -47,10 +48,15 @@ namespace Alunite
 
         public override void Update(GUIControlContext Context, double Time)
         {
+            {
+                FastPhysics phys = this._Physics;
+                this._World = phys.Update(this._World, phys.Null, Time);
+            }
             this._Time += Time * 0.2;
         }
 
-        private IEnumerable<Vector> _PointSetA;
+        private FastPhysics _Physics;
+        private FastPhysicsMatter _World;
         private double _Time;
     }
 }

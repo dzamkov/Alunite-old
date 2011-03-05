@@ -81,11 +81,11 @@ namespace Alunite
         /// <summary>
         /// Gets the position of all the particles in this matter, for debug purposes.
         /// </summary>
-        public IEnumerable<Vector> Particles
+        public IEnumerable<Particle<FastPhysicsSubstance>> Particles
         {
             get
             {
-                List<Vector> parts = new List<Vector>();
+                List<Particle<FastPhysicsSubstance>> parts = new List<Particle<FastPhysicsSubstance>>();
                 this._GetParticles(Transform.Identity, parts);
                 return parts;
             }
@@ -200,7 +200,7 @@ namespace Alunite
         /// <summary>
         /// Adds all particles in this matter to the given list after applying the specified transform.
         /// </summary>
-        internal virtual void _GetParticles(Transform Transform, List<Vector> Particles)
+        internal virtual void _GetParticles(Transform Transform, List<Particle<FastPhysicsSubstance>> Particles)
         {
             
         }
@@ -215,9 +215,17 @@ namespace Alunite
             /// </summary>
             public static readonly _Particle Default = new _Particle() { Substance = FastPhysicsSubstance.Default, Mass = 1.0 };
 
-            internal override void _GetParticles(Transform Transform, List<Vector> Particles)
+            internal override void _GetParticles(Transform Transform, List<Particle<FastPhysicsSubstance>> Particles)
             {
-                Particles.Add(Transform.Offset);
+                Particles.Add(new Particle<FastPhysicsSubstance>()
+                {
+                    Mass = this.Mass,
+                    Spin = this.Spin,
+                    Substance = this.Substance,
+                    Orientation = Transform.Rotation,
+                    Position = Transform.Offset,
+                    Velocity = Transform.VelocityOffset
+                });
             }
 
             public override void GetMass(out double Mass, out Vector CenterOfMass, out double Extent)
@@ -274,7 +282,7 @@ namespace Alunite
                 this.Source._GetUsed(Elements);
             }
 
-            internal override void _GetParticles(Transform Transform, List<Vector> Particles)
+            internal override void _GetParticles(Transform Transform, List<Particle<FastPhysicsSubstance>> Particles)
             {
                 this.Source._GetParticles(this.Transform.Apply(Transform), Particles);
             }
@@ -336,7 +344,7 @@ namespace Alunite
                 this.B._GetUsed(Elements);
             }
 
-            internal override void _GetParticles(Transform Transform, List<Vector> Particles)
+            internal override void _GetParticles(Transform Transform, List<Particle<FastPhysicsSubstance>> Particles)
             {
                 this.A._GetParticles(Transform, Particles);
                 this.B._GetParticles(this.AToB.Apply(Transform), Particles);
@@ -377,6 +385,7 @@ namespace Alunite
 
         public void Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time, ref Particle<FastPhysicsSubstance> Particle)
         {
+            Particle.Velocity.Z -= Time;
             Particle.Update(Time);
         }
 

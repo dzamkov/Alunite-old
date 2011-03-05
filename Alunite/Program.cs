@@ -35,11 +35,9 @@ namespace Alunite
                             Spin = AxisAngle.Identity
                         }), 0.1);
 
-            world = world.Update(fp, fp.Null, 0.1);
-
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;
-            hw.Control = new Visualizer(world.Particles);
+            hw.Control = new Visualizer(fp, world);
             hw.Run(60.0);
         }
     }
