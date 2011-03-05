@@ -79,6 +79,13 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Updates the state of this transform after the given amount of time in seconds.
+        /// </summary>
+        public Transform Update(double Time)
+        {
+            return new Transform(this.Offset + this.VelocityOffset * Time, this.VelocityOffset, this.Rotation);
+        }
 
         public Vector Offset;
         public Vector VelocityOffset;

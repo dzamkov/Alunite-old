@@ -17,7 +17,14 @@ namespace Alunite
 
         public FastPhysicsMatter Transform(FastPhysicsMatter Matter, Transform Transform)
         {
-            return Matter.Apply(this, Transform);
+            if (Matter != null)
+            {
+                return Matter.Apply(this, Transform);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public FastPhysicsMatter Update(FastPhysicsMatter Matter, FastPhysicsMatter Environment, double Time)
@@ -28,6 +35,14 @@ namespace Alunite
         public FastPhysicsMatter Compose(IEnumerable<FastPhysicsMatter> Matter)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Combines two pieces of matter in a similar manner to Compose.
+        /// </summary>
+        public FastPhysicsMatter Combine(FastPhysicsMatter A, FastPhysicsMatter B)
+        {
+            return FastPhysicsMatter.Combine(this, A, B);
         }
 
         public FastPhysicsMatter Null
@@ -81,36 +96,20 @@ namespace Alunite
         /// </summary>
         public virtual FastPhysicsMatter Apply(FastPhysics Physics, Transform Transform)
         {
-            return new _Transformed()
-            {
-                Source = this,
-                Transform = Transform
-            };
+            return new _Transformed(this, Transform);
         }
 
         /// <summary>
         /// Gets the updated form of this matter in the specified environment after the given time.
         /// </summary>
-        public virtual FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
-        {
-            return null;
-        }
+        public abstract FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time);
 
         /// <summary>
         /// Creates matter for a particle.
         /// </summary>
         public static FastPhysicsMatter Particle(FastPhysics Physics, Particle<FastPhysicsSubstance> Particle)
         {
-            return new _Transformed()
-            {
-                Transform = new Transform(Particle.Position, Particle.Velocity, Particle.Orientation),
-                Source = /*new _Particle()
-                {
-                    Mass = Particle.Mass,
-                    Spin = Particle.Spin,
-                    Substance = Particle.Substance
-                }*/ _Particle.Default
-            };
+            return new _Transformed(_Particle.Default, new Transform(Particle.Position, Particle.Velocity, Particle.Orientation));
         }
 
         /// <summary>
@@ -151,6 +150,40 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Combines two pieces of fast physics matter.
+        /// </summary>
+        public static FastPhysicsMatter Combine(FastPhysics Physics, FastPhysicsMatter A, FastPhysicsMatter B)
+        {
+            if (A == null)
+            {
+                return B;
+            }
+            if (B == null)
+            {
+                return A;
+            }
+
+            _Transformed atrans = A as _Transformed;
+            _Transformed btrans = B as _Transformed;
+
+            Transform atob = Transform.Identity;
+            if (btrans != null)
+            {
+                atob = btrans.Transform;
+                B = btrans.Source;
+            }
+
+            if (atrans != null)
+            {
+                return new _Binary(atrans.Source, B, atob.Apply(atrans.Transform.Inverse)).Apply(Physics, atrans.Transform);
+            }
+            else
+            {
+                return new _Binary(A, B, atob);
+            }
+        }
+
+        /// <summary>
         /// Gets the mass, center of mass, and extent (distance from the center of mass to the farthest piece of matter) for this matter.
         /// </summary>
         public abstract void GetMass(out double Mass, out Vector CenterOfMass, out double Extent);
@@ -180,7 +213,7 @@ namespace Alunite
             /// <summary>
             /// Default particle.
             /// </summary>
-            public static readonly _Particle Default = new _Particle() { Mass = 1.0 };
+            public static readonly _Particle Default = new _Particle() { Substance = FastPhysicsSubstance.Default, Mass = 1.0 };
 
             internal override void _GetParticles(Transform Transform, List<Vector> Particles)
             {
@@ -194,9 +227,29 @@ namespace Alunite
                 Extent = 0.0;
             }
 
-            public ISubstance Substance;
+            public override FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
+            {
+                Particle<FastPhysicsSubstance> part = new Particle<FastPhysicsSubstance>()
+                {
+                    Mass = this.Mass,
+                    Spin = this.Spin,
+                    Substance = this.Substance,
+                    Orientation = Quaternion.Identity,
+                    Position = new Vector(0.0, 0.0, 0.0),
+                    Velocity = new Vector(0.0, 0.0, 0.0)
+                };
+                this.Substance.Update(Physics, Environment, Time, ref part);
+                return new _Transformed(new _Particle()
+                {
+                    Mass = part.Mass,
+                    Spin = part.Spin,
+                    Substance = part.Substance
+                }, new Transform(part.Position, part.Velocity, part.Orientation));
+            }
+
+            public FastPhysicsSubstance Substance;
             public double Mass;
-            public Quaternion Spin;
+            public AxisAngle Spin;
         }
 
         /// <summary>
@@ -204,13 +257,15 @@ namespace Alunite
         /// </summary>
         internal class _Transformed : FastPhysicsMatter
         {
+            public _Transformed(FastPhysicsMatter Source, Transform Transform)
+            {
+                this.Source = Source;
+                this.Transform = Transform;
+            }
+
             public override FastPhysicsMatter Apply(FastPhysics Physics, Transform Transform)
             {
-                return new _Transformed()
-                {
-                    Source = this.Source,
-                    Transform = Transform.ApplyTo(this.Transform)
-                };
+                return new _Transformed(this.Source, this.Transform.Apply(Transform));
             }
 
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
@@ -228,6 +283,11 @@ namespace Alunite
             {
                 this.Source.GetMass(out Mass, out CenterOfMass, out Extent);
                 CenterOfMass = this.Transform.ApplyToOffset(CenterOfMass);
+            }
+
+            public override FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
+            {
+                return Physics.Transform(this.Source.Update(Physics, Physics.Transform(Environment, this.Transform.Inverse), Time), this.Transform.Update(Time));
             }
 
             public FastPhysicsMatter Source;
@@ -260,6 +320,13 @@ namespace Alunite
                 {
                     B._Usages.Add(this);
                 }
+            }
+
+            public override FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
+            {
+                FastPhysicsMatter na = this.A.Update(Physics, Combine(Physics, Environment, this.B.Apply(Physics, this.AToB)), Time);
+                FastPhysicsMatter nb = this.B.Update(Physics, Combine(Physics, Environment, this.A).Apply(Physics, this.AToB.Inverse), Time);
+                return Combine(Physics, na, nb.Apply(Physics, this.AToB));
             }
 
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)

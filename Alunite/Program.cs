@@ -25,7 +25,7 @@ namespace Alunite
 
             // Set up a world
             FastPhysics fp = new FastPhysics();
-            FastPhysicsMatter world = FastPhysicsMatter.CreateLattice(fp, 4, fp.Create(new Particle<FastPhysicsSubstance>()
+            FastPhysicsMatter world = FastPhysicsMatter.CreateLattice(fp, 1, fp.Create(new Particle<FastPhysicsSubstance>()
                         {
                             Substance = FastPhysicsSubstance.Default,
                             Mass = 1.0,
@@ -34,6 +34,8 @@ namespace Alunite
                             Orientation = Quaternion.Identity,
                             Spin = AxisAngle.Identity
                         }), 0.1);
+
+            world = world.Update(fp, fp.Null, 0.1);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;
