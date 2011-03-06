@@ -50,9 +50,7 @@ namespace Alunite
         {
             {
                 FastPhysics phys = this._Physics;
-                this._World = phys.Update(this._World, phys.Null, Time);
-
-                Vector grav = this._Physics.GetGravity(this._World, new Vector(0.0, 0.0, 1.0), 100.0);
+                this._World = phys.Update(this._World, phys.Null, Time * 0.1);
             }
             this._Time += Time * 0.2;
         }

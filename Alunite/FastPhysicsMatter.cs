@@ -59,7 +59,9 @@ namespace Alunite
         /// </summary>
         public static FastPhysicsMatter Particle(FastPhysics Physics, Particle<FastPhysicsSubstance> Particle)
         {
-            return new _Transformed(_Particle.Default, new Transform(Particle.Position, Particle.Velocity, Particle.Orientation));
+            return new _Transformed(
+                new _Particle(Particle.Substance, Particle.Mass, Particle.Spin.Apply(Particle.Orientation.Conjugate)), 
+                new Transform(Particle.Position, Particle.Velocity, Particle.Orientation));
         }
 
         /// <summary>
@@ -141,7 +143,7 @@ namespace Alunite
         /// <summary>
         /// Gets the force of gravity a particle at the specified offset and mass will feel from this matter.
         /// </summary>
-        /// <param name="RecurseThreshold">The ratio of mass / (distance ^ 2) a piece of matter will have to have in order to have its
+        /// <param name="RecurseThreshold">The ratio of (mass * extent) / (distance ^ 2) a piece of matter will have to have in order to have its
         /// gravity force "refined". Set at 0.0 to get the exact gravity.</param>
         public virtual Vector GetGravity(FastPhysics Physics, Vector Position, double Mass, double RecurseThreshold)
         {
@@ -170,10 +172,12 @@ namespace Alunite
         /// </summary>
         internal class _Particle : FastPhysicsMatter
         {
-            /// <summary>
-            /// Default particle.
-            /// </summary>
-            public static readonly _Particle Default = new _Particle() { Substance = FastPhysicsSubstance.Default, Mass = 1.0 };
+            public _Particle(FastPhysicsSubstance Substance, double Mass, AxisAngle Spin)
+            {
+                this.Substance = Substance;
+                this.Mass = Mass;
+                this.Spin = Spin;
+            }
 
             internal override void _GetParticles(Transform Transform, List<Particle<FastPhysicsSubstance>> Particles)
             {
@@ -207,12 +211,7 @@ namespace Alunite
                     Velocity = new Vector(0.0, 0.0, 0.0)
                 };
                 this.Substance.Update(Physics, Environment, Time, ref part);
-                return new _Transformed(new _Particle()
-                {
-                    Mass = part.Mass,
-                    Spin = part.Spin,
-                    Substance = part.Substance
-                }, new Transform(part.Position, part.Velocity, part.Orientation));
+                return Particle(Physics, part);
             }
 
             public override Vector GetGravity(FastPhysics Physics, Vector Position, double Mass, double RecurseThreshold)
@@ -260,7 +259,7 @@ namespace Alunite
 
             public override Vector GetGravity(FastPhysics Physics, Vector Position, double Mass, double RecurseThreshold)
             {
-                return this.Transform.ApplyToDirection(this.Source.GetGravity(Physics, this.Transform.Inverse.ApplyToDirection(Position), Mass, RecurseThreshold));
+                return this.Transform.ApplyToDirection(this.Source.GetGravity(Physics, this.Transform.Inverse.ApplyToOffset(Position), Mass, RecurseThreshold));
             }
 
             public override FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
@@ -311,9 +310,9 @@ namespace Alunite
 
             public override FastPhysicsMatter Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time)
             {
-                FastPhysicsMatter na = this.A.Update(Physics, Combine(Physics, Environment, this.B.Apply(Physics, this.AToB)), Time);
-                FastPhysicsMatter nb = this.B.Update(Physics, Combine(Physics, Environment, this.A).Apply(Physics, this.AToB.Inverse), Time);
-                return Combine(Physics, na, nb.Apply(Physics, this.AToB));
+                FastPhysicsMatter na = this.A.Update(Physics, Combine(Physics, this.B.Apply(Physics, this.AToB), Environment), Time);
+                FastPhysicsMatter nb = this.B.Update(Physics, Combine(Physics, this.A, Environment).Apply(Physics, this.AToB.Inverse), Time);
+                return Combine(Physics, na, nb.Apply(Physics, this.AToB.Update(Time)));
             }
 
             internal override void _GetUsed(HashSet<FastPhysicsMatter> Elements)
@@ -334,12 +333,12 @@ namespace Alunite
                 Vector offset = Position - this.CenterOfMass;
                 double offsetlen = offset.Length;
 
-                double rat = this.Mass / (offsetlen * offsetlen);
+                double rat = (this.Mass * this.Extent) / (offsetlen * offsetlen);
                 if (rat >= RecurseThreshold)
                 {
-                    return
-                        A.GetGravity(Physics, Position, Mass, RecurseThreshold) +
-                        this.AToB.ApplyToDirection(B.GetGravity(Physics, this.AToB.Inverse.ApplyToDirection(Position), Mass, RecurseThreshold));
+                    Vector agrav = this.A.GetGravity(Physics, Position, Mass, RecurseThreshold);
+                    Vector bgrav = this.AToB.ApplyToDirection(this.B.GetGravity(Physics, this.AToB.Inverse.ApplyToOffset(Position), Mass, RecurseThreshold));
+                    return agrav + bgrav;
                 }
                 else
                 {

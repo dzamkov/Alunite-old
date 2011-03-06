@@ -205,6 +205,14 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Applies a rotation created by a quaternion to this axis-angle rotation.
+        /// </summary>
+        public AxisAngle Apply(Quaternion Rotation)
+        {
+            return new AxisAngle(Rotation.Rotate(this.Axis), Angle);
+        }
+
         public static implicit operator Quaternion(AxisAngle AxisAngle)
         {
             return Quaternion.AxisAngle(AxisAngle.Axis, AxisAngle.Angle);

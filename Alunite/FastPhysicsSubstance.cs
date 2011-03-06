@@ -21,7 +21,7 @@ namespace Alunite
 
         public void Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time, ref Particle<FastPhysicsSubstance> Particle)
         {
-            Particle.Velocity.Z -= Time;
+            Particle.Velocity += Environment.GetGravity(Physics, new Vector(0.0, 0.0, 0.0), Particle.Mass, Physics.G * 1.0e15) * (Time / Particle.Mass);
             Particle.Update(Time);
         }
 
