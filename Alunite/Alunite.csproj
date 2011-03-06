@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{056E865F-6D6B-44E1-AD98-50DA0DB1C97E}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -40,6 +40,8 @@
   -->
   <ItemGroup>
     <Compile Include="FastPhysics.cs" />
+    <Compile Include="FastPhysicsMatter.cs" />
+    <Compile Include="FastPhysicsSubstance.cs" />
     <Compile Include="MatchMatrix.cs" />
     <Compile Include="Physics.cs" />
     <Compile Include="Particle.cs" />

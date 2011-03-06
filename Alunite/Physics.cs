@@ -19,7 +19,7 @@ namespace Alunite
         /// <summary>
         /// Creates some matter that is the physical composition of other matter.
         /// </summary>
-        TMatter Compose(IEnumerable<TMatter> Matter);
+        TMatter Compose(IEnumerable<TMatter> Elements);
 
         /// <summary>
         /// Gets matter that has no affect or interaction in the physics system.
@@ -37,6 +37,31 @@ namespace Alunite
         /// Applies a transformation to some matter.
         /// </summary>
         TMatter Transform(TMatter Matter, Transform Transform);
+    }
+
+    /// <summary>
+    /// A physical system where all matter has a mass expressable in kilograms.
+    /// </summary>
+    public interface IMassPhysics<TMatter> : IPhysics<TMatter>
+        where TMatter : IMatter
+    {
+        /// <summary>
+        /// Gets the mass of the given matter.
+        /// </summary>
+        double GetMass(TMatter Matter);
+    }
+
+    /// <summary>
+    /// A physical system where gravity (a force that affects all matter depending only on their mass) exists. Note that gravity must be
+    /// a force felt mutally by involved matter.
+    /// </summary>
+    public interface IGravitationalPhysics<TMatter> : ISpatialPhysics<TMatter>, IMassPhysics<TMatter>
+        where TMatter : IMatter
+    {
+        /// <summary>
+        /// Gets the gravity (meters / second ^ 2) a particle at the specified position and mass will feel if it was in the given environment.
+        /// </summary>
+        Vector GetGravity(TMatter Environment, Vector Position, double Mass);
     }
 
     /// <summary>

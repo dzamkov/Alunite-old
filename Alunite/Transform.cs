@@ -43,6 +43,14 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Applies this transform to a direction vector.
+        /// </summary>
+        public Vector ApplyToDirection(Vector Dir)
+        {
+            return this.Rotation.Rotate(Dir);
+        }
+
+        /// <summary>
         /// Applies a transform to this transform.
         /// </summary>
         public Transform Apply(Transform Transform)
