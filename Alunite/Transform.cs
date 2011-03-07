@@ -23,6 +23,12 @@ namespace Alunite
             this.Rotation = Quaternion.Identity;
         }
 
+        public Transform(double X, double Y, double Z)
+            : this(new Vector(X, Y, Z))
+        {
+
+        }
+
         /// <summary>
         /// Applies this transform to another, in effect combining them.
         /// </summary>

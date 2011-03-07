@@ -6,6 +6,8 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTKGUI;
 
+using Alunite.Fast;
+
 namespace Alunite
 {
     /// <summary>
@@ -13,7 +15,7 @@ namespace Alunite
     /// </summary>
     public class Visualizer : Render3DControl
     {
-        public Visualizer(FastPhysics Physics, FastPhysicsMatter World)
+        public Visualizer(Physics Physics, Matter World)
         {
             this._Physics = Physics;
             this._World = World;
@@ -38,7 +40,7 @@ namespace Alunite
             GL.PointSize(2.0f);
             GL.Begin(BeginMode.Points);
             GL.Color4(Color.RGB(0.0, 0.5, 1.0));
-            foreach (Particle<FastPhysicsSubstance> part in this._World.Particles)
+            foreach (Particle<Substance> part in this._World.Particles)
             {
                 GL.Vertex3(part.Position);
             }
@@ -49,14 +51,14 @@ namespace Alunite
         public override void Update(GUIControlContext Context, double Time)
         {
             {
-                FastPhysics phys = this._Physics;
+                Physics phys = this._Physics;
                 this._World = phys.Update(this._World, phys.Null, Time * 0.1);
             }
             this._Time += Time * 0.2;
         }
 
-        private FastPhysics _Physics;
-        private FastPhysicsMatter _World;
+        private Physics _Physics;
+        private Matter _World;
         private double _Time;
     }
 }

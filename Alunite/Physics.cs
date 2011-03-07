@@ -36,7 +36,7 @@ namespace Alunite
         /// <summary>
         /// Applies a transformation to some matter.
         /// </summary>
-        TMatter Transform(TMatter Matter, Transform Transform);
+        TMatter Apply(TMatter Matter, Transform Transform);
     }
 
     /// <summary>

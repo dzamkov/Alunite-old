@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using OpenTK;
 using OpenTKGUI;
 
+using Alunite.Fast;
+
 namespace Alunite
 {
     /// <summary>
@@ -24,26 +26,26 @@ namespace Alunite
 
 
             // Set up a world
-            FastPhysics fp = new FastPhysics();
-            FastPhysicsMatter obj = FastPhysicsMatter.CreateLattice(fp, 2, fp.Create(new Particle<FastPhysicsSubstance>()
+            Physics fp = new Physics();
+            Matter obj = fp.CreateLattice(fp.Create(new Particle<Substance>()
             {
-                Substance = FastPhysicsSubstance.Default,
+                Substance = Substance.Default,
                 Mass = 1.0,
                 Position = new Vector(0.0, 0.0, 0.0),
                 Orientation = Quaternion.Identity,
                 Spin = AxisAngle.Identity
-            }), 0.1);
+            }), 2, 0.1);
 
-            FastPhysicsMatter earth = fp.Create(new Particle<FastPhysicsSubstance>()
+            Matter earth = fp.Create(new Particle<Substance>()
             {
-                Substance = FastPhysicsSubstance.Default,
+                Substance = Substance.Default,
                 Mass = 5.9742e24,
                 Position = new Vector(0.0, 0.0, -6.3675e6),
                 Orientation = Quaternion.Identity,
                 Spin = AxisAngle.Identity
             });
 
-            FastPhysicsMatter world = fp.Combine(obj, earth);
+            Matter world = fp.Combine(obj, earth);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;

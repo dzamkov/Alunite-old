@@ -2,31 +2,31 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Alunite
+namespace Alunite.Fast
 {
     /// <summary>
     /// A substance in a fast physics system.
     /// </summary>
-    public class FastPhysicsSubstance : IAutoSubstance<FastPhysics, FastPhysicsMatter, FastPhysicsSubstance>
+    public class Substance : IAutoSubstance<Physics, Matter, Substance>
     {
-        private FastPhysicsSubstance()
+        private Substance()
         {
-            this._Usages = new UsageSet<FastPhysicsMatter._Particle>();
+
         }
 
         /// <summary>
         /// The default (and currently only) possible substance.
         /// </summary>
-        public static readonly FastPhysicsSubstance Default = new FastPhysicsSubstance();
+        public static readonly Substance Default = new Substance();
 
-        public void Update(FastPhysics Physics, FastPhysicsMatter Environment, double Time, ref Particle<FastPhysicsSubstance> Particle)
+        public void Update(Physics Physics, Matter Environment, double Time, ref Particle<Substance> Particle)
         {
             Particle.Velocity += Environment.GetGravity(Physics, new Vector(0.0, 0.0, 0.0), Particle.Mass, Physics.G * 1.0e15) * (Time / Particle.Mass);
             Particle.Update(Time);
         }
 
         public MatterDisparity GetDisparity(
-            FastPhysics Physics, FastPhysicsMatter Environment,
+            Physics Physics, Matter Environment,
             double OldMass, double NewMass,
             ISubstance NewSubstance,
             Vector DeltaPosition,
@@ -36,7 +36,5 @@ namespace Alunite
         {
             throw new NotImplementedException();
         }
-
-        private UsageSet<FastPhysicsMatter._Particle> _Usages;
     }
 }
