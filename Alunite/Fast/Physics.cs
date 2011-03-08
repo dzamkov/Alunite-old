@@ -131,11 +131,11 @@ namespace Alunite.Fast
 
             if (atrans != null)
             {
-                return new BinaryMatter(atrans.Source, B, atob.Apply(atrans.Transform.Inverse)).Apply(this, atrans.Transform);
+                return new MemoizedBinaryMatter(atrans.Source, B, atob.Apply(atrans.Transform.Inverse)).Apply(this, atrans.Transform);
             }
             else
             {
-                return new BinaryMatter(A, B, atob);
+                return new MemoizedBinaryMatter(A, B, atob);
             }
         }
 
@@ -144,7 +144,7 @@ namespace Alunite.Fast
         /// </summary>
         public BinaryMatter QuickCombine(Matter A, Matter B, Transform AToB)
         {
-            return new BinaryMatter(A, B, AToB);
+            return new MemoizedBinaryMatter(A, B, AToB);
         }
 
         public Matter Null

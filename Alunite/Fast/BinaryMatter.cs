@@ -108,4 +108,47 @@ namespace Alunite.Fast
         private Matter _B;
         private Transform _AToB;
     }
+
+    /// <summary>
+    /// Binary matter with many properties memoized, allowing it to perform faster at the cost of using more memory.
+    /// </summary>
+    public class MemoizedBinaryMatter : BinaryMatter
+    {
+        public MemoizedBinaryMatter(Matter A, Matter B, Transform AToB)
+            : base(A, B, AToB)
+        {
+            this._Mass = double.NaN;
+        }
+
+        public override void GetMassSummary(Physics Physics, out double Mass, out Vector CenterOfMass, out double Extent)
+        {
+            if (double.IsNaN(this._Mass))
+            {
+                base.GetMassSummary(Physics, out this._Mass, out this._CenterOfMass, out this._Extent);
+            }
+            Mass = this._Mass;
+            CenterOfMass = this._CenterOfMass;
+            Extent = this._Extent;
+        }
+
+        public override Vector GetGravity(Physics Physics, Vector Position, double Mass, double RecurseThreshold)
+        {
+            double mass; Vector com; double ext; this.GetMassSummary(Physics, out mass, out com, out ext);
+            Vector offset = Position - com;
+            double offsetlen = com.Length;
+            double rat = (mass * ext) / (offsetlen * offsetlen);
+            if (rat >= RecurseThreshold)
+            {
+                return base.GetGravity(Physics, Position, Mass, RecurseThreshold);
+            }
+            else
+            {
+                return offset * (Physics.GetGravityStrength(mass, Mass, offsetlen) / offsetlen);
+            }
+        }
+
+        private double _Mass;
+        private Vector _CenterOfMass;
+        private double _Extent;
+    }
 }
