@@ -40,7 +40,7 @@ namespace Alunite
             GL.PointSize(2.0f);
             GL.Begin(BeginMode.Points);
             GL.Color4(Color.RGB(0.0, 0.5, 1.0));
-            foreach (Particle<Substance> part in this._World.Particles)
+            foreach (Particle<Substance> part in this._World.GetParticles(this._Physics))
             {
                 GL.Vertex3(part.Position);
             }

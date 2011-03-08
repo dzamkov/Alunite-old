@@ -91,10 +91,10 @@ namespace Alunite.Fast
             this._B.OutputUsed(Elements);
         }
 
-        public override void OutputParticles(Transform Transform, List<Particle<Substance>> Particles)
+        public override void OutputParticles(Physics Physics, Transform Transform, List<Particle<Substance>> Particles)
         {
-            this._A.OutputParticles(Transform, Particles);
-            this._B.OutputParticles(this._AToB.Apply(Transform), Particles);
+            this._A.OutputParticles(Physics, Transform, Particles);
+            this._B.OutputParticles(Physics, this._AToB.Apply(Transform), Particles);
         }
 
         public override Vector GetGravity(Physics Physics, Vector Position, double Mass, double RecurseThreshold)

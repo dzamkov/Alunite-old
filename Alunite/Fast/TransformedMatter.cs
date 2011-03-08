@@ -53,9 +53,9 @@ namespace Alunite.Fast
             this._Source.OutputUsed(Elements);
         }
 
-        public override void OutputParticles(Transform Transform, List<Particle<Substance>> Particles)
+        public override void OutputParticles(Physics Physics, Transform Transform, List<Particle<Substance>> Particles)
         {
-            this._Source.OutputParticles(this._Transform.Apply(Transform), Particles);
+            this._Source.OutputParticles(Physics, this._Transform.Apply(Transform), Particles);
         }
 
         public override void GetMassSummary(Physics Physics, out double Mass, out Vector CenterOfMass, out double Extent)

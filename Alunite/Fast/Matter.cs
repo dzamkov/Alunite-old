@@ -29,19 +29,6 @@ namespace Alunite.Fast
         }
 
         /// <summary>
-        /// Gets the position of all the particles in this matter, for debug purposes.
-        /// </summary>
-        public IEnumerable<Particle<Substance>> Particles
-        {
-            get
-            {
-                List<Particle<Substance>> parts = new List<Particle<Substance>>();
-                this.OutputParticles(Transform.Identity, parts);
-                return parts;
-            }
-        }
-
-        /// <summary>
         /// Applies a transform to this matter.
         /// </summary>
         public virtual Matter Apply(Physics Physics, Transform Transform)
@@ -81,9 +68,19 @@ namespace Alunite.Fast
         /// <summary>
         /// Outputs all particles defined in this matter, after applying the specified transform.
         /// </summary>
-        public virtual void OutputParticles(Transform Transform, List<Particle<Substance>> Particles)
+        public virtual void OutputParticles(Physics Physics, Transform Transform, List<Particle<Substance>> Particles)
         {
 
+        }
+
+        /// <summary>
+        /// Gets all particles defined in this matter.
+        /// </summary>
+        public IEnumerable<Particle<Substance>> GetParticles(Physics Physics)
+        {
+            List<Particle<Substance>> parts = new List<Particle<Substance>>();
+            this.OutputParticles(Physics, Transform.Identity, parts);
+            return parts;
         }
     }
 }

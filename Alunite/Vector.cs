@@ -71,6 +71,14 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets if this vector is inside the specified sphere.
+        /// </summary>
+        public bool InSphere(Vector Center, double Radius)
+        {
+            return (this - Center).SquareLength < Radius * Radius;
+        }
+
+        /// <summary>
         /// Gets the cross product of two vectors.
         /// </summary>
         public static Vector Cross(Vector A, Vector B)

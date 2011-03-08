@@ -29,6 +29,25 @@ namespace Alunite
 
         }
 
+        public Transform(Quaternion Rotation)
+        {
+            this.Offset = new Vector(0.0, 0.0, 0.0);
+            this.VelocityOffset = new Vector(0.0, 0.0, 0.0);
+            this.Rotation = Rotation;
+        }
+
+        public Transform(AxisAngle Rotation)
+            : this((Quaternion)Rotation)
+        {
+            
+        }
+
+        public Transform(Vector Axis, double Angle)
+            : this(new AxisAngle(Axis, Angle))
+        {
+
+        }
+
         /// <summary>
         /// Applies this transform to another, in effect combining them.
         /// </summary>

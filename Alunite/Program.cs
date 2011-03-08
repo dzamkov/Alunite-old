@@ -34,7 +34,7 @@ namespace Alunite
                 Position = new Vector(0.0, 0.0, 0.0),
                 Orientation = Quaternion.Identity,
                 Spin = AxisAngle.Identity
-            }), 2, 0.1);
+            }), 3, 0.1);
 
             Matter earth = fp.Create(new Particle<Substance>()
             {
@@ -45,7 +45,7 @@ namespace Alunite
                 Spin = AxisAngle.Identity
             });
 
-            Matter world = fp.Combine(obj, earth);
+            Matter world = obj;
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.WindowState = WindowState.Maximized;

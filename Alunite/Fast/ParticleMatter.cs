@@ -38,7 +38,7 @@ namespace Alunite.Fast
             }
         }
 
-        public override void OutputParticles(Transform Transform, List<Particle<Substance>> Particles)
+        public override void OutputParticles(Physics Physics, Transform Transform, List<Particle<Substance>> Particles)
         {
             Particles.Add(new Particle<Substance>()
             {

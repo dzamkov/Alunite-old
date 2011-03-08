@@ -140,7 +140,7 @@ namespace Alunite.Fast
         }
 
         /// <summary>
-        /// Quickly combines two pieces of untransformed matter.
+        /// Quickly combines two nonnull pieces of untransformed matter.
         /// </summary>
         public BinaryMatter QuickCombine(Matter A, Matter B, Transform AToB)
         {
