@@ -8,7 +8,7 @@ namespace Alunite
     /// <summary>
     /// Represents a point or offset in three-dimensional space.
     /// </summary>
-    public struct Vector
+    public struct Vector : IAdditive<Vector, Vector>, IMultiplicative<Vector, Scalar>
     {
         public Vector(double X, double Y, double Z)
         {
@@ -27,29 +27,39 @@ namespace Alunite
             return new Vector3((float)Vector.X, (float)Vector.Y, (float)Vector.Z);
         }
 
-        public static bool operator ==(Vector A, Vector B)
+        public Vector Add(Vector Operand)
         {
-            return A.X == B.X && A.Y == B.Y && A.Z == B.Z;
+            return new Vector(this.X + Operand.X, this.Y + Operand.Y, this.Z + Operand.Z);
         }
 
-        public static bool operator !=(Vector A, Vector B)
+        public Vector Subtract(Vector Operand)
         {
-            return A.X != B.X || A.Y != B.Y || A.Z != B.Z;
+            return new Vector(this.X - Operand.X, this.Y - Operand.Y, this.Z - Operand.Z);
+        }
+
+        public Vector Multiply(Scalar Operand)
+        {
+            return new Vector(this.X * Operand, this.Y * Operand, this.Z * Operand);
+        }
+
+        public Vector Divide(Scalar Operand)
+        {
+            return new Vector(this.X / Operand, this.Y / Operand, this.Z / Operand);
         }
 
         public static Vector operator +(Vector A, Vector B)
         {
-            return new Vector(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
+            return A.Add(B);
         }
 
         public static Vector operator -(Vector A, Vector B)
         {
-            return new Vector(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
+            return A.Subtract(B);
         }
 
         public static Vector operator *(Vector A, double Magnitude)
         {
-            return new Vector(A.X * Magnitude, A.Y * Magnitude, A.Z * Magnitude);
+            return A.Multiply(Magnitude);
         }
 
         public static Vector operator -(Vector A)
@@ -60,14 +70,6 @@ namespace Alunite
         public override string ToString()
         {
             return this.X.ToString() + ", " + this.Y.ToString() + ", " + this.Z.ToString();
-        }
-
-        public override int GetHashCode()
-        {
-            int xhash = this.X.GetHashCode();
-            int yhash = this.Y.GetHashCode();
-            int zhash = this.Z.GetHashCode();
-            return unchecked(xhash ^ (yhash + 0x1337BED5) ^ (zhash + 0x2B50CDF1) ^ (yhash << 3) ^ (yhash >> 3) ^ (zhash << 7) ^ (zhash >> 7));
         }
 
         /// <summary>
@@ -88,24 +90,6 @@ namespace Alunite
                     (A.Y * B.Z) - (A.Z * B.Y),
                     (A.Z * B.X) - (A.X * B.Z),
                     (A.X * B.Y) - (A.Y * B.X));
-        }
-
-        /// <summary>
-        /// Compares two vectors lexographically.
-        /// </summary>
-        public static bool Compare(Vector A, Vector B)
-        {
-            if (A.X > B.X)
-                return true;
-            if (A.X < B.X)
-                return false;
-            if (A.Y > B.Y)
-                return true;
-            if (A.Y < B.Y)
-                return false;
-            if (A.Z > B.Z)
-                return true;
-            return false;
         }
 
         /// <summary>

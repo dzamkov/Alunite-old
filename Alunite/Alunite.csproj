@@ -47,6 +47,9 @@
     <Compile Include="Fast\TransformedMatter.cs" />
     <Compile Include="Data\Filter.cs" />
     <Compile Include="Data\MatchMatrix.cs" />
+    <Compile Include="Math\Arithmetic.cs" />
+    <Compile Include="Math\Curve.cs" />
+    <Compile Include="Math\Scalar.cs" />
     <Compile Include="Physics.cs" />
     <Compile Include="Particle.cs" />
     <Compile Include="Program.cs" />
