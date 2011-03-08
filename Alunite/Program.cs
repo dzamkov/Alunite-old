@@ -18,12 +18,9 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-
-            Curve<Scalar> curve = new Curve<Scalar>(new Scalar[]
-            {
-                1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, 0.6, 0.2, 0.3, 0.4, 0.5
-            });
-            double val = curve[1.0];
+            Curve<Vector> acceleration = Curve.Constant(new Vector(0.0, 0.0, -9.8));
+            Curve<Vector> velocity = Curve.Integral(acceleration, new Vector(0.0, 0.0, 0.0));
+            Curve<Vector> position = Curve.Integral(velocity, new Vector(0.0, 0.0, 0.0));
         }
     }
 }

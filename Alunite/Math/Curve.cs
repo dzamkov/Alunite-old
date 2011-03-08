@@ -27,6 +27,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the control points for this curve. Note that the array should not be modified.
+        /// </summary>
+        public T[] Points
+        {
+            get
+            {
+                return this._Points;
+            }
+        }
+
+        /// <summary>
         /// Gets the value of the curve with the specified parameter between 0.0 and 1.0.
         /// </summary>
         public T this[double Param]
@@ -79,6 +90,58 @@ namespace Alunite
     /// </summary>
     public static class Curve
     {
+        /// <summary>
+        /// Creates a curve with a constant value.
+        /// </summary>
+        public static Curve<T> Constant<T>(T Value)
+             where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            return new Curve<T>(new T[] { Value });
+        }
+
+        /// <summary>
+        /// Creates a curve that varies linearly between two values.
+        /// </summary>
+        public static Curve<T> Linear<T>(T Start, T End)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            return new Curve<T>(new T[] { Start, End });
+        }
+
+        /// <summary>
+        /// Creates a curve with a constant value.
+        /// </summary>
+        public static Curve<Scalar> Constant(double Value)
+        {
+            return Constant<Scalar>(Value);
+        }
+
+        /// <summary>
+        /// Creates a curve that varies linearly between two values.
+        /// </summary>
+        public static Curve<Scalar> Linear(double Start, double End)
+        {
+            return Linear<Scalar>(Start, End);
+        }
+
+        /// <summary>
+        /// Gets the intergral of the given curve starting at the specified initial value.
+        /// </summary>
+        public static Curve<T> Integral<T>(Curve<T> Curve, T Initial)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            T[] cpoints = Curve.Points;
+            T[] ipoints = new T[cpoints.Length + 1];
+            double scale = 1.0 / (double)cpoints.Length;
+
+            ipoints[0] = Initial;
+            for (int t = 0; t < cpoints.Length; t++)
+            {
+                Initial = Initial.Add(cpoints[t].Multiply(scale));
+                ipoints[t + 1] = Initial;
+            }
+            return new Curve<T>(ipoints);
+        }
 
         /// <summary>
         /// Contains the coffecients needed to evaluate bezier curves of certain orders.
