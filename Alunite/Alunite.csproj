@@ -45,18 +45,17 @@
     <Compile Include="Fast\Physics.cs" />
     <Compile Include="Fast\Substance.cs" />
     <Compile Include="Fast\TransformedMatter.cs" />
-    <Compile Include="Filter.cs" />
-    <Compile Include="MatchMatrix.cs" />
+    <Compile Include="Data\Filter.cs" />
+    <Compile Include="Data\MatchMatrix.cs" />
     <Compile Include="Physics.cs" />
     <Compile Include="Particle.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Quaternion.cs" />
-    <Compile Include="Set.cs" />
-    <Compile Include="Sink.cs" />
-    <Compile Include="SphereTree.cs" />
-    <Compile Include="Transform.cs" />
-    <Compile Include="UsageSet.cs" />
-    <Compile Include="Vector.cs" />
+    <Compile Include="Math\Quaternion.cs" />
+    <Compile Include="Data\Set.cs" />
+    <Compile Include="Data\Sink.cs" />
+    <Compile Include="Math\Transform.cs" />
+    <Compile Include="Data\UsageSet.cs" />
+    <Compile Include="Math\Vector.cs" />
     <Compile Include="Visualizer.cs" />
   </ItemGroup>
   <ItemGroup>

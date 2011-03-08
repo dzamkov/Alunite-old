@@ -34,7 +34,7 @@ namespace Alunite
                 Position = new Vector(0.0, 0.0, 0.0),
                 Orientation = Quaternion.Identity,
                 Spin = AxisAngle.Identity
-            }), 3, 0.1);
+            }), 2, 0.1);
 
             Matter earth = fp.Create(new Particle<Substance>()
             {
