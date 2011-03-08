@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// Represents an object that can have additive and subtractive operations applied to it.
+    /// Represents an object that can have additive and subtractive operations applied to it. Note that it can be assumed that the default
+    /// Operand is the additive identity.
     /// </summary>
     /// <typeparam name="TBase">The base of the objects produced by this kind of arithmetic.</typeparam>
     /// <typeparam name="TOperand">The allowable operand for the arithmetic.</typeparam>

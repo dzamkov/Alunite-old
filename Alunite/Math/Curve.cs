@@ -57,6 +57,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the first value in this curve.
+        /// </summary>
+        public T Initial
+        {
+            get
+            {
+                return this._Points[0];
+            }
+        }
+
+        /// <summary>
         /// Gets the coffecients that can be multiplied by corresponding degrees of the parameter to get the result at the parameter.
         /// </summary>
         private T[] _GetCoffecients()
@@ -141,6 +152,30 @@ namespace Alunite
                 ipoints[t + 1] = Initial;
             }
             return new Curve<T>(ipoints);
+        }
+
+        /// <summary>
+        /// Gets the derivative of the given curve.
+        /// </summary>
+        public static Curve<T> Derivative<T>(Curve<T> Curve)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            T[] cpoints = Curve.Points;
+            int size = cpoints.Length;
+            if (size > 1)
+            {
+                T[] ipoints = new T[size - 1];
+                double scale = (double)(size - 1);
+                for (int t = 0; t < ipoints.Length; t++)
+                {
+                    ipoints[t] = cpoints[t + 1].Subtract(cpoints[t]).Multiply(scale);
+                }
+                return new Curve<T>(ipoints);
+            }
+            else
+            {
+                return Constant(default(T));
+            }
         }
 
         /// <summary>
