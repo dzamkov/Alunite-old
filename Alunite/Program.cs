@@ -21,6 +21,10 @@ namespace Alunite
             Curve<Vector> acceleration = Curve.Constant(new Vector(0.0, 0.0, -9.8));
             Curve<Vector> velocity = Curve.Integral(acceleration, new Vector(0.0, 0.0, 0.0));
             Curve<Vector> position = Curve.Integral(velocity, new Vector(0.0, 0.0, 0.0));
+            Curve<Vector> nposition = position.Elevate(7);
+
+            double a = position[0.86].Length;
+            double b = nposition[0.86].Length;
         }
     }
 }

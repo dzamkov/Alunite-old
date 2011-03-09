@@ -15,7 +15,31 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the order (complexity) of this bezier curve. 0 is the minimum order for
+        /// Creates an identical curve with a higher order.
+        /// </summary>
+        public Curve<T> Elevate(int Order)
+        {
+            int target = Order + 1;
+            T[] cpoints = this._Points;
+            while (cpoints.Length < target)
+            {
+                int cur = cpoints.Length;
+                T[] npoints = new T[cur + 1];
+                npoints[0] = cpoints[0];
+                npoints[cur] = cpoints[cur - 1];
+
+                double dcur = (double)cur;
+                for (int i = 1; i < cur; i++)
+                {
+                    npoints[i] = cpoints[i - 1].Multiply((double)i /  dcur).Add(cpoints[i].Multiply((dcur - (double)i) / dcur));
+                }
+                cpoints = npoints;
+            }
+            return new Curve<T>(cpoints);
+        }
+
+        /// <summary>
+        /// Gets the order (complexity, degree) of this bezier curve. 0 is the minimum order for
         /// a valid curve.
         /// </summary>
         public int Order
@@ -176,6 +200,71 @@ namespace Alunite
             {
                 return Constant(default(T));
             }
+        }
+
+        /// <summary>
+        /// Sets both curves to have the same order without changing their content.
+        /// </summary>
+        public static void Align<T>(ref Curve<T> A, ref Curve<T> B)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            if (A.Order < B.Order)
+            {
+                A = A.Elevate(B.Order);
+            }
+            else
+            {
+                B = B.Elevate(A.Order);
+            }
+        }
+
+        /// <summary>
+        /// Gets the sum of two curves.
+        /// </summary>
+        public static Curve<T> Add<T>(Curve<T> A, Curve<T> B)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            Align(ref A, ref B);
+            T[] apoints = A.Points;
+            T[] bpoints = B.Points;
+            T[] npoints = new T[apoints.Length];
+            for (int t = 0; t < npoints.Length; t++)
+            {
+                npoints[t] = apoints[t].Add(bpoints[t]);
+            }
+            return new Curve<T>(npoints);
+        }
+
+        /// <summary>
+        /// Gets the difference of two curves.
+        /// </summary>
+        public static Curve<T> Subtract<T>(Curve<T> A, Curve<T> B)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            Align(ref A, ref B);
+            T[] apoints = A.Points;
+            T[] bpoints = B.Points;
+            T[] npoints = new T[apoints.Length];
+            for (int t = 0; t < npoints.Length; t++)
+            {
+                npoints[t] = apoints[t].Subtract(bpoints[t]);
+            }
+            return new Curve<T>(npoints);
+        }
+
+        /// <summary>
+        /// Scales a curve by the specified multiplier.
+        /// </summary>
+        public static Curve<T> Scale<T>(Curve<T> Curve, double Multiplier)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            T[] cpoints = Curve.Points;
+            T[] npoints = new T[cpoints.Length];
+            for (int t = 0; t < npoints.Length; t++)
+            {
+                npoints[t] = cpoints[t].Multiply(Multiplier);
+            }
+            return new Curve<T>(npoints);
         }
 
         /// <summary>
