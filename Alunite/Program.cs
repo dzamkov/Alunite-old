@@ -18,13 +18,14 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            Curve<Vector> acceleration = Curve.Constant(new Vector(0.0, 0.0, -9.8));
-            Curve<Vector> velocity = Curve.Integral(acceleration, new Vector(0.0, 0.0, 0.0));
-            Curve<Vector> position = Curve.Integral(velocity, new Vector(0.0, 0.0, 0.0));
-            Curve<Vector> nposition = position.Elevate(7);
-
-            double a = position[0.86].Length;
-            double b = nposition[0.86].Length;
+            Curve<Scalar> acurve = Curve.Linear(0.0, 1.0);
+            Curve<Scalar> bcurve = Curve.Linear(1.0, 0.4);
+            acurve = Curve.Integral(acurve, (Scalar)0.1);
+            bcurve = Curve.Integral(bcurve, (Scalar)0.0);
+            Curve<Scalar> pcurve = Curve.Multiply(acurve, bcurve);
+            double p = 0.4;
+            double ab = acurve[p] * bcurve[p];
+            double tn = pcurve[p];
         }
     }
 }

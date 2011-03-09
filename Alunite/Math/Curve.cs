@@ -268,6 +268,44 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the product of two curves.
+        /// </summary>
+        public static Curve<R> Multiply<R, L>(Curve<R> Right, Curve<L> Left)
+            where R : IAdditive<R, R>, IMultiplicative<R, Scalar>, IMultiplicative<R, L>
+            where L : IAdditive<L, L>, IMultiplicative<L, Scalar>
+        {
+            R[] rpoints = Right.Points;
+            L[] lpoints = Left.Points;
+            R[] npoints = new R[rpoints.Length + lpoints.Length - 1];
+            double da = (double)rpoints.Length;
+            double db = (double)lpoints.Length;
+
+            // Note: The coffecients used to determine the influence a pair of input points
+            // has on the output are base on binomial coffecients, which are encoded into the diagonals
+            // of bezier coffecients.
+            double[] rcoff = GetBezierCoffecients(rpoints.Length - 1);
+            double[] lcoff = GetBezierCoffecients(lpoints.Length - 1);
+            double[] ncoff = GetBezierCoffecients(npoints.Length - 1);
+
+            for (int x = 0; x < rpoints.Length; x++)
+            {
+                double crcoff = rcoff[x + (x * rpoints.Length)];
+                for (int y = 0; y < lpoints.Length; y++)
+                {
+                    double clcoff = lcoff[y + (y * lpoints.Length)];
+                    int t = x + y;
+                    npoints[t] = npoints[t].Add(rpoints[x].Multiply(lpoints[y]).Multiply(crcoff * clcoff));
+                }
+            }
+
+            for (int t = 0; t < npoints.Length; t++)
+            {
+                npoints[t] = npoints[t].Divide(ncoff[t + (t * npoints.Length)]);
+            }
+            return new Curve<R>(npoints);
+        }
+
+        /// <summary>
         /// Contains the coffecients needed to evaluate bezier curves of certain orders.
         /// </summary>
         private static readonly List<double[]> _BezierCoffecients = new List<double[]>();
