@@ -39,4 +39,15 @@ namespace Alunite
         /// </summary>
         TBase Divide(TOperand Operand);
     }
+
+    /// <summary>
+    /// Represents an object that has a square root.
+    /// </summary>
+    public interface ISquareRootable<TBase> : IMultiplicative<TBase, TBase>
+    {
+        /// <summary>
+        /// Gets the square root of this object.
+        /// </summary>
+        TBase SquareRoot { get; }
+    }
 }

@@ -306,6 +306,114 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the square of the specified curve.
+        /// </summary>
+        public static Curve<T> Square<T>(Curve<T> Curve)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>, IMultiplicative<T, T>
+        {
+            return Multiply(Curve, Curve);
+        }
+
+        /// <summary>
+        /// Approximates the quotient of a constant divided by a curve. The accuracy of the resulting curve depends on the
+        /// order of the input curve.
+        /// </summary>
+        public static Curve<T> Divide<T>(T Constant, Curve<T> Curve)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>, IMultiplicative<T, T>
+        {
+            T[] cpoints = Curve.Points;
+            T[] npoints = new T[cpoints.Length];
+            for (int t = 0; t < npoints.Length; t++)
+            {
+                npoints[t] = Constant.Divide(cpoints[t]);
+            }
+            return new Curve<T>(npoints);
+        }
+
+        /// <summary>
+        /// Approximates the square root of a curve. The accuracy of the resulting curve depends on the
+        /// order of the input curve.
+        /// </summary>
+        public static Curve<T> SquareRoot<T>(Curve<T> Curve)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>, ISquareRootable<T>
+        {
+            T[] cpoints = Curve.Points;
+            T[] npoints = new T[cpoints.Length];
+            for (int t = 0; t < npoints.Length; t++)
+            {
+                npoints[t] = cpoints[t].SquareRoot;
+            }
+            return new Curve<T>(npoints);
+        }
+
+        /// <summary>
+        /// Splits a vector curve into component curves.
+        /// </summary>
+        public static void Split(Curve<Vector> Curve, out Curve<Scalar> X, out Curve<Scalar> Y, out Curve<Scalar> Z)
+        {
+            Vector[] cpoints = Curve.Points;
+            Scalar[] xpoints = new Scalar[cpoints.Length];
+            Scalar[] ypoints = new Scalar[cpoints.Length];
+            Scalar[] zpoints = new Scalar[cpoints.Length];
+            for (int t = 0; t < cpoints.Length; t++)
+            {
+                xpoints[t] = cpoints[t].X;
+                ypoints[t] = cpoints[t].Y;
+                zpoints[t] = cpoints[t].Z;
+            }
+            X = new Curve<Scalar>(xpoints);
+            Y = new Curve<Scalar>(ypoints);
+            Z = new Curve<Scalar>(zpoints);
+        }
+
+        /// <summary>
+        /// Gets a curve representing the square of the length of the given vector curve over all parameters.
+        /// </summary>
+        public static Curve<Scalar> SquareLength(Curve<Vector> Curve)
+        {
+            Curve<Scalar> xcurve, ycurve, zcurve;
+            Split(Curve, out xcurve, out ycurve, out zcurve);
+            xcurve = Square(xcurve);
+            ycurve = Square(ycurve);
+            zcurve = Square(zcurve);
+            return Add(Add(xcurve, ycurve), zcurve);
+        }
+
+        /// <summary>
+        /// Gets a curve that approximates the length of a vector curve over all parameters.
+        /// </summary>
+        public static Curve<Scalar> Length(Curve<Vector> Curve)
+        {
+            return SquareRoot(SquareLength(Curve));
+        }
+
+        /// <summary>
+        /// Gets a curve that approximates the distance between two vector curves over all parameters.
+        /// </summary>
+        public static Curve<Scalar> Distance(Curve<Vector> A, Curve<Vector> B)
+        {
+            return Length(Subtract(A, B));
+        }
+
+        /// <summary>
+        /// Creates a curve which matches the specified parameters at their corresponding parameters (starting at 0.0 and then increasing
+        /// by 1 / Order for each value).
+        /// </summary>
+        public static Curve<T> Match<T>(T[] Values)
+            where T : IAdditive<T, T>, IMultiplicative<T, Scalar>
+        {
+            if (Values.Length == 1)
+            {
+                return Constant(Values[0]);
+            }
+            if (Values.Length == 2)
+            {
+                return Linear(Values[0], Values[1]);
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Contains the coffecients needed to evaluate bezier curves of certain orders.
         /// </summary>
         private static readonly List<double[]> _BezierCoffecients = new List<double[]>();

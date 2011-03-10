@@ -8,7 +8,7 @@ namespace Alunite
     /// <summary>
     /// Represents a point or offset in one-dimensional space.
     /// </summary>
-    public struct Scalar : IAdditive<Scalar, Scalar>, IMultiplicative<Scalar, Scalar>
+    public struct Scalar : IAdditive<Scalar, Scalar>, IMultiplicative<Scalar, Scalar>, ISquareRootable<Scalar>
     {
         public Scalar(double Value)
         {
@@ -43,6 +43,14 @@ namespace Alunite
         public Scalar Divide(Scalar Operand)
         {
             return this / Operand;
+        }
+
+        public Scalar SquareRoot
+        {
+            get 
+            {
+                return Math.Sqrt(this.Value);
+            }
         }
 
         public override string ToString()
