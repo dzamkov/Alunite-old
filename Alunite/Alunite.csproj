@@ -39,19 +39,12 @@
   </Target>
   -->
   <ItemGroup>
-    <Compile Include="Fast\BinaryMatter.cs" />
-    <Compile Include="Fast\Matter.cs" />
-    <Compile Include="Fast\ParticleMatter.cs" />
-    <Compile Include="Fast\Physics.cs" />
-    <Compile Include="Fast\Substance.cs" />
-    <Compile Include="Fast\TransformedMatter.cs" />
     <Compile Include="Data\Filter.cs" />
     <Compile Include="Data\MatchMatrix.cs" />
+    <Compile Include="Data\Void.cs" />
     <Compile Include="Math\Arithmetic.cs" />
     <Compile Include="Math\Curve.cs" />
     <Compile Include="Math\Scalar.cs" />
-    <Compile Include="Physics.cs" />
-    <Compile Include="Particle.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Math\Quaternion.cs" />
     <Compile Include="Data\Set.cs" />
@@ -59,6 +52,13 @@
     <Compile Include="Math\Transform.cs" />
     <Compile Include="Data\UsageSet.cs" />
     <Compile Include="Math\Vector.cs" />
+    <Compile Include="Simulation\Entities\Camera.cs" />
+    <Compile Include="Simulation\Entities\Compound.cs" />
+    <Compile Include="Simulation\Entities\Link.cs" />
+    <Compile Include="Simulation\Entity.cs" />
+    <Compile Include="Simulation\Signal.cs" />
+    <Compile Include="Simulation\Simulation.cs" />
+    <Compile Include="Simulation\Terminal.cs" />
     <Compile Include="Visualizer.cs" />
   </ItemGroup>
   <ItemGroup>
