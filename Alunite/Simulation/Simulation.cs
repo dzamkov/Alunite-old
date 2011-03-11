@@ -7,14 +7,25 @@ namespace Alunite
     /// Represents the progression of an entity over time. Simulations can be interacted with using
     /// unbound terminals in the supplied entity.
     /// </summary>
-    public class Simulation
+    public abstract class Simulation
     {
         /// <summary>
         /// Creates a simulation with the given initial state.
         /// </summary>
         public static Simulation Create(Entity World)
         {
-            throw new NotImplementedException();
+            return null;
         }
+
+        /// <summary>
+        /// Gets a signal for the output of the given terminal. Note that the signal will update as the simulation updates (if any corrections are made
+        /// to input signals).
+        /// </summary>
+        public abstract Signal<TOutput> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal);
+
+        /// <summary>
+        /// Sets the input of the given terminal to the specified signal.
+        /// </summary>
+        public abstract void Write<TInput, TOutput>(Terminal<TInput, TOutput> Terminal, Signal<TInput> Signal);
     }
 }

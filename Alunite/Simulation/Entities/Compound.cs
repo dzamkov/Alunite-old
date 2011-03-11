@@ -7,7 +7,7 @@ namespace Alunite
     /// An entity made from the combination of other entities. Note that each entity has its terminals remapped to avoid
     /// conflicts when reusing entities.
     /// </summary>
-    public class CompoundEntity
+    public class CompoundEntity : Entity
     {
         public CompoundEntity()
         {

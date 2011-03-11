@@ -9,7 +9,29 @@ namespace Alunite
     /// </summary>
     public class Entity
     {
+        /// <summary>
+        /// Creates an entity with a transform to this entity.
+        /// </summary>
+        public virtual TransformedEntity Apply(Transform Transform)
+        {
+            return new TransformedEntity(this, Transform);
+        }
 
+        /// <summary>
+        /// Gets a camera entity.
+        /// </summary>
+        public static CameraEntity Camera()
+        {
+            return CameraEntity.Singleton;
+        }
+
+        /// <summary>
+        /// Creates a sphere with the specified mass and radius.
+        /// </summary>
+        public static SphereEntity Sphere(double Mass, double Radius)
+        {
+            return new SphereEntity(Mass, Radius);
+        }
     }
 
     /// <summary>
@@ -38,7 +60,71 @@ namespace Alunite
             this._Body = Body;
         }
 
+        /// <summary>
+        /// Gets the phantom entity that is "embodied".
+        /// </summary>
+        public PhantomEntity Phantom
+        {
+            get
+            {
+                return this._Phantom;
+            }
+        }
+
+        /// <summary>
+        /// Gets the physical entity used as the body.
+        /// </summary>
+        public Entity Body
+        {
+            get
+            {
+                return this._Body;
+            }
+        }
+
         private PhantomEntity _Phantom;
         private Entity _Body;
+    }
+
+    /// <summary>
+    /// An entity that represents a transformed form of a source entity.
+    /// </summary>
+    public class TransformedEntity : Entity
+    {
+        public TransformedEntity(Entity Source, Transform Transform)
+        {
+            this._Source = Source;
+            this._Transform = Transform;
+        }
+
+        public override TransformedEntity Apply(Transform Transform)
+        {
+            return new TransformedEntity(this._Source, this._Transform.Apply(Transform));
+        }
+
+        /// <summary>
+        /// Gets the entity that is transformed.
+        /// </summary>
+        public Entity Source
+        {
+            get
+            {
+                return this._Source;
+            }
+        }
+
+        /// <summary>
+        /// Gets the transform used.
+        /// </summary>
+        public Transform Transform
+        {
+            get
+            {
+                return this._Transform;
+            }
+        }
+
+        private Entity _Source;
+        private Transform _Transform;
     }
 }

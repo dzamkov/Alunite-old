@@ -8,6 +8,9 @@ namespace Alunite
     /// </summary>
     public struct Void
     {
-
+        /// <summary>
+        /// Gets the only value of this object.
+        /// </summary>
+        public static Void Value = new Void();
     }
 }

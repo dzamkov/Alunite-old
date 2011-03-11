@@ -7,7 +7,7 @@ namespace Alunite
     /// A continous time-varying value.
     /// </summary>
     /// <typeparam name="T">The type of the signal at any one time.</typeparam>
-    public abstract class Signal<T>
+    public abstract class Signal<T> : IMutable<Void>
     {
         /// <summary>
         /// Gets the value of the signal at any one time.
@@ -17,9 +17,22 @@ namespace Alunite
         public abstract T this[double Time] { get; }
 
         /// <summary>
-        /// Gets the sum of the value in the range [Start, End) divided by the size of interval.
+        /// Gets the sum of the values in the range [Start, End) divided by the size of interval.
         /// </summary>
         public abstract T Average(double Start, double End);
+
+        /// <summary>
+        /// Informs the subscribers of this signal that it has been changed.
+        /// </summary>
+        protected void OnChange()
+        {
+            if (this.Changed != null)
+            {
+                this.Changed(Void.Value);
+            }
+        }
+
+        public event ChangedHandler<Void> Changed;
     }
 
     /// <summary>

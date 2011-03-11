@@ -11,7 +11,7 @@ namespace Alunite
     {
         internal CameraEntity()
         {
-            this._Output = new Terminal<Void, Image>();
+            this._Output = new Terminal<Void, View>();
         }
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace Alunite
         /// <summary>
         /// Gets the output image of this camera sensor.
         /// </summary>
-        public Terminal<Void, Image> Output
+        public Terminal<Void, View> Output
         {
             get
             {
@@ -30,13 +30,13 @@ namespace Alunite
             }
         }
 
-        private Terminal<Void, Image> _Output;
+        private Terminal<Void, View> _Output;
     }
 
     /// <summary>
-    /// Represents a static picture with an infinite resolution that can be drawn to a graphics context.
+    /// A view of a simulation that can be rendered to a graphics context.
     /// </summary>
-    public class Image
+    public class View
     {
 
     }

@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="Data\Filter.cs" />
     <Compile Include="Data\MatchMatrix.cs" />
+    <Compile Include="Data\Mutable.cs" />
     <Compile Include="Data\Void.cs" />
     <Compile Include="Math\Arithmetic.cs" />
     <Compile Include="Math\Curve.cs" />
@@ -55,6 +56,7 @@
     <Compile Include="Simulation\Entities\Camera.cs" />
     <Compile Include="Simulation\Entities\Compound.cs" />
     <Compile Include="Simulation\Entities\Link.cs" />
+    <Compile Include="Simulation\Entities\Sphere.cs" />
     <Compile Include="Simulation\Entity.cs" />
     <Compile Include="Simulation\Signal.cs" />
     <Compile Include="Simulation\Simulation.cs" />

@@ -13,14 +13,21 @@ namespace Alunite
     /// </summary>
     public class Visualizer : Render3DControl
     {
+        public Visualizer(Signal<View> Feed)
+        {
+            this._Feed = Feed;
+        }
+
         public override void RenderScene()
         {
-            throw new NotImplementedException();
+
         }
 
         public override void SetupProjection(Point Viewsize)
         {
-            throw new NotImplementedException();
+
         }
+
+        private Signal<View> _Feed;
     }
 }
