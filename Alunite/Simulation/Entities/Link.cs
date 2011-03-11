@@ -42,6 +42,14 @@ namespace Alunite
             this._Links.Add(_Link.Create<Void, TOutput>(Output, Input));
         }
 
+        public override bool Phantom
+        {
+            get
+            {
+                return this._Source.Phantom;
+            }
+        }
+
         private Entity _Source;
         private List<_Link> _Links;
     }

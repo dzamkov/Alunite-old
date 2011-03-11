@@ -56,6 +56,21 @@ namespace Alunite
             return tm;
         }
 
+        public override bool Phantom
+        {
+            get
+            {
+                foreach (Element e in this._Elements)
+                {
+                    if (!e.Entity.Phantom)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
         private List<Element> _Elements;
     }
 }

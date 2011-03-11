@@ -18,6 +18,17 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets wether or not this entity has any physical components. A phantom entity is invisible, massless and indescructible.
+        /// </summary>
+        public virtual bool Phantom
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Gets a camera entity.
         /// </summary>
         public static CameraEntity Camera()
@@ -50,8 +61,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates an entity that attaches this entity to the specified physical body. This will remove all matter
-        /// from this entity if any exists.
+        /// Creates an entity that attaches this entity to the specified physical body. Only phantom entities may be embodied.
         /// </summary>
         public EmbodimentEntity Embody(Entity Body)
         {
@@ -64,30 +74,36 @@ namespace Alunite
     /// </summary>
     public class PhantomEntity : Entity
     {
-        
+        public override bool Phantom
+        {
+            get
+            {
+                return true;
+            }
+        }
     }
 
     /// <summary>
-    /// An entity which attaches a entity to a physical form. This allows the attached entity to move and be destroyed with the physical entity while still retaining
+    /// An entity which attaches a phantom entity to a physical form. This allows the attached entity to move and be destroyed with the physical entity while still retaining
     /// its special properties.
     /// </summary>
     public class EmbodimentEntity : Entity
     {
-        public EmbodimentEntity(Entity Phantom, Entity Body)
+        public EmbodimentEntity(Entity Control, Entity Body)
         {
-            this._Phantom = Phantom;
+            this._Control = Control;
             this._Body = Body;
             this._BodyMap = new LazyTerminalMap();
         }
 
         /// <summary>
-        /// Gets the entity that is "embodied".
+        /// Gets the phantom entity that is "embodied".
         /// </summary>
-        public Entity Phantom
+        public Entity Control
         {
             get
             {
-                return this._Phantom;
+                return this._Control;
             }
         }
 
@@ -99,6 +115,14 @@ namespace Alunite
             get
             {
                 return this._Body;
+            }
+        }
+
+        public override bool Phantom
+        {
+            get
+            {
+                return false;
             }
         }
 
@@ -114,7 +138,7 @@ namespace Alunite
             }
         }
 
-        private Entity _Phantom;
+        private Entity _Control;
         private Entity _Body;
         private LazyTerminalMap _BodyMap;
     }
@@ -154,6 +178,14 @@ namespace Alunite
             get
             {
                 return this._Transform;
+            }
+        }
+
+        public override bool Phantom
+        {
+            get
+            {
+                return this._Source.Phantom;
             }
         }
 
