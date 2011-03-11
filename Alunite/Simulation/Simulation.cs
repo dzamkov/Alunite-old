@@ -14,7 +14,7 @@ namespace Alunite
         /// </summary>
         public static Simulation Create(Entity World)
         {
-            return null;
+            return new _Simulation(World);
         }
 
         /// <summary>
@@ -27,5 +27,26 @@ namespace Alunite
         /// Sets the input of the given terminal to the specified signal.
         /// </summary>
         public abstract void Write<TInput, TOutput>(Terminal<TInput, TOutput> Terminal, Signal<TInput> Signal);
+    }
+
+    /// <summary>
+    /// A concrete implementation of simulation.
+    /// </summary>
+    internal class _Simulation : Simulation
+    {
+        public _Simulation(Entity World)
+        {
+
+        }
+
+        public override Signal<TOutput> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write<TInput, TOutput>(Terminal<TInput, TOutput> Terminal, Signal<TInput> Signal)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

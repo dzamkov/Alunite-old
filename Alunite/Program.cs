@@ -20,7 +20,7 @@ namespace Alunite
             Entity cambody = Entity.Sphere(0.1, 0.1).Apply(new Transform(-0.12, 0.0, 0.0));
             Entity cam = camsensor.Embody(cambody);
             Entity obj = Entity.Sphere(0.1, 2.1).Apply(new Transform(5.0, 0.0, 0.0));
-            CompoundEntity world = new CompoundEntity();
+            CompoundEntity world = Entity.Compound();
             Terminal<Void, View> camout = world.Add(cam).Lookup(camsensor.Output);
             world.Add(obj);
 

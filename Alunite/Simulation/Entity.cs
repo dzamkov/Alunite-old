@@ -32,15 +32,26 @@ namespace Alunite
         {
             return new SphereEntity(Mass, Radius);
         }
-    }
 
-    /// <summary>
-    /// An invisible, indestructible, massless entity that may interact with a simulation.
-    /// </summary>
-    public class PhantomEntity : Entity
-    {
         /// <summary>
-        /// Creates an entity that gives this phantom entity the specified physical body.
+        /// Creates a compound entity.
+        /// </summary>
+        public static CompoundEntity Compound()
+        {
+            return new CompoundEntity();
+        }
+
+        /// <summary>
+        /// Creates a linking entity on another entity.
+        /// </summary>
+        public static LinkEntity Link(Entity Source)
+        {
+            return new LinkEntity(Source);
+        }
+
+        /// <summary>
+        /// Creates an entity that attaches this entity to the specified physical body. This will remove all matter
+        /// from this entity if any exists.
         /// </summary>
         public EmbodimentEntity Embody(Entity Body)
         {
@@ -49,21 +60,30 @@ namespace Alunite
     }
 
     /// <summary>
-    /// An entity which attaches a phantom entity a physical form. This allows the phantom entity to move and be destroyed like a physical entity while still retaining
+    /// An invisible, indestructible, massless entity that may interact with a simulation.
+    /// </summary>
+    public class PhantomEntity : Entity
+    {
+        
+    }
+
+    /// <summary>
+    /// An entity which attaches a entity to a physical form. This allows the attached entity to move and be destroyed with the physical entity while still retaining
     /// its special properties.
     /// </summary>
     public class EmbodimentEntity : Entity
     {
-        public EmbodimentEntity(PhantomEntity Phantom, Entity Body)
+        public EmbodimentEntity(Entity Phantom, Entity Body)
         {
             this._Phantom = Phantom;
             this._Body = Body;
+            this._BodyMap = new LazyTerminalMap();
         }
 
         /// <summary>
-        /// Gets the phantom entity that is "embodied".
+        /// Gets the entity that is "embodied".
         /// </summary>
-        public PhantomEntity Phantom
+        public Entity Phantom
         {
             get
             {
@@ -82,8 +102,21 @@ namespace Alunite
             }
         }
 
-        private PhantomEntity _Phantom;
+        /// <summary>
+        /// Gets the terminal map from terminals internal to the body to terminals that can be referenced externally on this entity. No
+        /// mapping is required for the "Phantom" part of this entity.
+        /// </summary>
+        public TerminalMap BodyMap
+        {
+            get
+            {
+                return this._BodyMap;
+            }
+        }
+
+        private Entity _Phantom;
         private Entity _Body;
+        private LazyTerminalMap _BodyMap;
     }
 
     /// <summary>

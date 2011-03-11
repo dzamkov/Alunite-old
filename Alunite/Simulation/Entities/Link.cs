@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// An entity that creates internal links within another source entity.
+    /// An entity that creates internal links within another source entity. Note that once an internal link is made, neither of the involved
+    /// terminals may be referenced with the LinkEntity.
     /// </summary>
     public class LinkEntity : Entity
     {

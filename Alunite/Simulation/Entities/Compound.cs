@@ -11,21 +11,34 @@ namespace Alunite
     {
         public CompoundEntity()
         {
-            this._Elements = new List<_Element>();
+            this._Elements = new List<Element>();
         }
 
         /// <summary>
         /// Gets the entities that make up this compound entity.
         /// </summary>
-        public IEnumerable<Entity> Elements
+        public IEnumerable<Element> Elements
         {
             get
             {
-                foreach (_Element e in this._Elements)
-                {
-                    yield return e.Entity;
-                }
+                return this._Elements;
             }
+        }
+
+        /// <summary>
+        /// An element within a compound entity.
+        /// </summary>
+        public struct Element
+        {
+            /// <summary>
+            /// A mapping of terminals from internally in the entity to externally in the compound entity.
+            /// </summary>
+            public TerminalMap TerminalMap;
+
+            /// <summary>
+            /// The entity for this element.
+            /// </summary>
+            public Entity Entity;
         }
 
         /// <summary>
@@ -35,7 +48,7 @@ namespace Alunite
         public TerminalMap Add(Entity Entity)
         {
             TerminalMap tm = this._Elements.Count == 0 ? (TerminalMap)TerminalMap.Identity : TerminalMap.Lazy;
-            this._Elements.Add(new _Element()
+            this._Elements.Add(new Element()
             {
                 TerminalMap = tm,
                 Entity = Entity
@@ -43,22 +56,6 @@ namespace Alunite
             return tm;
         }
 
-        private List<_Element> _Elements;
-    }
-
-    /// <summary>
-    /// An entity used within a compound entity.
-    /// </summary>
-    internal struct _Element
-    {
-        /// <summary>
-        /// A mapping of terminals from locally to globally within the compound entity.
-        /// </summary>
-        public TerminalMap TerminalMap;
-
-        /// <summary>
-        /// The entity for this element.
-        /// </summary>
-        public Entity Entity;
+        private List<Element> _Elements;
     }
 }
