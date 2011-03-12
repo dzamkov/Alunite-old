@@ -13,7 +13,7 @@ namespace Alunite
     /// </summary>
     public class Visualizer : Render3DControl
     {
-        public Visualizer(Signal<Maybe<View>> Feed)
+        public Visualizer(Mutable<Signal<Maybe<View>>> Feed)
         {
             this._Feed = Feed;
         }
@@ -28,6 +28,6 @@ namespace Alunite
 
         }
 
-        private Signal<Maybe<View>> _Feed;
+        private Mutable<Signal<Maybe<View>>> _Feed;
     }
 }

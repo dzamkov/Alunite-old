@@ -19,15 +19,15 @@ namespace Alunite
 
         /// <summary>
         /// Creates a connection to a terminal by specifing an input signal and reciving an output signal. Both
-        /// signals may be modified along with the simulation. If either signal is Nothing at any time, it
+        /// signals may be updated along with the simulation. If either signal is Nothing at any time, it
         /// indicates that the terminal is inactive in the corresponding direction.
         /// </summary>
-        public abstract Signal<Maybe<TOutput>> Connect<TInput, TOutput>(Signal<Maybe<TInput>> Input, Terminal<TInput, TOutput> Terminal);
+        public abstract Mutable<Signal<Maybe<TOutput>>> Connect<TInput, TOutput>(Mutable<Signal<Maybe<TInput>>> Input, Terminal<TInput, TOutput> Terminal);
 
         /// <summary>
         /// Creates a one-way connection with a terminal that only gives information.
         /// </summary>
-        public void Write<TInput, TOutput>(Signal<Maybe<TInput>> Input, Terminal<TInput, TOutput> Terminal)
+        public void Write<TInput, TOutput>(Mutable<Signal<Maybe<TInput>>> Input, Terminal<TInput, TOutput> Terminal)
         {
             this.Connect<TInput, TOutput>(Input, Terminal);
         }
@@ -35,9 +35,9 @@ namespace Alunite
         /// <summary>
         /// Creates a one-way connection with a terminal that only receives information.
         /// </summary>
-        public Signal<Maybe<TOutput>> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal)
+        public Mutable<Signal<Maybe<TOutput>>> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal)
         {
-            return this.Connect(NothingSignal<TInput>.Singleton, Terminal);
+            return this.Connect((Mutable<Signal<Maybe<TInput>>>)NothingSignal<TInput>.Singleton, Terminal);
         }
     }
 
@@ -51,7 +51,7 @@ namespace Alunite
 
         }
 
-        public override Signal<Maybe<TOutput>> Connect<TInput, TOutput>(Signal<Maybe<TInput>> Input, Terminal<TInput, TOutput> Terminal)
+        public override Mutable<Signal<Maybe<TOutput>>> Connect<TInput, TOutput>(Mutable<Signal<Maybe<TInput>>> Input, Terminal<TInput, TOutput> Terminal)
         {
             throw new NotImplementedException();
         }

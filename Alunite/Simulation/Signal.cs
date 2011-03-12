@@ -8,7 +8,7 @@ namespace Alunite
     /// </summary>
     /// <remarks>All ranges in signals represent the interval [Start, End).</remarks>
     /// <typeparam name="T">The type of the signal at any one time.</typeparam>
-    public abstract class Signal<T> : IMutable<Void>
+    public abstract class Signal<T>
     {
         /// <summary>
         /// Gets the value of the signal at any one time. Not that no times before 0.0 may be used.
@@ -18,17 +18,15 @@ namespace Alunite
         public abstract T this[double Time] { get; }
 
         /// <summary>
-        /// Informs the subscribers of this signal that it has been changed.
+        /// Gets the length of this signal in seconds, or infinity to indicate an unbounded signal.
         /// </summary>
-        protected void OnChange()
+        public virtual double Length
         {
-            if (this.Changed != null)
+            get
             {
-                this.Changed(Void.Value);
+                return double.PositiveInfinity;
             }
         }
-
-        public event ChangedHandler<Void> Changed;
     }
 
     /// <summary>
@@ -56,13 +54,21 @@ namespace Alunite
     }
 
     /// <summary>
-    /// A sample type that contains a variable amount of items of the given type.
+    /// Signal-related functions.
+    /// </summary>
+    public static class Signal
+    {
+
+    }
+
+    /// <summary>
+    /// A sample type that contains a variable amount of items (as events) of the given type.
     /// </summary>
     /// <remarks>This can be used as the type parameter of a signal to create an event signal.</remarks>
-    public struct Event<T>
+    public struct Multi<T>
     {
         /// <summary>
-        /// Gets if the event sample contains no events.
+        /// Gets if the multi sample contains no items.
         /// </summary>
         public bool Empty
         {
@@ -73,8 +79,30 @@ namespace Alunite
         }
 
         /// <summary>
-        /// The chronologically-ordered collection of all events in the period of the sample.
+        /// The chronologically-ordered collection of all items in the period of the sample.
         /// </summary>
         public IEnumerable<T> Items;
+    }
+
+    /// <summary>
+    /// A chronologically-placed item.
+    /// </summary>
+    public struct Event<T>
+    {
+        public Event(T Item, double Time)
+        {
+            this.Item = Item;
+            this.Time = Time;
+        }
+
+        /// <summary>
+        /// The data for the event.
+        /// </summary>
+        public T Item;
+
+        /// <summary>
+        /// The time at which the event occurs.
+        /// </summary>
+        public double Time;
     }
 }
