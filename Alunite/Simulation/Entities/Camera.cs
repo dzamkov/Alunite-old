@@ -11,7 +11,7 @@ namespace Alunite
     {
         internal CameraEntity()
         {
-            this._Output = new Terminal<Void, View>();
+            this._Output = new OutTerminal<View>();
         }
 
         /// <summary>
@@ -20,9 +20,9 @@ namespace Alunite
         public static readonly CameraEntity Singleton = new CameraEntity();
 
         /// <summary>
-        /// Gets the output image of this camera sensor.
+        /// Gets the output image terminal of this camera sensor.
         /// </summary>
-        public Terminal<Void, View> Output
+        public OutTerminal<View> Output
         {
             get
             {
@@ -30,7 +30,7 @@ namespace Alunite
             }
         }
 
-        private Terminal<Void, View> _Output;
+        private OutTerminal<View> _Output;
     }
 
     /// <summary>

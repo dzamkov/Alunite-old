@@ -93,7 +93,7 @@ namespace Alunite
         {
             this._Control = Control;
             this._Body = Body;
-            this._BodyMap = new LazyTerminalMap();
+            this._BodyMap = new LazyNodeMap();
         }
 
         /// <summary>
@@ -127,10 +127,10 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the terminal map from terminals internal to the body to terminals that can be referenced externally on this entity. No
+        /// Gets the node map from terminals internal to the body to nodes that can be referenced externally on this entity. No
         /// mapping is required for the "Phantom" part of this entity.
         /// </summary>
-        public TerminalMap BodyMap
+        public NodeMap BodyMap
         {
             get
             {
@@ -140,7 +140,7 @@ namespace Alunite
 
         private Entity _Control;
         private Entity _Body;
-        private LazyTerminalMap _BodyMap;
+        private LazyNodeMap _BodyMap;
     }
 
     /// <summary>
