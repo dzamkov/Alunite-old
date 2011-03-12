@@ -18,15 +18,27 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets a signal for the output of the given terminal. Note that the signal will update as the simulation updates (if any corrections are made
-        /// to input signals).
+        /// Creates a connection to a terminal by specifing an input signal and reciving an output signal. Both
+        /// signals may be modified along with the simulation. If either signal is Nothing at any time, it
+        /// indicates that the terminal is inactive in the corresponding direction.
         /// </summary>
-        public abstract Signal<TOutput> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal);
+        public abstract Signal<Maybe<TOutput>> Connect<TInput, TOutput>(Signal<Maybe<TInput>> Input, Terminal<TInput, TOutput> Terminal);
 
         /// <summary>
-        /// Sets the input of the given terminal to the specified signal.
+        /// Creates a one-way connection with a terminal that only gives information.
         /// </summary>
-        public abstract void Write<TInput, TOutput>(Terminal<TInput, TOutput> Terminal, Signal<TInput> Signal);
+        public void Write<TInput, TOutput>(Signal<Maybe<TInput>> Input, Terminal<TInput, TOutput> Terminal)
+        {
+            this.Connect<TInput, TOutput>(Input, Terminal);
+        }
+
+        /// <summary>
+        /// Creates a one-way connection with a terminal that only receives information.
+        /// </summary>
+        public Signal<Maybe<TOutput>> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal)
+        {
+            return this.Connect(NothingSignal<TInput>.Singleton, Terminal);
+        }
     }
 
     /// <summary>
@@ -39,12 +51,7 @@ namespace Alunite
 
         }
 
-        public override Signal<TOutput> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Write<TInput, TOutput>(Terminal<TInput, TOutput> Terminal, Signal<TInput> Signal)
+        public override Signal<Maybe<TOutput>> Connect<TInput, TOutput>(Signal<Maybe<TInput>> Input, Terminal<TInput, TOutput> Terminal)
         {
             throw new NotImplementedException();
         }

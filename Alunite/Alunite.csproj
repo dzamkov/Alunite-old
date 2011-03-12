@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="Data\Filter.cs" />
     <Compile Include="Data\MatchMatrix.cs" />
+    <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
     <Compile Include="Data\Void.cs" />
     <Compile Include="Math\Arithmetic.cs" />
