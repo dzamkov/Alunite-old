@@ -26,21 +26,12 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Links two terminals within the source entity. Note that once a terminal is linked, it can no longer
-        /// be used outside the entity.
+        /// Creates a link between two terminals. There is a many to one relationship between output and
+        /// input terminals.
         /// </summary>
-        public void Link<TInput, TOutput>(Terminal<TInput, TOutput> A, Terminal<TOutput, TInput> B)
+        public void Link<T>(OutTerminal<T> Output, InTerminal<T> Input)
         {
-            this._Links.Add(_Link.Create<TInput, TOutput>(A, B));
-        }
-
-        /// <summary>
-        /// Links two terminals within the source entity. Note that once a terminal is linked, it can no longer
-        /// be used outside the entity.
-        /// </summary>
-        public void Link<TOutput>(Terminal<Void, TOutput> Output, Terminal<TOutput, Void> Input)
-        {
-            this._Links.Add(_Link.Create<Void, TOutput>(Output, Input));
+            this._Links.Add(_Link.Create(Output, Input));
         }
 
         public override bool Phantom
@@ -63,22 +54,22 @@ namespace Alunite
         /// <summary>
         /// Creates a link between two terminals.
         /// </summary>
-        public static _Link Create<TA, TB>(Terminal<TA, TB> A, Terminal<TB, TA> B)
+        public static _Link Create<T>(OutTerminal<T> Output, InTerminal<T> Input)
         {
-            return new SpecialTerminal<TA, TB>()
+            return new SpecialTerminal<T>
             {
-                A = A,
-                B = B
+                Output = Output,
+                Input = Input
             };
         }
 
         /// <summary>
         /// A specialized link between complimentary typed terminals.
         /// </summary>>
-        public class SpecialTerminal<TA, TB> : _Link
+        public class SpecialTerminal<T> : _Link
         {
-            public Terminal<TA, TB> A;
-            public Terminal<TB, TA> B;
+            public OutTerminal<T> Output;
+            public InTerminal<T> Input;
         }
     }
 }

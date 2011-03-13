@@ -18,27 +18,17 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a connection to a terminal by specifing an input signal and reciving an output signal. Both
-        /// signals may be updated along with the simulation. If either signal is Nothing at any time, it
-        /// indicates that the terminal is inactive in the corresponding direction.
+        /// Reads the signal from the given terminal. The signal will be Nothing when the terminal is not
+        /// active, either because the entity that has the terminal does not have the required terminal or
+        /// the entity does not exist.
         /// </summary>
-        public abstract Mutable<Signal<Maybe<TOutput>>> Connect<TInput, TOutput>(Mutable<Signal<Maybe<TInput>>> Input, Terminal<TInput, TOutput> Terminal);
+        public abstract Mutable<Signal<Maybe<T>>> Read<T>(OutTerminal<T> Terminal);
 
         /// <summary>
-        /// Creates a one-way connection with a terminal that only gives information.
+        /// Writes a signal to the given terminal. Note that only one input source may be used
+        /// for each input terminal.
         /// </summary>
-        public void Write<TInput, TOutput>(Mutable<Signal<Maybe<TInput>>> Input, Terminal<TInput, TOutput> Terminal)
-        {
-            this.Connect<TInput, TOutput>(Input, Terminal);
-        }
-
-        /// <summary>
-        /// Creates a one-way connection with a terminal that only receives information.
-        /// </summary>
-        public Mutable<Signal<Maybe<TOutput>>> Read<TInput, TOutput>(Terminal<TInput, TOutput> Terminal)
-        {
-            return this.Connect((Mutable<Signal<Maybe<TInput>>>)NothingSignal<TInput>.Singleton, Terminal);
-        }
+        public abstract void Write<T>(InTerminal<T> Terminal, Mutable<Signal<Maybe<T>>> Signal);
     }
 
     /// <summary>
@@ -51,7 +41,12 @@ namespace Alunite
 
         }
 
-        public override Mutable<Signal<Maybe<TOutput>>> Connect<TInput, TOutput>(Mutable<Signal<Maybe<TInput>>> Input, Terminal<TInput, TOutput> Terminal)
+        public override Mutable<Signal<Maybe<T>>> Read<T>(OutTerminal<T> Terminal)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write<T>(InTerminal<T> Terminal, Mutable<Signal<Maybe<T>>> Signal)
         {
             throw new NotImplementedException();
         }

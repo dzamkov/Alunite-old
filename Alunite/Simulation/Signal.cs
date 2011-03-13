@@ -4,17 +4,15 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A continous time-varying value.
+    /// Represents an infinitely precise, continous time-varying value.
     /// </summary>
     /// <remarks>All ranges in signals represent the interval [Start, End).</remarks>
-    /// <typeparam name="T">The type of the signal at any one time.</typeparam>
+    /// <typeparam name="T">The type of the signal at any one time or a range of time.</typeparam>
     public abstract class Signal<T>
     {
         /// <summary>
-        /// Gets the value of the signal at any one time. Not that no times before 0.0 may be used.
+        /// Gets the value of the signal at the specified time.
         /// </summary>
-        /// <remarks>Due to the fact that a double can not perfectly represent any one time, this actually gets the average
-        /// of the signal between Time and the next highest double.</remarks>
         public abstract T this[double Time] { get; }
 
         /// <summary>
@@ -32,7 +30,7 @@ namespace Alunite
     /// <summary>
     /// A maybe signal whose value is always nothing.
     /// </summary>
-    public class NothingSignal<T> : Signal<Maybe<T>>
+    public sealed class NothingSignal<T> : Signal<Maybe<T>>
     {
         private NothingSignal()
         {
@@ -58,7 +56,13 @@ namespace Alunite
     /// </summary>
     public static class Signal
     {
-
+        /// <summary>
+        /// Gets a maybe signal whose value is always nothing.
+        /// </summary>
+        public static NothingSignal<T> Nothing<T>()
+        {
+            return NothingSignal<T>.Singleton;
+        }
     }
 
     /// <summary>

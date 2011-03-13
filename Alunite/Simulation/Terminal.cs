@@ -4,27 +4,17 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A reference to a bidirectional channel in an entity that can be used for communication with complimentary terminals over time.
+    /// A reference to a terminal which takes an input signal produced by a complimentary terminal.
     /// </summary>
-    /// <typeparam name="TInput">The type of input received on the channel at any one time.</typeparam>
-    /// <typeparam name="TOutput">The type of output given by the channel at any one time.</typeparam>
-    public class Terminal<TInput, TOutput> : Node
-    {
-        
-    }
-
-    /// <summary>
-    /// A terminal that receives input without giving any output.
-    /// </summary>
-    public class InTerminal<TInput> : Terminal<TInput, Void>
+    public class InTerminal<T> : Node
     {
 
     }
 
     /// <summary>
-    /// A terminal that gives output without receiving any input.
+    /// A reference to a terminal which produces an output signal that may be used by a complimentary terminal.
     /// </summary>
-    public class OutTerminal<TOutput> : Terminal<Void, TOutput>
+    public class OutTerminal<T> : Node
     {
 
     }
