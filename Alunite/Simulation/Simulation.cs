@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// Represents the progression of an entity over time. Simulations can be interacted with using
+    /// A mutable representation of the progression of an entity over time. Simulations can be interacted with using
     /// unbound terminals in the supplied entity.
     /// </summary>
     public abstract class Simulation

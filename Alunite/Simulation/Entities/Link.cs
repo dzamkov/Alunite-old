@@ -4,8 +4,7 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// An entity that creates internal links within another source entity. Note that once an internal link is made, neither of the involved
-    /// terminals may be referenced with the LinkEntity.
+    /// An entity that creates internal links within another source entity.
     /// </summary>
     public class LinkEntity : Entity
     {
@@ -27,7 +26,8 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Links two terminals within the source entity.
+        /// Links two terminals within the source entity. Note that once a terminal is linked, it can no longer
+        /// be used outside the entity.
         /// </summary>
         public void Link<TInput, TOutput>(Terminal<TInput, TOutput> A, Terminal<TOutput, TInput> B)
         {
@@ -35,7 +35,8 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Links two terminals within the source entity.
+        /// Links two terminals within the source entity. Note that once a terminal is linked, it can no longer
+        /// be used outside the entity.
         /// </summary>
         public void Link<TOutput>(Terminal<Void, TOutput> Output, Terminal<TOutput, Void> Input)
         {
@@ -64,7 +65,7 @@ namespace Alunite
         /// </summary>
         public static _Link Create<TA, TB>(Terminal<TA, TB> A, Terminal<TB, TA> B)
         {
-            return new Special<TA, TB>()
+            return new SpecialTerminal<TA, TB>()
             {
                 A = A,
                 B = B
@@ -74,7 +75,7 @@ namespace Alunite
         /// <summary>
         /// A specialized link between complimentary typed terminals.
         /// </summary>>
-        public class Special<TA, TB> : _Link
+        public class SpecialTerminal<TA, TB> : _Link
         {
             public Terminal<TA, TB> A;
             public Terminal<TB, TA> B;
