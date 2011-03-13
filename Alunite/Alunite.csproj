@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{056E865F-6D6B-44E1-AD98-50DA0DB1C97E}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -54,12 +54,15 @@
     <Compile Include="Math\Transform.cs" />
     <Compile Include="Data\UsageSet.cs" />
     <Compile Include="Math\Vector.cs" />
-	<Compile Include="Simulation\Dynamics\Progression.cs" />
+    <Compile Include="Simulation\Dynamics\Progression.cs" />
     <Compile Include="Simulation\Entities\Camera.cs" />
     <Compile Include="Simulation\Entities\Compound.cs" />
     <Compile Include="Simulation\Entities\Link.cs" />
-    <Compile Include="Simulation\Entities\Sphere.cs" />
     <Compile Include="Simulation\Entity.cs" />
+    <Compile Include="Simulation\Matter\Brush.cs" />
+    <Compile Include="Simulation\Matter\Material.cs" />
+    <Compile Include="Simulation\Matter\Shape.cs" />
+    <Compile Include="Simulation\Matter\Substance.cs" />
     <Compile Include="Simulation\Node.cs" />
     <Compile Include="Simulation\Signal.cs" />
     <Compile Include="Simulation\Simulation.cs" />

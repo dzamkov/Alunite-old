@@ -5,7 +5,8 @@ namespace Alunite
 {
     /// <summary>
     /// An entity made from the combination of other entities. Note that each entity has its nodes remapped to avoid
-    /// conflicts when reusing entities.
+    /// conflicts when reusing entities. If multiple physical entities take up the same space, they will be superimposed (which is usually
+    /// not the desired effect, but it is the only logical one).
     /// </summary>
     public class CompoundEntity : Entity
     {
@@ -68,6 +69,19 @@ namespace Alunite
                     }
                 }
                 return true;
+            }
+        }
+
+        public override MassAggregate Aggregate
+        {
+            get
+            {
+                MassAggregate n = MassAggregate.Null;
+                foreach (Element e in this._Elements)
+                {
+                    n = n + e.Entity.Aggregate;
+                }
+                return n;
             }
         }
 

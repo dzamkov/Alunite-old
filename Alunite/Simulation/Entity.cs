@@ -7,7 +7,7 @@ namespace Alunite
     /// A static description of a dynamic object that can interact with other entities in a simulation over time. Note that each entity may be used multiple
     /// times and is not linked with any particular context.
     /// </summary>
-    public class Entity
+    public abstract class Entity
     {
         /// <summary>
         /// Creates an entity with a transform to this entity.
@@ -29,6 +29,11 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets an aggregation of the physical contents of this entity.
+        /// </summary>
+        public abstract MassAggregate Aggregate { get; }
+
+        /// <summary>
         /// Gets a camera entity.
         /// </summary>
         public static CameraEntity Camera()
@@ -37,19 +42,27 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a sphere with the specified mass and radius.
-        /// </summary>
-        public static SphereEntity Sphere(double Mass, double Radius)
-        {
-            return new SphereEntity(Mass, Radius);
-        }
-
-        /// <summary>
         /// Creates a compound entity.
         /// </summary>
         public static CompoundEntity Compound()
         {
             return new CompoundEntity();
+        }
+
+        /// <summary>
+        /// Creates a brush.
+        /// </summary>
+        public static Brush Brush(Material Material, Shape Shape)
+        {
+            return new Brush(Material, Shape);
+        }
+
+        /// <summary>
+        /// Creates a solid brush.
+        /// </summary>
+        public static Brush Brush(Substance Substance, Shape Shape)
+        {
+            return new Brush(Material.Solid(Substance), Shape);
         }
 
         /// <summary>
@@ -74,6 +87,14 @@ namespace Alunite
     /// </summary>
     public class PhantomEntity : Entity
     {
+        public override MassAggregate Aggregate
+        {
+            get
+            {
+                return MassAggregate.Null;
+            }
+        }
+
         public override bool Phantom
         {
             get
@@ -118,6 +139,14 @@ namespace Alunite
             }
         }
 
+        public override MassAggregate Aggregate
+        {
+            get
+            {
+                return this._Body.Aggregate;
+            }
+        }
+
         public override bool Phantom
         {
             get
@@ -159,6 +188,16 @@ namespace Alunite
             return new TransformedEntity(this._Source, this._Transform.Apply(Transform));
         }
 
+        public override MassAggregate Aggregate
+        {
+            get
+            {
+                MassAggregate source = this._Source.Aggregate;
+                source.Barycenter = this._Transform.ApplyToOffset(source.Barycenter);
+                return source;
+            }
+        }
+
         /// <summary>
         /// Gets the entity that is transformed.
         /// </summary>
@@ -191,5 +230,50 @@ namespace Alunite
 
         private Entity _Source;
         private Transform _Transform;
+    }
+
+    /// <summary>
+    /// Aggregation of the physical contents of an entity.
+    /// </summary>
+    public struct MassAggregate
+    {
+        public MassAggregate(double Mass, Vector Barycenter)
+        {
+            this.Mass = Mass;
+            this.Barycenter = Barycenter;
+        }
+
+        /// <summary>
+        /// Gets a mass aggregation for no matter.
+        /// </summary>
+        public static MassAggregate Null
+        {
+            get
+            {
+                return new MassAggregate(0.0, new Vector(0.0, 0.0, 0.0));
+            }
+        }
+
+        public static MassAggregate operator +(MassAggregate A, MassAggregate B)
+        {
+            double totalmass = A.Mass + B.Mass;
+            return new MassAggregate(totalmass, A.Barycenter * (A.Mass / totalmass) + B.Barycenter * (B.Mass / totalmass));
+        }
+
+        public static MassAggregate operator -(MassAggregate A, MassAggregate B)
+        {
+            double totalmass = A.Mass + B.Mass;
+            return new MassAggregate(A.Mass - B.Mass, A.Barycenter * (A.Mass / totalmass) - B.Barycenter * (B.Mass / totalmass));
+        }
+
+        /// <summary>
+        /// The total mass in kilograms.
+        /// </summary>
+        public double Mass;
+
+        /// <summary>
+        /// The location center of mass, or barycenter in relation to the entity.
+        /// </summary>
+        public Vector Barycenter;
     }
 }

@@ -25,6 +25,14 @@ namespace Alunite
             }
         }
 
+        public override MassAggregate Aggregate
+        {
+            get
+            {
+                return this._Source.Aggregate;
+            }
+        }
+
         /// <summary>
         /// Creates a link between two terminals. There is a many to one relationship between output and
         /// input terminals.
