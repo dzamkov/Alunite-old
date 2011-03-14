@@ -194,6 +194,33 @@ namespace Alunite
             this.Angle = Angle;
         }
 
+        public AxisAngle(Vector Rotation)
+        {
+            this.Angle = Rotation.Length;
+            this.Axis = Rotation * (1.0 / this.Angle);
+        }
+
+        /// <summary>
+        /// Gets a single vector representing the rotation of this axis angle pair by setting the length of the axis
+        /// to the amount of rotation. Rotation vectors are useful for representing angular velocity or torque because adding
+        /// the vectors together will add their effects.
+        /// </summary>
+        public Vector Rotation
+        {
+            get
+            {
+                return this.Axis * this.Angle;
+            }
+        }
+
+        /// <summary>
+        /// Gets the axis angle rotation between the two specified normal vectors.
+        /// </summary>
+        public static AxisAngle Between(Vector A, Vector B)
+        {
+            return new AxisAngle(Vector.Normalize(Vector.Cross(A, B)), Math.Acos(Vector.Dot(A, B)));
+        }
+
         /// <summary>
         /// Gets an axis angle representation of an identity rotation.
         /// </summary>
