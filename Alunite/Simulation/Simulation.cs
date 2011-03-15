@@ -38,7 +38,7 @@ namespace Alunite
     {
         public _Simulation(Entity World)
         {
-            this._Span = Span.Create(World);
+            this._Span = Span.Create(double.PositiveInfinity, World, null, null);
         }
 
         public override Mutable<Signal<Maybe<T>>> Read<T>(OutTerminal<T> Terminal)

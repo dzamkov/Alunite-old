@@ -79,7 +79,7 @@ namespace Alunite
     /// <summary>
     /// An invisible, indestructible, massless entity that may interact with a simulation.
     /// </summary>
-    public class PhantomEntity : Entity
+    public abstract class PhantomEntity : Entity
     {
         public override MassAggregate Aggregate
         {

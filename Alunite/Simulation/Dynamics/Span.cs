@@ -29,11 +29,27 @@ namespace Alunite
                 return this[0.0];
             }
         }
+
+        /// <summary>
+        /// Gets the final state of the span.
+        /// </summary>
+        public virtual Entity Final
+        {
+            get
+            {
+                return this[this.Length];
+            }
+        }
         
         /// <summary>
         /// Gets the initial environment (all entities that have an influence on this span, relative to the span) for this span.
         /// </summary>
-        public abstract Entity InitialEnvironment { get; }
+        public abstract Entity Environment { get; }
+
+        /// <summary>
+        /// Gets the control node input for this span. This gives data for input terminals of both this entity and the environment.
+        /// </summary>
+        public abstract ControlInput Input { get; }
 
         /// <summary>
         /// Gets the signal for the specified terminal from this span. If at any point the terminal is not in the span,
@@ -42,11 +58,30 @@ namespace Alunite
         public abstract Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal);
 
         /// <summary>
-        /// Creates a span for an entity with no external influence.
+        /// Creates a new span with initial parameters like this except for the control input.
         /// </summary>
-        public static Span Create(Entity Entity)
+        public virtual Span UpdateInput(ControlInput Input)
+        {
+            return Create(this.Length, this.Initial, this.Environment, Input);
+        }
+
+        /// <summary>
+        /// Creates a span with the given parameters.
+        /// </summary>
+        public static Span Create(double Length, Entity Initial, Entity Environment, ControlInput Input)
         {
             throw new NotImplementedException();
         }
+    }
+
+    /// <summary>
+    /// Describes a mapping of signals to input terminals.
+    /// </summary>
+    public abstract class ControlInput
+    {
+        /// <summary>
+        /// Gets the signal for the given input terminal.
+        /// </summary>
+        public abstract Signal<Maybe<T>> Lookup<T>(InTerminal<T> Terminal);
     }
 }
