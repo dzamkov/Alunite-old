@@ -38,17 +38,23 @@ namespace Alunite
     {
         public _Simulation(Entity World)
         {
-
+            this._Span = Span.Create(World);
         }
 
         public override Mutable<Signal<Maybe<T>>> Read<T>(OutTerminal<T> Terminal)
         {
-            throw new NotImplementedException();
+
+            return this._Span.Read<T>(Terminal);
         }
 
         public override void Write<T>(InTerminal<T> Terminal, Mutable<Signal<Maybe<T>>> Signal)
         {
-            throw new NotImplementedException();
+            //this._Span.Write<T>(Terminal, Signal);
         }
+
+        /// <summary>
+        /// A span unbounded in time and space that represents the complete progression of this simulation.
+        /// </summary>
+        private Span _Span;
     }
 }

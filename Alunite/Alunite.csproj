@@ -54,7 +54,7 @@
     <Compile Include="Math\Transform.cs" />
     <Compile Include="Data\UsageSet.cs" />
     <Compile Include="Math\Vector.cs" />
-    <Compile Include="Simulation\Dynamics\Progression.cs" />
+    <Compile Include="Simulation\Dynamics\Span.cs" />
     <Compile Include="Simulation\Dynamics\RigidBody.cs" />
     <Compile Include="Simulation\Entities\Camera.cs" />
     <Compile Include="Simulation\Entities\Compound.cs" />

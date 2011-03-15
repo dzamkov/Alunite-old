@@ -44,6 +44,14 @@ namespace Alunite
             }
         }
 
+        public override bool Phantom
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         private Material _Material;
         private Shape _Shape;
     }

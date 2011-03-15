@@ -21,13 +21,7 @@ namespace Alunite
         /// <summary>
         /// Gets the centroid, or center of volume, of this shape.
         /// </summary>
-        public virtual Vector Centroid
-        {
-            get
-            {
-                return new Vector(0.0, 0.0, 0.0);
-            }
-        }
+        public abstract Vector Centroid { get; }
 
         /// <summary>
         /// Creates a sphere with the given radius.
@@ -58,6 +52,14 @@ namespace Alunite
             get
             {
                 return (4.0 / 3.0) * Math.PI * this._Radius * this._Radius * this._Radius;
+            }
+        }
+
+        public override Vector Centroid
+        {
+            get
+            {
+                return new Vector(0.0, 0.0, 0.0);
             }
         }
 

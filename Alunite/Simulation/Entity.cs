@@ -20,13 +20,7 @@ namespace Alunite
         /// <summary>
         /// Gets wether or not this entity has any physical components. A phantom entity is invisible, massless and indescructible.
         /// </summary>
-        public virtual bool Phantom
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public abstract bool Phantom { get; }
 
         /// <summary>
         /// Gets an aggregation of the physical contents of this entity.
