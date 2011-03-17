@@ -8,17 +8,38 @@ namespace Alunite
     /// </summary>
     public abstract class RigidBodySpan : Span
     {
-        /// <summary>
-        /// Gets the entity for the rigid body. Note that this is the same entity used at all times throughout the span.
-        /// </summary>
-        public Entity Entity
+        public override Entity this[double Time]
         {
-            get
+            get 
             {
-                return this._Entity;
+                return this.Entity.Apply(this.Transform[Time]);
             }
         }
 
-        private Entity _Entity;
+        public override Entity Initial
+        {
+            get
+            {
+                return this.Entity;
+            }
+        }
+
+        public override double Length
+        {
+            get
+            {
+                return this.Transform.Length;
+            }
+        }
+
+        /// <summary>
+        /// Gets the entity for the rigid body. Note that this is the same entity used at all times throughout the span.
+        /// </summary>
+        public abstract Entity Entity { get; }
+
+        /// <summary>
+        /// Gets a signal showing the progression of the transform from entity to span coordinates over time.
+        /// </summary>
+        public abstract Signal<Transform> Transform { get; }
     }
 }

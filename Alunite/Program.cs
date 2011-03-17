@@ -24,10 +24,10 @@ namespace Alunite
             OutTerminal<View> camout = world.Add(cam).Lookup(camsensor.Output);
             world.Add(obj);
 
-            Simulation sim = Simulation.Create(world);
+            Span worldspan = Span.Create(double.PositiveInfinity, world);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
-            hw.Control = new Visualizer(sim.Read(camout));
+            hw.Control = new Visualizer(worldspan.Read(camout));
             hw.Run(60.0);
         }
     }

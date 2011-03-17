@@ -8,7 +8,7 @@ namespace Alunite
     /// <summary>
     /// Represents a point or offset in three-dimensional space.
     /// </summary>
-    public struct Vector : IAdditive<Vector, Vector>, IMultiplicative<Vector, Scalar>
+    public struct Vector
     {
         public Vector(double X, double Y, double Z)
         {
@@ -27,39 +27,19 @@ namespace Alunite
             return new Vector3((float)Vector.X, (float)Vector.Y, (float)Vector.Z);
         }
 
-        public Vector Add(Vector Operand)
-        {
-            return new Vector(this.X + Operand.X, this.Y + Operand.Y, this.Z + Operand.Z);
-        }
-
-        public Vector Subtract(Vector Operand)
-        {
-            return new Vector(this.X - Operand.X, this.Y - Operand.Y, this.Z - Operand.Z);
-        }
-
-        public Vector Multiply(Scalar Operand)
-        {
-            return new Vector(this.X * Operand, this.Y * Operand, this.Z * Operand);
-        }
-
-        public Vector Divide(Scalar Operand)
-        {
-            return new Vector(this.X / Operand, this.Y / Operand, this.Z / Operand);
-        }
-
         public static Vector operator +(Vector A, Vector B)
         {
-            return A.Add(B);
+            return new Vector(A.X + B.X, A.Y + B.Y, A.Z + B.Z);
         }
 
         public static Vector operator -(Vector A, Vector B)
         {
-            return A.Subtract(B);
+            return new Vector(A.X - B.X, A.Y - B.Y, A.Z - B.Z);
         }
 
         public static Vector operator *(Vector A, double Magnitude)
         {
-            return A.Multiply(Magnitude);
+            return new Vector(A.X * Magnitude, A.Y * Magnitude, A.Z * Magnitude);
         }
 
         public static Vector operator -(Vector A)

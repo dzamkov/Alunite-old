@@ -48,13 +48,20 @@ namespace Alunite
         /// </summary>
         public NodeMap Add(Entity Entity)
         {
-            NodeMap tm = this._Elements.Count == 0 ? (NodeMap)NodeMap.Identity : NodeMap.Lazy;
-            this._Elements.Add(new Element()
+            if (Entity != Entity.Null)
             {
-                NodeMap = tm,
-                Entity = Entity
-            });
-            return tm;
+                NodeMap tm = this._Elements.Count == 0 ? (NodeMap)NodeMap.Identity : NodeMap.Lazy;
+                this._Elements.Add(new Element()
+                {
+                    NodeMap = tm,
+                    Entity = Entity
+                });
+                return tm;
+            }
+            else
+            {
+                return NodeMap.Identity;
+            }
         }
 
         public override bool Phantom

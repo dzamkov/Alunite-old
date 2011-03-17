@@ -45,9 +45,6 @@
     <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
     <Compile Include="Data\Void.cs" />
-    <Compile Include="Math\Arithmetic.cs" />
-    <Compile Include="Math\Curve.cs" />
-    <Compile Include="Math\Scalar.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Math\Quaternion.cs" />
     <Compile Include="Data\Set.cs" />
@@ -69,6 +66,7 @@
     <Compile Include="Simulation\Signal.cs" />
     <Compile Include="Simulation\Simulation.cs" />
     <Compile Include="Simulation\Terminal.cs" />
+    <Compile Include="Simulation\Visual\Visual.cs" />
     <Compile Include="Visualizer.cs" />
   </ItemGroup>
   <ItemGroup>

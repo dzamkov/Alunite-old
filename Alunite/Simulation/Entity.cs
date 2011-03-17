@@ -12,7 +12,7 @@ namespace Alunite
         /// <summary>
         /// Creates an entity with a transform to this entity.
         /// </summary>
-        public virtual TransformedEntity Apply(Transform Transform)
+        public virtual Entity Apply(Transform Transform)
         {
             return new TransformedEntity(this, Transform);
         }
@@ -68,11 +68,59 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the null entity. This entity has no interactions and can be completely disregarded.
+        /// </summary>
+        public static NullEntity Null
+        {
+            get
+            {
+                return NullEntity.Singleton;
+            }
+        }
+
+        /// <summary>
         /// Creates an entity that attaches this entity to the specified physical body. Only phantom entities may be embodied.
         /// </summary>
         public EmbodimentEntity Embody(Entity Body)
         {
             return new EmbodimentEntity(this, Body);
+        }
+    }
+
+    /// <summary>
+    /// An undetectable entity with no interactions.
+    /// </summary>
+    public class NullEntity : Entity
+    {
+        private NullEntity()
+        {
+
+        }
+
+        /// <summary>
+        /// Gets the only instance of this class.
+        /// </summary>
+        public static readonly NullEntity Singleton = new NullEntity();
+
+        public override MassAggregate Aggregate
+        {
+            get
+            {
+                return MassAggregate.Null;
+            }
+        }
+
+        public override Entity Apply(Transform Transform)
+        {
+            return this;
+        }
+
+        public override bool Phantom
+        {
+            get
+            {
+                return false;
+            }
         }
     }
 
@@ -177,7 +225,7 @@ namespace Alunite
             this._Transform = Transform;
         }
 
-        public override TransformedEntity Apply(Transform Transform)
+        public override Entity Apply(Transform Transform)
         {
             return new TransformedEntity(this._Source, this._Transform.Apply(Transform));
         }

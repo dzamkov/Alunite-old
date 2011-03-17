@@ -5,7 +5,7 @@ namespace Alunite
 {
     /// <summary>
     /// The progression of an entity over time. A span must account for all interaction within an entity
-    /// and possibly some external interaction with an environment (given by an entity).
+    /// and possibly some external interaction with an environment (given by a span).
     /// </summary>
     public abstract class Span
     {
@@ -31,47 +31,176 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Gets the final state of the span.
-        /// </summary>
-        public virtual Entity Final
-        {
-            get
-            {
-                return this[this.Length];
-            }
-        }
-        
-        /// <summary>
-        /// Gets the initial environment (all entities that have an influence on this span, relative to the span) for this span.
-        /// </summary>
-        public abstract Entity Environment { get; }
-
-        /// <summary>
-        /// Gets the control node input for this span. This gives data for input terminals of both this entity and the environment.
-        /// </summary>
-        public abstract ControlInput Input { get; }
-
-        /// <summary>
         /// Gets the signal for the specified terminal from this span. If at any point the terminal is not in the span,
         /// or the terminal is inactive, the result of the signal will be "Nothing".
         /// </summary>
         public abstract Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal);
 
         /// <summary>
-        /// Creates a new span with initial parameters like this except for the control input.
+        /// Applies a uniform transform to this span. This will not affect the internal attributes of the span, nor the
+        /// the output control signals.
         /// </summary>
-        public virtual Span UpdateInput(ControlInput Input)
+        public virtual Span Apply(Transform Transform)
         {
-            return Create(this.Length, this.Initial, this.Environment, Input);
+            return new TransformedSpan(this, Transform);
         }
 
         /// <summary>
-        /// Creates a span with the given parameters.
+        /// Creates a new span with initial parameters like this except for the environment and control input.
         /// </summary>
-        public static Span Create(double Length, Entity Initial, Entity Environment, ControlInput Input)
+        public virtual Span Update(Span Environment, ControlInput Input)
         {
+            return Create(this.Length, this.Initial, Environment, Input);
+        }
+
+        /// <summary>
+        /// Creates a span with the given parameters. Note that the returned entity's length may exceed the minimum length specified.
+        /// </summary>
+        public static Span Create(double Length, Entity Initial, Span Environment, ControlInput Input)
+        {
+            if (Initial == Entity.Null)
+            {
+                return Span.Null;
+            }
+
+            TransformedEntity te = Initial as TransformedEntity;
+            if (te != null)
+            {
+                return Create(Length, te.Source, Environment.Apply(te.Transform.Inverse), Input).Apply(te.Transform);
+            }
+
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Creates a span for an entity with no external influence.
+        /// </summary>
+        public static Span Create(double Length, Entity Initial)
+        {
+            return Create(Length, Initial, Span.Null, ControlInput.Null);
+        }
+
+        /// <summary>
+        /// Gets the null span, which is a span containing the null entity at all times.
+        /// </summary>
+        public static NullSpan Null
+        {
+            get
+            {
+                return NullSpan.Singleton;
+            }
+        }
+    }
+
+    /// <summary>
+    /// An unbounded span that has the state of a null entity at any time.
+    /// </summary>
+    public sealed class NullSpan : Span
+    {
+        private NullSpan()
+        {
+
+        }
+
+        /// <summary>
+        /// Gets the only instance of this class.
+        /// </summary>
+        public static readonly NullSpan Singleton = new NullSpan();
+
+        public override double Length
+        {
+            get
+            {
+                return double.PositiveInfinity;
+            }
+        }
+
+        public override Entity this[double Time]
+        {
+            get
+            {
+                return Entity.Null;
+            }
+        }
+
+        public override Span Update(Span Environment, ControlInput Input)
+        {
+            return this;
+        }
+
+        public override Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal)
+        {
+            return Signal.Nothing<T>();
+        }
+    }
+
+    /// <summary>
+    /// A span that uniformly transforms all states of a source span. The transformation will only affect the external state
+    /// of the span as entities can never know their absolute position, orientation or velocity.
+    /// </summary>
+    public class TransformedSpan : Span
+    {
+        public TransformedSpan(Span Source, Transform Transform)
+        {
+            this._Source = Source;
+            this._Transform = Transform;
+        }
+
+        /// <summary>
+        /// Gets the source before transformation.
+        /// </summary>
+        public Span Source
+        {
+            get
+            {
+                return this._Source;
+            }
+        }
+
+        /// <summary>
+        /// Gets the transformation.
+        /// </summary>
+        public Transform Transform
+        {
+            get
+            {
+                return this._Transform;
+            }
+        }
+
+        public override double Length
+        {
+            get
+            {
+                return this._Source.Length;
+            }
+        }
+
+        public override Entity this[double Time]
+        {
+            get
+            {
+                return this._Source[Time].Apply(this._Transform);
+            }
+        }
+
+        public override Span Update(Span Environment, ControlInput Input)
+        {
+            return this._Source.Update(Environment.Apply(this._Transform.Inverse), Input).Apply(this._Transform);
+        }
+
+        public override Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal)
+        {
+            return this._Source.Read(Terminal);
+        }
+
+        public override Span Apply(Transform Transform)
+        {
+            return new TransformedSpan(this._Source, Transform);
+        }
+
+        private Span _Source;
+        private Transform _Transform;
     }
 
     /// <summary>
@@ -83,5 +212,37 @@ namespace Alunite
         /// Gets the signal for the given input terminal.
         /// </summary>
         public abstract Signal<Maybe<T>> Lookup<T>(InTerminal<T> Terminal);
+
+        /// <summary>
+        /// Gets the null control input.
+        /// </summary>
+        public static NullControlInput Null
+        {
+            get
+            {
+                return NullControlInput.Singleton;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A control input that has the default ("Nothing") signal for all terminals.
+    /// </summary>
+    public class NullControlInput : ControlInput
+    {
+        private NullControlInput()
+        {
+
+        }
+
+        /// <summary>
+        /// Gets the only instance of this class.
+        /// </summary>
+        public static readonly NullControlInput Singleton = new NullControlInput();
+
+        public override Signal<Maybe<T>> Lookup<T>(InTerminal<T> Terminal)
+        {
+            return Signal.Nothing<T>();
+        }
     }
 }
