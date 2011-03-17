@@ -81,9 +81,9 @@ namespace Alunite
         /// <summary>
         /// Creates an entity that attaches this entity to the specified physical body. Only phantom entities may be embodied.
         /// </summary>
-        public EmbodimentEntity Embody(Entity Body)
+        public EmbodiedEntity Embody(Entity Body)
         {
-            return new EmbodimentEntity(this, Body);
+            return new EmbodiedEntity(this, Body);
         }
     }
 
@@ -150,9 +150,9 @@ namespace Alunite
     /// An entity which attaches a phantom entity to a physical form. This allows the attached entity to move and be destroyed with the physical entity while still retaining
     /// its special properties.
     /// </summary>
-    public class EmbodimentEntity : Entity
+    public class EmbodiedEntity : Entity
     {
-        public EmbodimentEntity(Entity Control, Entity Body)
+        public EmbodiedEntity(Entity Control, Entity Body)
         {
             this._Control = Control;
             this._Body = Body;

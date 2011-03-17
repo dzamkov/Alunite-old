@@ -53,7 +53,7 @@
     <Compile Include="Data\UsageSet.cs" />
     <Compile Include="Math\Vector.cs" />
     <Compile Include="Simulation\Dynamics\Span.cs" />
-    <Compile Include="Simulation\Dynamics\RigidBody.cs" />
+    <Compile Include="Simulation\Dynamics\Spans\RigidBody.cs" />
     <Compile Include="Simulation\Entities\Camera.cs" />
     <Compile Include="Simulation\Entities\Compound.cs" />
     <Compile Include="Simulation\Entities\Link.cs" />
