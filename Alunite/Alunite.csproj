@@ -55,6 +55,7 @@
     <Compile Include="Math\Vector.cs" />
     <Compile Include="Simulation\Dynamics\Span.cs" />
     <Compile Include="Simulation\Dynamics\Spans\Binary.cs" />
+    <Compile Include="Simulation\Dynamics\Spans\Camera.cs" />
     <Compile Include="Simulation\Dynamics\Spans\Embodied.cs" />
     <Compile Include="Simulation\Dynamics\Spans\Path.cs" />
     <Compile Include="Simulation\Dynamics\Spans\RigidBody.cs" />

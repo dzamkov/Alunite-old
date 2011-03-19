@@ -42,7 +42,10 @@ namespace Alunite
         public static Span Create(Entity InitialControl, Span Body, Span Environment, ControlInput Input)
         {
             Signal<Maybe<Transform>> path = GetPath(Body);
-            return Create(InitialControl, Span.Combine(Body, Environment).Apply(Signal.Default(path, Transform.Identity)), Input);
+            return
+                new EmbodiedSpan(
+                    InitialControl.CreateSpan(Span.Combine(Body, Environment).Apply(Signal.Default(path, Transform.Identity)), Input),
+                    Body);
         }
 
         /// <summary>

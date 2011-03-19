@@ -12,7 +12,8 @@ namespace Alunite
         /// <summary>
         /// Gets a simplified form of this object. The simplified data represents the same object,
         /// but is usually smaller and faster performace-wise. Simple simplifications can be made in the constructors
-        /// of data.
+        /// of data. Since this does not change the meaning of data, it may be performed in place, and change the
+        /// data.
         /// </summary>
         public virtual TBase Simplify
         {

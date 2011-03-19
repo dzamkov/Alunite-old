@@ -50,6 +50,11 @@ namespace Alunite
             }
         }
 
+        public override Span CreateSpan(Span Environment, ControlInput Input)
+        {
+            throw new NotImplementedException();
+        }
+
         private Entity _Source;
         private List<_Link> _Links;
     }

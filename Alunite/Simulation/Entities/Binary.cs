@@ -57,6 +57,18 @@ namespace Alunite
             }
         }
 
+        public override Span CreateSpan(Span Environment, ControlInput Input)
+        {
+            // TODO: Make this correct
+            Span pri = this._Primary.CreateSpan(Environment, Input);
+            Span sec = this._Secondary.CreateSpan(Environment, Input);
+
+            pri = pri.Update(Span.Combine(sec, Environment), Input);
+            sec = sec.Update(Span.Combine(pri, Environment), Input);
+
+            return Span.Combine(pri, sec);
+        }
+
         private Entity _Primary;
         private Entity _Secondary;
     }

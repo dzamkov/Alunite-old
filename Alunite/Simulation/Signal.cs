@@ -73,15 +73,8 @@ namespace Alunite
         {
             get
             {
-                Signal<T> src = this._Source.Simplify;
-                if (src != this._Source)
-                {
-                    return new JustSignal<T>(src);
-                }
-                else
-                {
-                    return this;
-                }
+                this._Source = this._Source.Simplify;
+                return this;
             }
         }
 
@@ -142,31 +135,23 @@ namespace Alunite
         {
             get
             {
-                Signal<Maybe<T>> pri = this._Primary.Simplify;
-                Signal<Maybe<T>> sec = this._Secondary.Simplify;
-                if (pri == NothingSignal<T>.Singleton)
+                this._Primary = this._Primary.Simplify;
+                this._Secondary = this._Secondary.Simplify;
+                if (this._Primary == NothingSignal<T>.Singleton)
                 {
-                    return sec;
+                    return this._Secondary;
                 }
-                if (pri is JustSignal<T>)
+                if (this._Primary is JustSignal<T>)
                 {
-                    return pri;
+                    return this._Primary;
                 }
 
-                JustSignal<T> js = sec as JustSignal<T>;
+                JustSignal<T> js = this._Secondary as JustSignal<T>;
                 if (js != null)
                 {
-                    return new JustSignal<T>(new DefaultSignal<T>(pri, js.Source));
+                    return new JustSignal<T>(new DefaultSignal<T>(this._Primary, js.Source));
                 }
-
-                if (this._Primary != pri || this._Secondary != sec)
-                {
-                    return new DeferSignal<T>(pri, sec);
-                }
-                else
-                {
-                    return this;
-                }
+                return this;
             }
         }
 
@@ -228,28 +213,20 @@ namespace Alunite
         {
             get
             {
-                Signal<Maybe<T>> pri = this._Primary.Simplify;
-                Signal<T> sec = this._Secondary.Simplify;
+                this._Primary = this._Primary.Simplify;
+                this._Secondary = this._Secondary.Simplify;
 
-                if (pri == NothingSignal<T>.Singleton)
+                if (this._Primary == NothingSignal<T>.Singleton)
                 {
-                    return sec;
+                    return this._Secondary;
                 }
 
-                JustSignal<T> js = pri as JustSignal<T>;
+                JustSignal<T> js = this._Primary as JustSignal<T>;
                 if (js != null)
                 {
                     return js.Source;
                 }
-
-                if (this._Primary != pri || this._Secondary != sec)
-                {
-                    return new DefaultSignal<T>(pri, sec);
-                }
-                else
-                {
-                    return this;
-                }
+                return this;
             }
         }
 

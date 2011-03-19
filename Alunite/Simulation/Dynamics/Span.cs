@@ -57,7 +57,7 @@ namespace Alunite
         /// </summary>
         public virtual Span Update(Span Environment, ControlInput Input)
         {
-            return Create(this.Initial, Environment, Input);
+            return this.Initial.CreateSpan(Environment, Input);
         }
 
         /// <summary>
@@ -77,47 +77,11 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a span with the given parameters.
-        /// </summary>
-        public static Span Create(Entity Initial, Span Environment, ControlInput Input)
-        {
-            if (Initial == Entity.Null)
-            {
-                return Span.Null;
-            }
-
-            TransformedEntity te = Initial as TransformedEntity;
-            if (te != null)
-            {
-                return Create(te.Source, Environment.Apply(te.Transform.Inverse), Input).Apply(te.Transform);
-            }
-
-            BinaryEntity be = Initial as BinaryEntity;
-            if (be != null)
-            {
-                return new BinarySpan(
-                    Create(be.Primary, Environment, Input),
-                    Create(be.Secondary, Environment, Input));
-            }
-
-            EmbodiedEntity ee = Initial as EmbodiedEntity;
-            if (ee != null)
-            {
-                return EmbodiedSpan.Create(
-                    ee.Control,
-                    Create(ee.Body, Environment, Input),
-                    Input);
-            }
-
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Creates a span for an entity with no external influence.
         /// </summary>
         public static Span Create(Entity Initial)
         {
-            return Create(Initial, Span.Null, ControlInput.Null);
+            return Initial.CreateSpan(Span.Null, ControlInput.Null);
         }
 
         /// <summary>

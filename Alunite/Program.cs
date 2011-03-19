@@ -25,7 +25,7 @@ namespace Alunite
             Span worldspan = Span.Create(world);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
-            hw.Control = new Visualizer(worldspan.Read(camsensor.Output));
+            hw.Control = new Visualizer(worldspan.Read(camsensor.Output).Simplify);
             hw.Run(60.0);
         }
     }

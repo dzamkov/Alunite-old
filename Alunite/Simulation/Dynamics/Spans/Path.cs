@@ -27,6 +27,23 @@ namespace Alunite
             return this._Source.Read(Terminal);
         }
 
+        public override Span Simplify
+        {
+            get
+            {
+                this._Path = this._Path.Simplify;
+                this._Source = this._Source.Simplify;
+
+                ConstantSignal<Transform> cs = this._Path as ConstantSignal<Transform>;
+                if (cs != null)
+                {
+                    return new TransformedSpan(this._Source, cs.Value);
+                }
+
+                return this;
+            }
+        }
+
         private Signal<Transform> _Path;
         private Span _Source;
     }

@@ -30,14 +30,11 @@ namespace Alunite
             }
         }
 
+        public override Span CreateSpan(Span Environment, ControlInput Input)
+        {
+            return new CameraSpan(Environment);
+        }
+
         private OutTerminal<View> _Output;
-    }
-
-    /// <summary>
-    /// A view of a simulation that can be rendered to a graphics context.
-    /// </summary>
-    public class View
-    {
-
     }
 }
