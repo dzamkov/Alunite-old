@@ -378,7 +378,7 @@ namespace Alunite
                 }
             }
 
-            return null;
+            throw new NotImplementedException();
         }
     }
 

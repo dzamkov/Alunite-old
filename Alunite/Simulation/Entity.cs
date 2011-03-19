@@ -36,11 +36,44 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a compound entity.
+        /// Creates a superimposed compound of entities. If any single node reference is used with both entities, the node reference
+        /// will have priority towards the primary entity.
         /// </summary>
-        public static CompoundEntity Compound()
+        public static Entity Combine(Entity Primary, Entity Secondary)
         {
-            return new CompoundEntity();
+            if (Primary == Null)
+            {
+                return Secondary;
+            }
+            if (Secondary == Null)
+            {
+                return Primary;
+            }
+            return new BinaryEntity(Primary, Secondary);
+        }
+
+        /// <summary>
+        /// Creates a superimposed compound of entities. If any single node reference is used more than once throughout the given entities, the
+        /// node reference will have priority towards the begining of the collection.
+        /// </summary>
+        public static Entity Combine(IEnumerable<Entity> Entities)
+        {
+            Entity cur = Null;
+            foreach (Entity e in Entities)
+            {
+                if (cur == Null)
+                {
+                    cur = e;
+                }
+                else
+                {
+                    if (e != Null)
+                    {
+                        cur = new BinaryEntity(cur, e);
+                    }
+                }
+            }
+            return cur;
         }
 
         /// <summary>

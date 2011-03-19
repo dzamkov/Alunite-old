@@ -20,14 +20,12 @@ namespace Alunite
             Entity cambody = Entity.Brush(Substance.Iron, Shape.Sphere(0.1)).Apply(new Transform(-0.12, 0.0, 0.0));
             Entity cam = camsensor.Embody(cambody);
             Entity obj = Entity.Brush(Substance.Iron, Shape.Sphere(1.0)).Apply(new Transform(5.0, 0.0, 0.0));
-            CompoundEntity world = Entity.Compound();
-            OutTerminal<View> camout = world.Add(cam).Lookup(camsensor.Output);
-            world.Add(obj);
+            Entity world = Entity.Combine(cam, obj);
 
             Span worldspan = Span.Create(double.PositiveInfinity, world);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
-            hw.Control = new Visualizer(worldspan.Read(camout));
+            hw.Control = new Visualizer(worldspan.Read(camsensor.Output));
             hw.Run(60.0);
         }
     }

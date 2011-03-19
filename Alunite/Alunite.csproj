@@ -54,8 +54,8 @@
     <Compile Include="Math\Vector.cs" />
     <Compile Include="Simulation\Dynamics\Span.cs" />
     <Compile Include="Simulation\Dynamics\Spans\RigidBody.cs" />
+    <Compile Include="Simulation\Entities\Binary.cs" />
     <Compile Include="Simulation\Entities\Camera.cs" />
-    <Compile Include="Simulation\Entities\Compound.cs" />
     <Compile Include="Simulation\Entities\Link.cs" />
     <Compile Include="Simulation\Entity.cs" />
     <Compile Include="Simulation\Matter\Brush.cs" />
