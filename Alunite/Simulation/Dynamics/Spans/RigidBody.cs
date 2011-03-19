@@ -24,14 +24,6 @@ namespace Alunite
             }
         }
 
-        public override double Length
-        {
-            get
-            {
-                return this.Transform.Length;
-            }
-        }
-
         /// <summary>
         /// Gets the entity for the rigid body. Note that this is the same entity used at all times throughout the span.
         /// </summary>

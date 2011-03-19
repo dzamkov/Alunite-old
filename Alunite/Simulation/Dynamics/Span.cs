@@ -13,11 +13,6 @@ namespace Alunite
     public abstract class Span
     {
         /// <summary>
-        /// Gets the length of time this span occupies in seconds.
-        /// </summary>
-        public abstract double Length { get; }
-
-        /// <summary>
         /// Gets the state of this span (as an entity) at the given time relative to the span.
         /// </summary>
         public abstract Entity this[double Time] { get; }
@@ -53,13 +48,13 @@ namespace Alunite
         /// </summary>
         public virtual Span Update(Span Environment, ControlInput Input)
         {
-            return Create(this.Length, this.Initial, Environment, Input);
+            return Create(this.Initial, Environment, Input);
         }
 
         /// <summary>
-        /// Creates a span with the given parameters. Note that the returned entity's length may exceed the minimum length specified.
+        /// Creates a span with the given parameters.
         /// </summary>
-        public static Span Create(double Length, Entity Initial, Span Environment, ControlInput Input)
+        public static Span Create(Entity Initial, Span Environment, ControlInput Input)
         {
             if (Initial == Entity.Null)
             {
@@ -69,7 +64,15 @@ namespace Alunite
             TransformedEntity te = Initial as TransformedEntity;
             if (te != null)
             {
-                return Create(Length, te.Source, Environment.Apply(te.Transform.Inverse), Input).Apply(te.Transform);
+                return Create(te.Source, Environment.Apply(te.Transform.Inverse), Input).Apply(te.Transform);
+            }
+
+            BinaryEntity be = Initial as BinaryEntity;
+            if (be != null)
+            {
+                return new BinarySpan(
+                    Create(be.Primary, Environment, Input),
+                    Create(be.Secondary, Environment, Input));
             }
 
             throw new NotImplementedException();
@@ -80,7 +83,7 @@ namespace Alunite
         /// </summary>
         public static Span Create(double Length, Entity Initial)
         {
-            return Create(Length, Initial, Span.Null, ControlInput.Null);
+            return Create(Initial, Span.Null, ControlInput.Null);
         }
 
         /// <summary>
@@ -96,7 +99,7 @@ namespace Alunite
     }
 
     /// <summary>
-    /// An unbounded span that has the state of a null entity at any time.
+    /// An span that has the state of a null entity at any time.
     /// </summary>
     public sealed class NullSpan : Span
     {
@@ -109,14 +112,6 @@ namespace Alunite
         /// Gets the only instance of this class.
         /// </summary>
         public static readonly NullSpan Singleton = new NullSpan();
-
-        public override double Length
-        {
-            get
-            {
-                return double.PositiveInfinity;
-            }
-        }
 
         public override Entity this[double Time]
         {
@@ -168,14 +163,6 @@ namespace Alunite
             get
             {
                 return this._Transform;
-            }
-        }
-
-        public override double Length
-        {
-            get
-            {
-                return this._Source.Length;
             }
         }
 

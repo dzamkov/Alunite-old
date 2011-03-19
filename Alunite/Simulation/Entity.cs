@@ -181,15 +181,15 @@ namespace Alunite
 
     /// <summary>
     /// An entity which attaches a phantom entity to a physical form. This allows the attached entity to move and be destroyed with the physical entity while still retaining
-    /// its special properties.
+    /// its special properties. If any node reference is defined in both the control and the body, it has priority towards the control.
     /// </summary>
+    /// <remarks>The reason I can't call control something sensible like "Phantom" is because that is already a property of "Entity".</remarks>
     public class EmbodiedEntity : Entity
     {
         public EmbodiedEntity(Entity Control, Entity Body)
         {
             this._Control = Control;
             this._Body = Body;
-            this._BodyMap = new LazyNodeMap();
         }
 
         /// <summary>
@@ -230,21 +230,8 @@ namespace Alunite
             }
         }
 
-        /// <summary>
-        /// Gets the node map from terminals internal to the body to nodes that can be referenced externally on this entity. No
-        /// mapping is required for the "Phantom" part of this entity.
-        /// </summary>
-        public NodeMap BodyMap
-        {
-            get
-            {
-                return this._BodyMap;
-            }
-        }
-
         private Entity _Control;
         private Entity _Body;
-        private LazyNodeMap _BodyMap;
     }
 
     /// <summary>

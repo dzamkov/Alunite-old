@@ -14,31 +14,12 @@ namespace Alunite
         /// Gets the value of the signal at the specified time.
         /// </summary>
         public abstract T this[double Time] { get; }
-
-        /// <summary>
-        /// Gets the length of this signal in seconds, or infinity to indicate an unbounded signal.
-        /// </summary>
-        public abstract double Length { get; }
-    }
-
-    /// <summary>
-    /// A signal with an infinite length.
-    /// </summary>
-    public abstract class UnboundSignal<T> : Signal<T>
-    {
-        public sealed override double Length
-        {
-            get
-            {
-                return double.PositiveInfinity;
-            }
-        }
     }
 
     /// <summary>
     /// A maybe signal whose value is always nothing.
     /// </summary>
-    public sealed class NothingSignal<T> : UnboundSignal<Maybe<T>>
+    public sealed class NothingSignal<T> : Signal<Maybe<T>>
     {
         private NothingSignal()
         {
@@ -80,14 +61,6 @@ namespace Alunite
             }
         }
 
-        public override double Length
-        {
-            get
-            {
-                return this._Source.Length;
-            }
-        }
-
         public override Maybe<T> this[double Time]
         {
             get
@@ -101,8 +74,7 @@ namespace Alunite
 
     /// <summary>
     /// A signal that takes two maybe sources signals and at any time takes the value of the primary unless it is 
-    /// nothing, in which case it takes the value of the secondary. The secondary signal must be at the same length, or larger
-    /// than the primary signal.
+    /// nothing, in which case it takes the value of the secondary.
     /// </summary>
     public sealed class DeferSignal<T> : Signal<Maybe<T>>
     {
@@ -150,14 +122,6 @@ namespace Alunite
             }
         } 
 
-        public override double Length
-        {
-            get
-            {
-                return this._Primary.Length;
-            }
-        }
-
         private Signal<Maybe<T>> _Primary;
         private Signal<Maybe<T>> _Secondary;
     }
@@ -165,7 +129,7 @@ namespace Alunite
     /// <summary>
     /// A signal with a constant value.
     /// </summary>
-    public sealed class ConstantSignal<T> : UnboundSignal<T>
+    public sealed class ConstantSignal<T> : Signal<T>
     {
         public ConstantSignal(T Value)
         {
@@ -199,7 +163,7 @@ namespace Alunite
     /// </summary>
     /// <remarks>Since events occupy an infinitesimal amount of time, reading from this signal the standard way (using a time parameter) will never return
     /// any events.</remarks>
-    public class EventSignal<T> : UnboundSignal<Multi<T>>
+    public class EventSignal<T> : Signal<Multi<T>>
     {
         public EventSignal(IEnumerable<Event<T>> Events)
         {
