@@ -44,11 +44,36 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Applies a path transform to this span. This will not affect the internal attributes of the span, nor the
+        /// the output control signals.
+        /// </summary>
+        public virtual Span Apply(Signal<Transform> Path)
+        {
+            return new PathSpan(this, Path);
+        }
+
+        /// <summary>
         /// Creates a new span with initial parameters like this except for the environment and control input.
         /// </summary>
         public virtual Span Update(Span Environment, ControlInput Input)
         {
             return Create(this.Initial, Environment, Input);
+        }
+
+        /// <summary>
+        /// Creates a superimposed combination two spans.
+        /// </summary>
+        public static Span Combine(Span Primary, Span Secondary)
+        {
+            if (Primary == Null)
+            {
+                return Secondary;
+            }
+            if (Secondary == Null)
+            {
+                return Primary;
+            }
+            return new BinarySpan(Primary, Secondary);
         }
 
         /// <summary>
@@ -75,13 +100,28 @@ namespace Alunite
                     Create(be.Secondary, Environment, Input));
             }
 
+            EmbodiedEntity ee = Initial as EmbodiedEntity;
+            if (ee != null)
+            {
+                return EmbodiedSpan.Create(
+                    ee.Control,
+                    Create(ee.Body, Environment, Input),
+                    Input);
+            }
+
+            Brush b = Initial as Brush;
+            if (b != null)
+            {
+
+            }
+
             throw new NotImplementedException();
         }
 
         /// <summary>
         /// Creates a span for an entity with no external influence.
         /// </summary>
-        public static Span Create(double Length, Entity Initial)
+        public static Span Create(Entity Initial)
         {
             return Create(Initial, Span.Null, ControlInput.Null);
         }

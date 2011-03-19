@@ -22,7 +22,7 @@ namespace Alunite
             Entity obj = Entity.Brush(Substance.Iron, Shape.Sphere(1.0)).Apply(new Transform(5.0, 0.0, 0.0));
             Entity world = Entity.Combine(cam, obj);
 
-            Span worldspan = Span.Create(double.PositiveInfinity, world);
+            Span worldspan = Span.Create(world);
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.Control = new Visualizer(worldspan.Read(camsensor.Output));

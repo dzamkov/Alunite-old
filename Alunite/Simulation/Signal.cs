@@ -127,6 +127,60 @@ namespace Alunite
     }
 
     /// <summary>
+    /// A signal which returns values from Primary that are not nothing, or values from Secondary when they are.
+    /// </summary>
+    public sealed class DefaultSignal<T> : Signal<T>
+    {
+        public DefaultSignal(Signal<Maybe<T>> Primary, Signal<T> Secondary)
+        {
+            this._Primary = Primary;
+            this._Secondary = Secondary;
+        }
+
+        /// <summary>
+        /// Gets the primary signal.
+        /// </summary>
+        public Signal<Maybe<T>> Primary
+        {
+            get
+            {
+                return this._Primary;
+            }
+        }
+
+        /// <summary>
+        /// Gets the secondary signal.
+        /// </summary>
+        public Signal<T> Secondary
+        {
+            get
+            {
+                return this._Secondary;
+            }
+        }
+
+        public override T this[double Time]
+        {
+            get
+            {
+                Maybe<T> p = this._Primary[Time];
+                T val;
+                if (p.TryGetData(out val))
+                {
+                    return val;
+                }
+                else
+                {
+                    return this._Secondary[Time];
+                }
+            }
+        }
+
+        private Signal<Maybe<T>> _Primary;
+        private Signal<T> _Secondary;
+    }
+
+    /// <summary>
     /// A signal with a constant value.
     /// </summary>
     public sealed class ConstantSignal<T> : Signal<T>
@@ -251,9 +305,42 @@ namespace Alunite
         /// <summary>
         /// Encapsulates a signal as a maybe signal with no nothing values.
         /// </summary>
-        public static JustSignal<T> Just<T>(Signal<T> Signal)
+        public static Signal<Maybe<T>> Just<T>(Signal<T> Signal)
         {
+            ConstantSignal<T> cs = Signal as ConstantSignal<T>;
+            if (cs != null)
+            {
+                return new ConstantSignal<Maybe<T>>(Maybe<T>.Just(cs.Value));
+            }
+
             return new JustSignal<T>(Signal);
+        }
+
+        /// <summary>
+        /// Creates a signal that returns the value from the primary signal if its not nothing, or gets the value from the secondary signal otherwise.
+        /// </summary>
+        public static Signal<T> Default<T>(Signal<Maybe<T>> Primary, Signal<T> Secondary)
+        {
+            if (Primary == NothingSignal<T>.Singleton)
+            {
+                return Secondary;
+            }
+
+            JustSignal<T> js = Primary as JustSignal<T>;
+            if (js != null)
+            {
+                return js.Source;
+            }
+
+            return new DefaultSignal<T>(Primary, Secondary);
+        }
+
+        /// <summary>
+        /// Creates a signal that replaces all nothings in the primary signal with the given value.
+        /// </summary>
+        public static Signal<T> Default<T>(Signal<Maybe<T>> Primary, T Secondary)
+        {
+            return Default<T>(Primary, Constant<T>(Secondary));
         }
 
         /// <summary>
@@ -265,41 +352,18 @@ namespace Alunite
             {
                 return Secondary;
             }
-            if (Primary is JustSignal<T>)
+            if (Secondary == NothingSignal<T>.Singleton || Primary is JustSignal<T>)
             {
                 return Primary;
             }
+
+            JustSignal<T> sjs = Secondary as JustSignal<T>;
+            if (sjs != null)
+            {
+                return new JustSignal<T>(new DefaultSignal<T>(Primary, sjs.Source));
+            }
+
             return new DeferSignal<T>(Primary, Secondary);
-        }
-
-        /// <summary>
-        /// Creates a signal that defers across multiple source signals.
-        /// </summary>
-        public static Signal<Maybe<T>> Defer<T>(IEnumerable<Signal<Maybe<T>>> Signals)
-        {
-            IEnumerator<Signal<Maybe<T>>> e = Signals.GetEnumerator();
-
-            if (!e.MoveNext())
-            {
-                return Nothing<T>();
-            }
-            Signal<Maybe<T>> cur = e.Current;
-
-            while (e.MoveNext())
-            {
-                if (cur is JustSignal<T>)
-                {
-                    return cur;
-                }
-
-                Signal<Maybe<T>> next = e.Current;
-                if (next == NothingSignal<T>.Singleton)
-                {
-                    continue;
-                }
-                cur = new DeferSignal<T>(cur, next);
-            }
-            return cur;
         }
 
         /// <summary>

@@ -15,6 +15,14 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates a static span with no exposed terminals for the specified entity.
+        /// </summary>
+        public static SimpleStaticSpan CreateSimple(Entity Entity)
+        {
+            return new SimpleStaticSpan(Entity);
+        }
+
+        /// <summary>
         /// Gets the entity that defines the state of this span at any one time.
         /// </summary>
         public Entity Entity
@@ -42,5 +50,27 @@ namespace Alunite
         }
 
         private Entity _Entity;
+    }
+
+    /// <summary>
+    /// A static span with no exposed nodes.
+    /// </summary>
+    public sealed class SimpleStaticSpan : StaticSpan
+    {
+        public SimpleStaticSpan(Entity Entity)
+            : base(Entity)
+        {
+
+        }
+
+        public override Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal)
+        {
+            return Signal.Nothing<T>();    
+        }
+
+        public override Span Apply(Transform Transform)
+        {
+            return new SimpleStaticSpan(this.Entity.Apply(Transform));
+        }
     }
 }
