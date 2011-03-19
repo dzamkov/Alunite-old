@@ -7,7 +7,7 @@ namespace Alunite
     /// A static description of a dynamic object that can interact with other entities in a simulation over time. Note that each entity may be used multiple
     /// times and is not linked with any particular context.
     /// </summary>
-    public abstract class Entity
+    public abstract class Entity : Data<Entity>
     {
         /// <summary>
         /// Creates an entity with a transform to this entity.

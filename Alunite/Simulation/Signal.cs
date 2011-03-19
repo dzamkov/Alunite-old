@@ -8,7 +8,7 @@ namespace Alunite
     /// </summary>
     /// <remarks>All ranges in signals represent the interval [Start, End).</remarks>
     /// <typeparam name="T">The type of the signal at any one time or a range of time.</typeparam>
-    public abstract class Signal<T>
+    public abstract class Signal<T> : Data<Signal<T>>
     {
         /// <summary>
         /// Gets the value of the signal at the specified time.
@@ -69,6 +69,22 @@ namespace Alunite
             }
         }
 
+        public override Signal<Maybe<T>> Simplify
+        {
+            get
+            {
+                Signal<T> src = this._Source.Simplify;
+                if (src != this._Source)
+                {
+                    return new JustSignal<T>(src);
+                }
+                else
+                {
+                    return this;
+                }
+            }
+        }
+
         private Signal<T> _Source;
     }
 
@@ -120,7 +136,39 @@ namespace Alunite
                     return p;
                 }
             }
-        } 
+        }
+
+        public override Signal<Maybe<T>> Simplify
+        {
+            get
+            {
+                Signal<Maybe<T>> pri = this._Primary.Simplify;
+                Signal<Maybe<T>> sec = this._Secondary.Simplify;
+                if (pri == NothingSignal<T>.Singleton)
+                {
+                    return sec;
+                }
+                if (pri is JustSignal<T>)
+                {
+                    return pri;
+                }
+
+                JustSignal<T> js = sec as JustSignal<T>;
+                if (js != null)
+                {
+                    return new JustSignal<T>(new DefaultSignal<T>(pri, js.Source));
+                }
+
+                if (this._Primary != pri || this._Secondary != sec)
+                {
+                    return new DeferSignal<T>(pri, sec);
+                }
+                else
+                {
+                    return this;
+                }
+            }
+        }
 
         private Signal<Maybe<T>> _Primary;
         private Signal<Maybe<T>> _Secondary;
@@ -176,6 +224,35 @@ namespace Alunite
             }
         }
 
+        public override Signal<T> Simplify
+        {
+            get
+            {
+                Signal<Maybe<T>> pri = this._Primary.Simplify;
+                Signal<T> sec = this._Secondary.Simplify;
+
+                if (pri == NothingSignal<T>.Singleton)
+                {
+                    return sec;
+                }
+
+                JustSignal<T> js = pri as JustSignal<T>;
+                if (js != null)
+                {
+                    return js.Source;
+                }
+
+                if (this._Primary != pri || this._Secondary != sec)
+                {
+                    return new DefaultSignal<T>(pri, sec);
+                }
+                else
+                {
+                    return this;
+                }
+            }
+        }
+
         private Signal<Maybe<T>> _Primary;
         private Signal<T> _Secondary;
     }
@@ -206,6 +283,15 @@ namespace Alunite
             get
             {
                 return this._Value;
+            }
+        }
+
+        public override Signal<T> Simplify
+        {
+            get
+            {
+                // TODO: Make nothing signals for nothing values
+                return this;
             }
         }
 
@@ -307,12 +393,6 @@ namespace Alunite
         /// </summary>
         public static Signal<Maybe<T>> Just<T>(Signal<T> Signal)
         {
-            ConstantSignal<T> cs = Signal as ConstantSignal<T>;
-            if (cs != null)
-            {
-                return new ConstantSignal<Maybe<T>>(Maybe<T>.Just(cs.Value));
-            }
-
             return new JustSignal<T>(Signal);
         }
 
@@ -321,17 +401,6 @@ namespace Alunite
         /// </summary>
         public static Signal<T> Default<T>(Signal<Maybe<T>> Primary, Signal<T> Secondary)
         {
-            if (Primary == NothingSignal<T>.Singleton)
-            {
-                return Secondary;
-            }
-
-            JustSignal<T> js = Primary as JustSignal<T>;
-            if (js != null)
-            {
-                return js.Source;
-            }
-
             return new DefaultSignal<T>(Primary, Secondary);
         }
 
@@ -348,21 +417,6 @@ namespace Alunite
         /// </summary>
         public static Signal<Maybe<T>> Defer<T>(Signal<Maybe<T>> Primary, Signal<Maybe<T>> Secondary)
         {
-            if (Primary == NothingSignal<T>.Singleton)
-            {
-                return Secondary;
-            }
-            if (Secondary == NothingSignal<T>.Singleton || Primary is JustSignal<T>)
-            {
-                return Primary;
-            }
-
-            JustSignal<T> sjs = Secondary as JustSignal<T>;
-            if (sjs != null)
-            {
-                return new JustSignal<T>(new DefaultSignal<T>(Primary, sjs.Source));
-            }
-
             return new DeferSignal<T>(Primary, Secondary);
         }
 

@@ -10,7 +10,7 @@ namespace Alunite
     /// <remarks>The provided environment to create a span can be given as an approximation. If the approximation conflicts
     /// with the methods used to create a span, the initial entity of the environment can be used to recreate an environment span
     /// with properties that don't cause a conflict.</remarks>
-    public abstract class Span
+    public abstract class Span : Data<Span>
     {
         /// <summary>
         /// Gets the state of this span (as an entity) at the given time relative to the span.
@@ -107,12 +107,6 @@ namespace Alunite
                     ee.Control,
                     Create(ee.Body, Environment, Input),
                     Input);
-            }
-
-            Brush b = Initial as Brush;
-            if (b != null)
-            {
-
             }
 
             throw new NotImplementedException();
