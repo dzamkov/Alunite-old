@@ -46,6 +46,7 @@
     <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
     <Compile Include="Data\Void.cs" />
+    <Compile Include="Math\Matrix.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Math\Quaternion.cs" />
     <Compile Include="Data\Set.cs" />

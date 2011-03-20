@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
+
+using OpenTK;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
+
 namespace Alunite
 {
     /// <summary>
@@ -9,11 +14,27 @@ namespace Alunite
     public class Visual
     {
         /// <summary>
+        /// Creates a new visual context.
+        /// </summary>
+        public static Visual Create()
+        {
+            return new Visual();
+        }
+
+        /// <summary>
         /// Gets a signal of views that shows what is seen by an untransformed camera in an environment.
         /// </summary>
         public static Signal<View> GetViewFeed(Span Environment)
         {
             return new ViewSignal(Environment);
+        }
+
+        /// <summary>
+        /// Renders an entity to the current graphics context.
+        /// </summary>
+        public void Render(Entity Entity)
+        {
+            
         }
     }
 
@@ -67,6 +88,15 @@ namespace Alunite
             {
                 return this._Entity;
             }
+        }
+
+        /// <summary>
+        /// Renders this view to the current graphics context using the given visual data. The projection for the view should be set up before
+        /// this call.
+        /// </summary>
+        public void Render(Visual Visual)
+        {
+            Visual.Render(this._Entity);
         }
 
         private Entity _Entity;
