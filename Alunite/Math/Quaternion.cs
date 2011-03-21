@@ -177,6 +177,25 @@ namespace Alunite
             return q;
         }
 
+        public static implicit operator Matrix(Quaternion A)
+        {
+            double aa = A.A * A.A;
+            double dab = A.A * A.B * 2.0;
+            double dac = A.A * A.C * 2.0;
+            double dad = A.A * A.D * 2.0;
+            double bb = A.B * A.B;
+            double dbc = A.B * A.C * 2.0;
+            double dbd = A.B * A.D * 2.0;
+            double cc = A.C * A.C;
+            double dcd = A.C * A.D * 2.0;
+            double dd = A.D * A.D;
+            return new Matrix(
+                aa + bb - cc - dd, dbc - dad, dbd + dac, 0.0,
+                dbc + dad, aa - bb + cc - dd, dcd - dab, 0.0,
+                dbd - dac, dcd + dab, aa - bb - cc + dd, 0.0,
+                0.0, 0.0, 0.0, 1.0);
+        }
+
         public double A;
         public double B;
         public double C;
