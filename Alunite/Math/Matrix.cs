@@ -97,6 +97,12 @@ namespace Alunite
 
         }
 
+        public AfflineMatrix(OrthogonalMatrix Orthogonal, Vector Translate)
+            : this(Orthogonal, Translate.X, Translate.Y, Translate.Z)
+        {
+
+        }
+
         /// <summary>
         /// Applies the transform represented by this matrix to a vector.
         /// </summary>

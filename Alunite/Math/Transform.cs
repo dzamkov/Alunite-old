@@ -120,6 +120,17 @@ namespace Alunite
             return new Transform(this.Offset + this.VelocityOffset * Time, this.VelocityOffset, this.Rotation);
         }
 
+        /// <summary>
+        /// Gets the matrix representation of the transformation applied to offsets.
+        /// </summary>
+        public AfflineMatrix OffsetMatrix
+        {
+            get
+            {
+                return new AfflineMatrix(this.Rotation, this.Offset);
+            }
+        }
+
         public Vector Offset;
         public Vector VelocityOffset;
         public Quaternion Rotation;
