@@ -120,6 +120,28 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets a vector representing the origin of a coordinate system.
+        /// </summary>
+        public static Vector Origin
+        {
+            get
+            {
+                return Zero;
+            }
+        }
+
+        /// <summary>
+        /// Gets a vector representing a zero offset.
+        /// </summary>
+        public static Vector Zero
+        {
+            get
+            {
+                return new Vector(0.0, 0.0, 0.0);
+            }
+        }
+
+        /// <summary>
         /// Normalizes the vector so its length is one but its direction is unchanged.
         /// </summary>
         public void Normalize()

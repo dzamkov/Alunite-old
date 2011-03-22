@@ -84,17 +84,17 @@ namespace Alunite
         /// <summary>
         /// Creates a brush.
         /// </summary>
-        public static Brush Brush(Material Material, Shape Shape)
+        public static Brush Brush(Shape<Substance> Shape)
         {
-            return new Brush(Material, Shape);
+            return new Brush(Shape);
         }
 
         /// <summary>
         /// Creates a solid brush.
         /// </summary>
-        public static Brush Brush(Substance Substance, Shape Shape)
+        public static Brush Brush(Substance Substance, Mask Mask)
         {
-            return new Brush(Material.Solid(Substance), Shape);
+            return new Brush(Mask.Map<Substance>(x => x ? Substance : Substance.Vacuum));
         }
 
         /// <summary>

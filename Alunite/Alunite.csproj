@@ -46,6 +46,9 @@
     <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
     <Compile Include="Data\Void.cs" />
+    <Compile Include="Geometry\Shape.cs" />
+    <Compile Include="Geometry\Sphere.cs" />
+    <Compile Include="Geometry\Surface.cs" />
     <Compile Include="Math\Matrix.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Math\Quaternion.cs" />
@@ -67,8 +70,6 @@
     <Compile Include="Simulation\Entities\Link.cs" />
     <Compile Include="Simulation\Entity.cs" />
     <Compile Include="Simulation\Matter\Brush.cs" />
-    <Compile Include="Simulation\Matter\Material.cs" />
-    <Compile Include="Simulation\Matter\Shape.cs" />
     <Compile Include="Simulation\Matter\Substance.cs" />
     <Compile Include="Simulation\Node.cs" />
     <Compile Include="Simulation\Signal.cs" />
