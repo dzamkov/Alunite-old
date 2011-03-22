@@ -177,7 +177,7 @@ namespace Alunite
             return q;
         }
 
-        public static implicit operator Matrix(Quaternion A)
+        public static implicit operator OrthogonalMatrix(Quaternion A)
         {
             double aa = A.A * A.A;
             double dab = A.A * A.B * 2.0;
@@ -189,11 +189,10 @@ namespace Alunite
             double cc = A.C * A.C;
             double dcd = A.C * A.D * 2.0;
             double dd = A.D * A.D;
-            return new Matrix(
-                aa + bb - cc - dd, dbc - dad, dbd + dac, 0.0,
-                dbc + dad, aa - bb + cc - dd, dcd - dab, 0.0,
-                dbd - dac, dcd + dab, aa - bb - cc + dd, 0.0,
-                0.0, 0.0, 0.0, 1.0);
+            return new OrthogonalMatrix(
+                aa + bb - cc - dd, dbc - dad, dbd + dac,
+                dbc + dad, aa - bb + cc - dd, dcd - dab,
+                dbd - dac, dcd + dab, aa - bb - cc + dd);
         }
 
         public double A;
