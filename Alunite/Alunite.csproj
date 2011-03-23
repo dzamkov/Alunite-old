@@ -46,10 +46,13 @@
     <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
     <Compile Include="Data\Void.cs" />
+    <Compile Include="Geometry\Segment.cs" />
     <Compile Include="Geometry\Shape.cs" />
     <Compile Include="Geometry\Sphere.cs" />
     <Compile Include="Geometry\Surface.cs" />
+    <Compile Include="Geometry\Triangle.cs" />
     <Compile Include="Math\Matrix.cs" />
+    <Compile Include="Math\Point.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Math\Quaternion.cs" />
     <Compile Include="Data\Set.cs" />

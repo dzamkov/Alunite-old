@@ -24,7 +24,7 @@ namespace Alunite
             this._Feed[this._Time].Data.Render(this._Visual);
         }
 
-        public override void SetupProjection(Point Viewsize)
+        public override void SetupProjection(OpenTKGUI.Point Viewsize)
         {
             Matrix4d proj = Matrix4d.Perspective(Math.Sin(Math.PI / 8.0), Viewsize.AspectRatio, 0.1, 100.0);
             GL.MultMatrix(ref proj);
