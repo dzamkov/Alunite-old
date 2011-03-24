@@ -28,20 +28,20 @@ namespace Alunite
     /// <summary>
     /// A surface defined by a collection of triangles.
     /// </summary>
-    /// <typeparam name="T">The type of a value at any point on a triangle.</typeparam>
+    /// <typeparam name="T">The type of a value at any vertex on a triangle.</typeparam>
     /// <typeparam name="TTriangle">A reference to a triangle within the mesh.</typeparam>
     /// <typeparam name="TPoint">A reference to a point within the mesh.</typeparam>
-    public abstract class Mesh<T, TTriangle, TPoint> : Surface<T>
+    public abstract class Mesh<T, TTriangle, TVertex> : Surface<T>
     {
         /// <summary>
         /// Gets the location of the given point.
         /// </summary>
-        public abstract Vector Lookup(TPoint Point);
+        public abstract Vector LookupVertex(TVertex Vertex);
 
         /// <summary>
         /// Gets the points in the given triangle.
         /// </summary>
-        public abstract Triangle<TPoint> Lookup(TTriangle Triangle);
+        public abstract Triangle<TVertex> LookupTriangle(TTriangle Triangle);
 
         /// <summary>
         /// Gets the surface value for the triangle at the given uv coordinates.
@@ -59,11 +59,11 @@ namespace Alunite
             LinkedList<SurfaceHit<T>> hits = new LinkedList<SurfaceHit<T>>();
             foreach (TTriangle tri in this.Triangles)
             {
-                Triangle<TPoint> dtri = this.Lookup(tri);
+                Triangle<TVertex> dtri = this.LookupTriangle(tri);
                 Triangle<Vector> vtri = new Triangle<Vector>(
-                    this.Lookup(dtri.A),
-                    this.Lookup(dtri.B),
-                    this.Lookup(dtri.C));
+                    this.LookupVertex(dtri.A),
+                    this.LookupVertex(dtri.B),
+                    this.LookupVertex(dtri.C));
                 double len;
                 Vector pos;
                 Point uv;
@@ -92,6 +92,44 @@ namespace Alunite
             }
             return hits;
         }
+    }
+
+    /// <summary>
+    /// A mesh defined by a list of vertices and a list of triangles with no additional spatial organization.
+    /// </summary>
+    public sealed class ListMesh : Mesh<Void, int, int>
+    {
+        public ListMesh(List<Vector> Vertices, List<Triangle<int>> Triangles)
+        {
+            this._Vertices = Vertices;
+            this._Triangles = Triangles;
+        }
+
+        public override Void GetValue(int Triangle, Point UV)
+        {
+            return Void.Value;
+        }
+
+        public override Vector LookupVertex(int Vertex)
+        {
+            return this._Vertices[Vertex];
+        }
+
+        public override Triangle<int> LookupTriangle(int Triangle)
+        {
+            return this._Triangles[Triangle];
+        }
+
+        public override IEnumerable<int> Triangles
+        {
+            get
+            {
+                return Enumerable.Range(0, this._Triangles.Count);
+            }
+        }
+
+        private List<Vector> _Vertices;
+        private List<Triangle<int>> _Triangles;
     }
 
     /// <summary>

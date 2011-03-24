@@ -23,6 +23,12 @@ namespace Alunite
     /// </summary>
     public static class Segment
     {
-
+        /// <summary>
+        /// Gets the direction vector of the given directed segment.
+        /// </summary>
+        public static Vector Direction(Segment<Vector> Segment)
+        {
+            return Vector.Normalize(Segment.B - Segment.A);
+        }
     }
 }
