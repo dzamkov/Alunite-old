@@ -21,6 +21,9 @@ namespace Alunite
 
         public override void RenderScene()
         {
+            GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+            GL.LoadIdentity();
             this._Feed[this._Time].Data.Render(this._Visual);
         }
 
@@ -28,6 +31,8 @@ namespace Alunite
         {
             Matrix4d proj = Matrix4d.Perspective(Math.Sin(Math.PI / 8.0), Viewsize.AspectRatio, 0.1, 100.0);
             GL.MultMatrix(ref proj);
+            Matrix4d view = Matrix4d.LookAt(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+            GL.MultMatrix(ref view);
         }
 
         public override void Update(GUIControlContext Context, double Time)

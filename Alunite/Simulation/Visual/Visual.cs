@@ -34,7 +34,34 @@ namespace Alunite
         /// </summary>
         public void Render(Entity Entity)
         {
-            
+            TransformedEntity te = Entity as TransformedEntity;
+            if (te != null)
+            {
+                Matrix4d tr = te.Transform.OffsetMatrix;
+                GL.PushMatrix();
+                GL.MultMatrix(ref tr);
+                Render(te.Source);
+                GL.PopMatrix();
+                return;
+            }
+
+            BinaryEntity be = Entity as BinaryEntity;
+            if (be != null)
+            {
+                Render(be.Primary);
+                Render(be.Secondary);
+                return;
+            }
+
+            Brush br = Entity as Brush;
+            if (br != null)
+            {
+                GL.PointSize(10.0f);
+                GL.Begin(BeginMode.Points);
+                GL.Color3(0.0f, 0.0f, 1.0f);
+                GL.Vertex3(1.0, 0.0, 0.0);
+                GL.End();
+            }
         }
     }
 
