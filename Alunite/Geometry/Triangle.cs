@@ -15,6 +15,38 @@ namespace Alunite
             this.C = C;
         }
 
+        /// <summary>
+        /// Gets the vertices in this triangle.
+        /// </summary>
+        public IEnumerable<T> Vertices
+        {
+            get
+            {
+                return new T[]
+                {
+                    this.A,
+                    this.B,
+                    this.C
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all the segments of this triangle.
+        /// </summary>
+        public IEnumerable<Segment<T>> Segments
+        {
+            get
+            {
+                return new Segment<T>[]
+                {
+                    new Segment<T>(this.A, this.B),
+                    new Segment<T>(this.B, this.C),
+                    new Segment<T>(this.C, this.A)
+                };
+            }
+        }
+
         public T A;
         public T B;
         public T C;

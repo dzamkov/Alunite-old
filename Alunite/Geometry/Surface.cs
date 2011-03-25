@@ -15,6 +15,15 @@ namespace Alunite
         /// order of length.
         /// </summary>
         public abstract IEnumerable<SurfaceHit<T>> Trace(Segment<Vector> Segment);
+
+        /// <summary>
+        /// Approximates this surface with a mesh using the specified integer as a guide for the target amount
+        /// of triangles the mesh should have.
+        /// </summary>
+        public virtual Surface<T> ApproximateMesh(int Triangles)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>

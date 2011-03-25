@@ -21,10 +21,12 @@ namespace Alunite
 
         public override void RenderScene()
         {
+            GL.Enable(EnableCap.CullFace);
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.LoadIdentity();
             this._Feed[this._Time].Data.Render(this._Visual);
+            GL.Disable(EnableCap.CullFace);
         }
 
         public override void SetupProjection(OpenTKGUI.Point Viewsize)

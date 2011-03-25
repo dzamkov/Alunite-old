@@ -56,11 +56,48 @@ namespace Alunite
             Brush br = Entity as Brush;
             if (br != null)
             {
-                GL.PointSize(10.0f);
-                GL.Begin(BeginMode.Points);
-                GL.Color3(0.0f, 0.0f, 1.0f);
-                GL.Vertex3(1.0, 0.0, 0.0);
+                Shape<Substance> shape = br.Shape;
+                MappedShape<bool, Substance> ms = shape as MappedShape<bool, Substance>;
+                if (ms != null)
+                {
+                    Mask mk = ms.Source as Mask;
+                    if (mk != null)
+                    {
+                        Substance inner = ms.Map(true);
+                        Substance outer = ms.Map(false);
+                        if (outer == Substance.Vacuum)
+                        {
+                            Surface<Void> surf = mk.Surface;
+                            Surface<Void> mesh = surf.ApproximateMesh(30);
+                            Void dummy;
+                            Resolver.Resolve<Void>(mesh, new _MeshRenderResolver(), ref dummy);
+                        }
+                    }
+                }
+            }
+        }
+
+        private class _MeshRenderResolver : IResolver<Void>
+        {
+            public Void Resolve<TVertex, TTriangle>(Mesh<Void, TTriangle, TVertex> Mesh)
+            {
+                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
+                GL.Begin(BeginMode.Triangles);
+                GL.Color3(1.0, 0.5, 0.0);
+                foreach (TTriangle tri in Mesh.Triangles)
+                {
+                    Triangle<TVertex> dtri = Mesh.LookupTriangle(tri);
+                    Triangle<Vector> vtri = new Triangle<Vector>(
+                        Mesh.LookupVertex(dtri.A),
+                        Mesh.LookupVertex(dtri.B),
+                        Mesh.LookupVertex(dtri.C));
+                    GL.Vertex3(vtri.A);
+                    GL.Vertex3(vtri.B);
+                    GL.Vertex3(vtri.C);
+                }
                 GL.End();
+
+                return Void.Value;
             }
         }
     }

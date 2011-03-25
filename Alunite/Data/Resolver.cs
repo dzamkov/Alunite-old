@@ -57,38 +57,68 @@ namespace Alunite
         /// </summary>
         public static bool Match(Type Actual, Type Template, Type[] Parameters)
         {
-            if (Actual == Template)
-            {
-                return true;
-            }
             if (Template.IsGenericParameter)
             {
                 Parameters[Template.GenericParameterPosition] = Actual;
                 return true;
             }
-            if (!Actual.IsGenericType || !Template.IsGenericType)
-            {
-                return false;
-            }
-            if (Actual.GetGenericTypeDefinition() != Template.GetGenericTypeDefinition())
-            {
-                return false;
-            }
 
-            Type[] aargs = Actual.GetGenericArguments();
-            Type[] targs = Template.GetGenericArguments();
-
-            for (int t = 0; t < aargs.Length; t++)
+            while(true)
             {
-                Type aarg = aargs[t];
-                Type targ = targs[t];
-                if (!Match(aarg, targ, Parameters))
+                if (Actual == Template)
                 {
-                    return false;
+                    return true;
                 }
-            }
 
-            return true;
+                if (!Actual.IsGenericType || !Template.IsGenericType)
+                {
+                    if (!_GetBase(ref Actual, Template))
+                    {
+                        return false;
+                    }
+                    continue;
+                }
+
+                if (Actual.GetGenericTypeDefinition() != Template.GetGenericTypeDefinition())
+                {
+                    if (!_GetBase(ref Actual, Template))
+                    {
+                        return false;
+                    }
+                    continue;
+                }
+
+                Type[] aargs = Actual.GetGenericArguments();
+                Type[] targs = Template.GetGenericArguments();
+
+                for (int t = 0; t < aargs.Length; t++)
+                {
+                    Type aarg = aargs[t];
+                    Type targ = targs[t];
+                    if (!Match(aarg, targ, Parameters))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Gets the base of actual to make it compatible with template, returns true on sucsess or false on failure.
+        /// </summary>
+        private static bool _GetBase(ref Type Actual, Type Template)
+        {
+            if (Actual == typeof(object))
+            {
+                return false;
+            }
+            if (Template.IsClass)
+            {
+                Actual = Actual.BaseType;
+                return true;
+            }
+            throw new NotImplementedException();
         }
     }
 }
