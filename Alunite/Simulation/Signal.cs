@@ -16,7 +16,7 @@ namespace Alunite
         public abstract T this[double Time] { get; }
 
         /// <summary>
-        /// Gets the length of the signal in time units. The signal does not define any samples at or after this time.
+        /// Gets the length of the signal. The signal does not define any samples at or after this time.
         /// </summary>
         public abstract double Length { get; }
     }

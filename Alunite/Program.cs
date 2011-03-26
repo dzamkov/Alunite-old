@@ -17,6 +17,9 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
+            CubicSignal<double, ScalarContinuum> sig = CubicSignal<double, ScalarContinuum>.Linear(new ScalarContinuum(), 30.0, 0.0, 1.0);
+            double f = sig[0.5];
+
             CameraEntity camsensor = Entity.Camera();
             Entity cambody = Entity.Brush(Substance.Iron, Shape.Sphere(0.1)).Apply(new Transform(-0.12, 0.0, 0.0));
             Entity cam = camsensor.Embody(cambody);
