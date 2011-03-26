@@ -82,7 +82,7 @@ namespace Alunite
             return Enumerable.Empty<SurfaceHit<Void>>();
         }
 
-        public override Surface<Void> ApproximateMesh(int Triangles)
+        public override Mesh<Void> ApproximateMesh(int Triangles)
         {
             List<Vector> verts = new List<Vector>(12);
             List<Triangle<int>> tris = new List<Triangle<int>>(20);

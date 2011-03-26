@@ -45,7 +45,6 @@
     <Compile Include="Data\MatchMatrix.cs" />
     <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
-    <Compile Include="Data\Resolver.cs" />
     <Compile Include="Data\Void.cs" />
     <Compile Include="Geometry\Segment.cs" />
     <Compile Include="Geometry\Shape.cs" />

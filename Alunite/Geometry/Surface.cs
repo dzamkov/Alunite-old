@@ -20,7 +20,7 @@ namespace Alunite
         /// Approximates this surface with a mesh using the specified integer as a guide for the target amount
         /// of triangles the mesh should have.
         /// </summary>
-        public virtual Surface<T> ApproximateMesh(int Triangles)
+        public virtual Mesh<T> ApproximateMesh(int Triangles)
         {
             throw new NotImplementedException();
         }
@@ -35,13 +35,35 @@ namespace Alunite
     }
 
     /// <summary>
+    /// A generalized base class for all meshes.
+    /// </summary>
+    public abstract class Mesh<T> : Surface<T>
+    {
+        /// <summary>
+        /// Gives the prefered concrete representation of this mesh with the Triangle and Vertex type's defined
+        /// to the given resolver.
+        /// </summary>
+        public abstract void Resolve(IMeshResolver Resolver);
+
+        public interface IMeshResolver
+        {
+            void Resolve<TTriangle, TVertex>(Mesh<T, TTriangle, TVertex> Mesh);
+        }
+    }
+
+    /// <summary>
     /// A surface defined by a collection of triangles.
     /// </summary>
     /// <typeparam name="T">The type of a value at any vertex on a triangle.</typeparam>
     /// <typeparam name="TTriangle">A reference to a triangle within the mesh.</typeparam>
     /// <typeparam name="TPoint">A reference to a point within the mesh.</typeparam>
-    public abstract class Mesh<T, TTriangle, TVertex> : Surface<T>
+    public abstract class Mesh<T, TTriangle, TVertex> : Mesh<T>
     {
+        public override void Resolve(Mesh<T>.IMeshResolver Resolver)
+        {
+            Resolver.Resolve(this);
+        }
+
         /// <summary>
         /// Gets the location of the given point.
         /// </summary>

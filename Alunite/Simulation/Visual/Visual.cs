@@ -68,18 +68,17 @@ namespace Alunite
                         if (outer == Substance.Vacuum)
                         {
                             Surface<Void> surf = mk.Surface;
-                            Surface<Void> mesh = surf.ApproximateMesh(30);
-                            Void dummy;
-                            Resolver.Resolve<Void>(mesh, new _MeshRenderResolver(), ref dummy);
+                            Mesh<Void> mesh = surf.ApproximateMesh(30);
+                            mesh.Resolve(new _MeshRenderResolver());
                         }
                     }
                 }
             }
         }
 
-        private class _MeshRenderResolver : IResolver<Void>
+        private class _MeshRenderResolver : Mesh<Void>.IMeshResolver
         {
-            public Void Resolve<TVertex, TTriangle>(Mesh<Void, TTriangle, TVertex> Mesh)
+            public void Resolve<TTriangle, TVertex>(Mesh<Void, TTriangle, TVertex> Mesh)
             {
                 GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
                 GL.Begin(BeginMode.Triangles);
@@ -96,8 +95,6 @@ namespace Alunite
                     GL.Vertex3(vtri.C);
                 }
                 GL.End();
-
-                return Void.Value;
             }
         }
     }

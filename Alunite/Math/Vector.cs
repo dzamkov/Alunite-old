@@ -8,7 +8,7 @@ namespace Alunite
     /// <summary>
     /// Represents a point or offset in three-dimensional space.
     /// </summary>
-    public struct Vector
+    public struct Vector : IInterpolatable<Vector>
     {
         public Vector(double X, double Y, double Z)
         {
