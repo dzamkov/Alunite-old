@@ -30,7 +30,8 @@ namespace Alunite
 
         /// <summary>
         /// Gets the signal for the specified terminal from this span. If at any point the terminal is not in the span,
-        /// or the terminal is inactive, the result of the signal will be "Nothing".
+        /// or the terminal is inactive, the result of the signal will be "Nothing". All signals returned from this call will
+        /// be unbounded in time, since the span itself is unbounded.
         /// </summary>
         public abstract Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal);
 
