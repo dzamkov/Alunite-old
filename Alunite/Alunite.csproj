@@ -42,6 +42,7 @@
     <Compile Include="Data\Data.cs" />
     <Compile Include="Data\Delta.cs" />
     <Compile Include="Data\Filter.cs" />
+    <Compile Include="Data\Interpolation.cs" />
     <Compile Include="Data\MatchMatrix.cs" />
     <Compile Include="Data\Maybe.cs" />
     <Compile Include="Data\Mutable.cs" />
@@ -51,6 +52,7 @@
     <Compile Include="Geometry\Sphere.cs" />
     <Compile Include="Geometry\Surface.cs" />
     <Compile Include="Geometry\Triangle.cs" />
+    <Compile Include="Math\BSpline.cs" />
     <Compile Include="Math\Matrix.cs" />
     <Compile Include="Math\Point.cs" />
     <Compile Include="Program.cs" />
