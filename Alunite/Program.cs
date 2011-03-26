@@ -17,10 +17,6 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            double[] knots = new double[] { 0.0, 0.0, 1.0, 1.0 };
-            double[] points = new double[] { 0.0, 1.0 };
-            double res = BSpline.Evaluate(ScalarInterpolation.Singleton, knots, points, 1, 0.1);
-
             CameraEntity camsensor = Entity.Camera();
             Entity cambody = Entity.Brush(Substance.Iron, Shape.Sphere(0.1)).Apply(new Transform(-0.12, 0.0, 0.0));
             Entity cam = camsensor.Embody(cambody);
