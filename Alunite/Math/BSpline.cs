@@ -9,12 +9,12 @@ namespace Alunite
     public static class BSpline
     {
         /// <summary>
-        /// Evaluates a bspline defines by an a knot vector and a control point vector of equal lengths at a certain parameter.
+        /// Evaluates a bspline defines by an a knot vector and a control point vector at a certain parameter.
         /// </summary>
         public static T Evaluate<T, TInterpolation>(TInterpolation Interpolation, double[] Knots, T[] Points, int Degree, double Parameter)
             where TInterpolation : IInterpolation<T>
         {
-            int l = GetInterval(Knots, Parameter) + Degree;
+            int l = GetInterval(Knots, Parameter);
 
             T[] temp = new T[Degree + 1];
             for (int i = 0; i < temp.Length; i++)
@@ -26,8 +26,8 @@ namespace Alunite
                 for (int m = 0; m < Degree - k; m++)
                 {
                     int u = l - m;
-                    double ui = u < Degree ? Knots[0] : Knots[u - Degree];
-                    double a = (Parameter - ui) / (Knots[u - k] - ui);
+                    double ui = Knots[u];
+                    double a = (Parameter - ui) / (Knots[u + Degree - k] - ui);
                     temp[m] = Interpolation.Mix(temp[m + 1], temp[m], a);
                 }
             }
