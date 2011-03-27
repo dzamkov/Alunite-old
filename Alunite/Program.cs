@@ -21,7 +21,7 @@ namespace Alunite
             CubicSignal<double, ScalarContinuum> b = CubicSignal<double, ScalarContinuum>.Linear(new ScalarContinuum(), 1.0, -1.0, 1.0);
             a = a.Resample(10);
             b = b.Resample(10);
-            CubicSignal<double, ScalarContinuum> c = CubicSignal<double, ScalarContinuum>.Product(a, b, new ScalarContinuum(), new ScalarContinuum());
+            CubicSignal<double, ScalarContinuum> c = CubicSignal<double, ScalarContinuum>.Sum(a, b, new ScalarContinuum());
 
             double error = 0.0;
 
@@ -29,7 +29,7 @@ namespace Alunite
             for (int i = 0; i < 100; i++)
             {
                 double t = r.NextDouble();
-                double tx = a[t] * b[t];
+                double tx = a[t] + b[t];
                 double ty = c[t];
                 error += Math.Abs(tx - ty);
             }

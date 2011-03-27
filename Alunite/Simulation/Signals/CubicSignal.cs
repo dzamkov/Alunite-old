@@ -162,7 +162,7 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Approximates the product of two signals. The resulting signal will have the length of the smaller of the two given signals.
+        /// Approximates the product of two signals.
         /// </summary>
         public static CubicSignal<T, TContinuum> Product<TA, TAContinuum, TB, TBContinuum, TMultiplication>(
             CubicSignal<TA, TAContinuum> A,
@@ -172,6 +172,28 @@ namespace Alunite
             where TAContinuum : IContinuum<TA>
             where TBContinuum : IContinuum<TB>
             where TMultiplication : IMultiplication<TA, TB, T>
+        {
+            return BinaryOperation(A, B, (x, y) => Product(x, y, Multiplication, Continuum), Continuum);
+        }
+
+        /// <summary>
+        /// Approximates the sum of two signals.
+        /// </summary>
+        public static CubicSignal<T, TContinuum> Sum(CubicSignal<T, TContinuum> A, CubicSignal<T, TContinuum> B, TContinuum Continuum)
+        {
+            return BinaryOperation(A, B, (x, y) => new Vertex(x.Time, Continuum.Add(x.Value, y.Value), Continuum.Add(x.Derivative, y.Derivative)), Continuum);
+        }
+
+        /// <summary>
+        /// Performs a binary operation on two signals. The resulting signal will have the length of the smaller of the two given signals.
+        /// </summary>
+        public static CubicSignal<T, TContinuum> BinaryOperation<TA, TAContinuum, TB, TBContinuum>(
+            CubicSignal<TA, TAContinuum> A,
+            CubicSignal<TB, TBContinuum> B,
+            Func<CubicSignal<TA>.Vertex, CubicSignal<TB>.Vertex, Vertex> Function,
+            TContinuum Continuum)
+            where TAContinuum : IContinuum<TA>
+            where TBContinuum : IContinuum<TB>
         {
             List<Vertex> vs = new List<Vertex>();
             List<CubicSignal<TA>.Vertex> avs = A._Vertices;
@@ -183,7 +205,7 @@ namespace Alunite
             {
                 if (a.Time == b.Time)
                 {
-                    vs.Add(Product(a, b, Multiplication, Continuum));
+                    vs.Add(Function(a, b));
                     if (ai < avs.Count && bi < bvs.Count)
                     {
                         a = avs[ai];
@@ -199,7 +221,7 @@ namespace Alunite
                 }
                 if (a.Time < b.Time)
                 {
-                    vs.Add(Product(a, B.GetVertex(a.Time), Multiplication, Continuum));
+                    vs.Add(Function(a, B.GetVertex(a.Time)));
                     if (ai < avs.Count)
                     {
                         a = avs[ai];
@@ -213,7 +235,7 @@ namespace Alunite
                 }
                 if (b.Time < a.Time)
                 {
-                    vs.Add(Product(A.GetVertex(b.Time), b, Multiplication, Continuum));
+                    vs.Add(Function(A.GetVertex(b.Time), b));
                     if (bi < bvs.Count)
                     {
                         b = bvs[bi];
