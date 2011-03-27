@@ -101,6 +101,26 @@ namespace Alunite
             return ct.Mix(vd, ve, param);
         }
 
+        /// <summary>
+        /// Gets the second-order derivative of this signal at the specified time.
+        /// </summary>
+        public T GetSecondDerivative(double Time)
+        {
+            int i = this.GetInterval(Time);
+            Vertex f = this._Vertices[i];
+            Vertex s = this._Vertices[i + 1];
+            double delta = s.Time - f.Time;
+            double param = (Time - f.Time) / delta;
+
+            TContinuum ct = this._Continuum;
+
+            T mid = ct.Multiply(ct.Subtract(s.Value, f.Value), 3.0 / delta);
+            T va = ct.Multiply(ct.Subtract(mid, f.Derivative), 2.0 / delta);
+            T vb = ct.Multiply(ct.Subtract(s.Derivative, mid), 2.0 / delta);
+
+            return ct.Mix(va, vb, param);
+        }
+
         public override double Length
         {
             get
