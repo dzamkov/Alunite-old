@@ -4,14 +4,14 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A general base class for all cubic signals of a certain type.
+    /// Contains functions and methods related to cubic signals.
     /// </summary>
-    public abstract class CubicSignal<T> : Signal<T>
+    public abstract class CubicSignal
     {
         /// <summary>
-        /// A vertex in the cubic signal.
+        /// A vertex for a cubic signal.
         /// </summary>
-        public struct Vertex
+        public struct Vertex<T>
         {
             public Vertex(double Time, T Value, T Derivative)
             {
@@ -41,10 +41,10 @@ namespace Alunite
     /// A continous finite signal defined by a cubic (natural) spline. These signals are best for approximations because they
     /// can not represent many curves exactly but can represent many curves closely and quickly.
     /// </summary>
-    public class CubicSignal<T, TContinuum> : CubicSignal<T>
+    public class CubicSignal<T, TContinuum> : ContinuousSignal<T, TContinuum>
         where TContinuum : IContinuum<T>
     {
-        public CubicSignal(List<Vertex> Vertices, TContinuum Continuum)
+        public CubicSignal(List<CubicSignal.Vertex<T>> Vertices, TContinuum Continuum)
         {
             this._Vertices = Vertices;
             this._Continuum = Continuum;
@@ -54,7 +54,7 @@ namespace Alunite
         {
             get
             {
-                Vertex f, s; double delta, param;
+                CubicSignal.Vertex<T> f, s; double delta, param;
                 this.GetInterval(Time, out f, out s, out delta, out param);
 
                 TContinuum ct = this._Continuum;
@@ -75,12 +75,9 @@ namespace Alunite
             }
         }
 
-        /// <summary>
-        /// Gets the derivative of this signal at the specified time.
-        /// </summary>
-        public T GetDerivative(double Time)
+        public override T GetDerivative(double Time)
         {
-            Vertex f, s; double delta, param;
+            CubicSignal.Vertex<T> f, s; double delta, param;
             this.GetInterval(Time, out f, out s, out delta, out param);
 
             TContinuum ct = this._Continuum;
@@ -95,12 +92,20 @@ namespace Alunite
             return ct.Mix(vd, ve, param);
         }
 
+        public override TContinuum Continuum
+        {
+            get
+            {
+                return this._Continuum;
+            }
+        }
+
         /// <summary>
         /// Gets a vertex for the signal at the given tim.
         /// </summary>
-        public Vertex GetVertex(double Time)
+        public CubicSignal.Vertex<T> GetVertex(double Time)
         {
-            return new Vertex(Time, this[Time], this.GetDerivative(Time));
+            return new CubicSignal.Vertex<T>(Time, this[Time], this.GetDerivative(Time));
         }
 
         /// <summary>
@@ -108,7 +113,7 @@ namespace Alunite
         /// </summary>
         public T GetSecondDerivative(double Time)
         {
-            Vertex f, s; double delta, param;
+            CubicSignal.Vertex<T> f, s; double delta, param;
             this.GetInterval(Time, out f, out s, out delta, out param);
 
             TContinuum ct = this._Continuum;
@@ -129,10 +134,10 @@ namespace Alunite
         /// </summary>
         public CubicSignal<T, TContinuum> Resample(int Amount)
         {
-            Vertex last = this._Vertices[this._Vertices.Count - 1];
+            CubicSignal.Vertex<T> last = this._Vertices[this._Vertices.Count - 1];
 
-            
-            List<Vertex> vs = new List<Vertex>();
+
+            List<CubicSignal.Vertex<T>> vs = new List<CubicSignal.Vertex<T>>();
 
             double d = last.Time / Amount;
             Amount -= 2;
@@ -154,9 +159,9 @@ namespace Alunite
         {
             double ilen = 1.0 / Length;
             T d = Continuum.Multiply(Continuum.Subtract(Last, First), ilen);
-            List<Vertex> vs = new List<Vertex>();
-            vs.Add(new Vertex(0.0, First, d));
-            vs.Add(new Vertex(Length, Last, d));
+            List<CubicSignal.Vertex<T>> vs = new List<CubicSignal.Vertex<T>>();
+            vs.Add(new CubicSignal.Vertex<T>(0.0, First, d));
+            vs.Add(new CubicSignal.Vertex<T>(Length, Last, d));
 
             return new CubicSignal<T, TContinuum>(vs, Continuum);
         }
@@ -181,7 +186,15 @@ namespace Alunite
         /// </summary>
         public static CubicSignal<T, TContinuum> Sum(CubicSignal<T, TContinuum> A, CubicSignal<T, TContinuum> B, TContinuum Continuum)
         {
-            return BinaryOperation(A, B, (x, y) => new Vertex(x.Time, Continuum.Add(x.Value, y.Value), Continuum.Add(x.Derivative, y.Derivative)), Continuum);
+            return BinaryOperation(A, B, (x, y) => new CubicSignal.Vertex<T>(x.Time, Continuum.Add(x.Value, y.Value), Continuum.Add(x.Derivative, y.Derivative)), Continuum);
+        }
+
+        /// <summary>
+        /// Approximates the difference of two signals.
+        /// </summary>
+        public static CubicSignal<T, TContinuum> Difference(CubicSignal<T, TContinuum> A, CubicSignal<T, TContinuum> B, TContinuum Continuum)
+        {
+            return BinaryOperation(A, B, (x, y) => new CubicSignal.Vertex<T>(x.Time, Continuum.Subtract(x.Value, y.Value), Continuum.Subtract(x.Derivative, y.Derivative)), Continuum);
         }
 
         /// <summary>
@@ -190,17 +203,17 @@ namespace Alunite
         public static CubicSignal<T, TContinuum> BinaryOperation<TA, TAContinuum, TB, TBContinuum>(
             CubicSignal<TA, TAContinuum> A,
             CubicSignal<TB, TBContinuum> B,
-            Func<CubicSignal<TA>.Vertex, CubicSignal<TB>.Vertex, Vertex> Function,
+            Func<CubicSignal.Vertex<TA>, CubicSignal.Vertex<TB>, CubicSignal.Vertex<T>> Function,
             TContinuum Continuum)
             where TAContinuum : IContinuum<TA>
             where TBContinuum : IContinuum<TB>
         {
-            List<Vertex> vs = new List<Vertex>();
-            List<CubicSignal<TA>.Vertex> avs = A._Vertices;
-            List<CubicSignal<TB>.Vertex> bvs = B._Vertices;
+            List<CubicSignal.Vertex<TA>> avs = A._Vertices;
+            List<CubicSignal.Vertex<TB>> bvs = B._Vertices;
+            List<CubicSignal.Vertex<T>> vs = new List<CubicSignal.Vertex<T>>(avs.Count);
 
-            int ai = 1; CubicSignal<TA>.Vertex a = avs[0];
-            int bi = 1; CubicSignal<TB>.Vertex b = bvs[0];
+            int ai = 1; CubicSignal.Vertex<TA> a = avs[0];
+            int bi = 1; CubicSignal.Vertex<TB> b = bvs[0];
             while (true)
             {
                 if (a.Time == b.Time)
@@ -253,16 +266,34 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Performs a unary operation on a signal.
+        /// </summary>
+        public static CubicSignal<T, TContinuum> UnaryOperation<TA, TAContinuum>(
+            CubicSignal<TA, TAContinuum> A,
+            Func<CubicSignal.Vertex<TA>, CubicSignal.Vertex<T>> Function,
+            TContinuum Continuum)
+            where TAContinuum : IContinuum<TA>
+        {
+            List<CubicSignal.Vertex<TA>> avs = A._Vertices;
+            List<CubicSignal.Vertex<T>> vs = new List<CubicSignal.Vertex<T>>(avs.Count);
+            foreach (CubicSignal.Vertex<TA> v in avs)
+            {
+                vs.Add(Function(v));
+            }
+            return new CubicSignal<T, TContinuum>(vs, Continuum);
+        }
+
+        /// <summary>
         /// Gets the product of two vertices occuring at the same time.
         /// </summary>
-        public static Vertex Product<TA, TB, TMultiplication>(
-            CubicSignal<TA>.Vertex A,
-            CubicSignal<TB>.Vertex B,
+        public static CubicSignal.Vertex<T> Product<TA, TB, TMultiplication>(
+            CubicSignal.Vertex<TA> A,
+            CubicSignal.Vertex<TB> B,
             TMultiplication Multiplication,
             TContinuum Continuum)
             where TMultiplication : IMultiplication<TA, TB, T>
         {
-            return new Vertex(
+            return new CubicSignal.Vertex<T>(
                 A.Time,
                 Multiplication.Multiply(A.Value, B.Value),
                 Continuum.Add(
@@ -273,7 +304,7 @@ namespace Alunite
         /// <summary>
         /// Gets the vertices for this signal, in the order they occur at.
         /// </summary>
-        public List<Vertex> Vertices
+        public List<CubicSignal.Vertex<T>> Vertices
         {
             get
             {
@@ -287,7 +318,7 @@ namespace Alunite
         /// </summary>
         /// <param name="Delta">The length of the interval.</param>
         /// <param name="Param">The relative position of Time in the interval between 0.0 and 1.0.</param>
-        public int GetInterval(double Time, out Vertex Start, out Vertex End, out double Delta, out double Param)
+        public int GetInterval(double Time, out CubicSignal.Vertex<T> Start, out CubicSignal.Vertex<T> End, out double Delta, out double Param)
         {
             int l = 0;
             int h = this._Vertices.Count;
@@ -313,6 +344,6 @@ namespace Alunite
         }
 
         private TContinuum _Continuum;
-        private List<Vertex> _Vertices;
+        private List<CubicSignal.Vertex<T>> _Vertices;
     }
 }

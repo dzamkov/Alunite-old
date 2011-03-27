@@ -77,7 +77,8 @@
     <Compile Include="Simulation\Matter\Substance.cs" />
     <Compile Include="Simulation\Node.cs" />
     <Compile Include="Simulation\Signal.cs" />
-    <Compile Include="Simulation\Signals\CubicSignal.cs" />
+    <Compile Include="Simulation\Signals\Continuous.cs" />
+    <Compile Include="Simulation\Signals\Cubic.cs" />
     <Compile Include="Simulation\Simulation.cs" />
     <Compile Include="Simulation\Terminal.cs" />
     <Compile Include="Simulation\Visual\Visual.cs" />
