@@ -92,7 +92,7 @@ namespace Alunite
             TContinuum ct = this._Continuum;
 
             T va = f.Derivative;
-            T vb = ct.Multiply(ct.Subtract(s.Value, f.Value), 1.0 / delta);
+            T vb = ct.Multiply(ct.Subtract(s.Value, f.Value), 3.0 / delta);
             T vc = s.Derivative;
 
             T vd = ct.Mix(va, vb, param);
