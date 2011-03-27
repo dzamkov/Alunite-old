@@ -7,13 +7,8 @@ namespace Alunite
     /// Contains methods for manipulation of continous values of a comman base. 
     /// </summary>
     /// <remarks>"Continuum" is a fancy word for number line.</remarks>
-    public interface IContinuum<T>
+    public interface IContinuum<T> : IMultiplication<T, double, T>
     {
-        /// <summary>
-        /// Multiplies a value by a scalar.
-        /// </summary>
-        T Multiply(T Value, double Scalar);
-
         /// <summary>
         /// Adds two values.
         /// </summary>
@@ -34,6 +29,17 @@ namespace Alunite
         /// returned value will be B, with the value being interpolated between the two.
         /// </summary>
         T Mix(T A, T B, double Amount);
+    }
+
+    /// <summary>
+    /// Describes a multiplication between objects. The multiplication may not be commutative.
+    /// </summary>
+    public interface IMultiplication<TA, TB, TResult>
+    {
+        /// <summary>
+        /// Gets the product of two values.
+        /// </summary>
+        TResult Multiply(TA A, TB B);
     }
 
     /// <summary>
