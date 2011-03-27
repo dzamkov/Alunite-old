@@ -25,6 +25,11 @@ namespace Alunite
         T Subtract(T A, T B);
 
         /// <summary>
+        /// Gets a value which has no effect when added or subtracted from another value.
+        /// </summary>
+        T Zero { get; }
+
+        /// <summary>
         /// Gets a value between the two given values. If amount is 0.0, the returned value will be A and if amount is 1.0, the
         /// returned value will be B, with the value being interpolated between the two.
         /// </summary>
@@ -55,6 +60,14 @@ namespace Alunite
         {
             return A * (1.0 - Amount) + B * Amount;
         }
+
+        public double Zero
+        {
+            get
+            {
+                return 0.0;
+            }
+        }
     }
 
     /// <summary>
@@ -80,6 +93,14 @@ namespace Alunite
         public Vector Mix(Vector A, Vector B, double Amount)
         {
             return A * (1.0 - Amount) + B * Amount;
+        }
+
+        public Vector Zero
+        {
+            get
+            {
+                return Vector.Zero;
+            }
         }
     }
 }

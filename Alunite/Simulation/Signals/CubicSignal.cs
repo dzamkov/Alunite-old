@@ -4,10 +4,44 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
+    /// A general base class for all cubic signals of a certain type.
+    /// </summary>
+    public abstract class CubicSignal<T> : Signal<T>
+    {
+        /// <summary>
+        /// A vertex in the cubic signal.
+        /// </summary>
+        public struct Vertex
+        {
+            public Vertex(double Time, T Value, T Derivative)
+            {
+                this.Time = Time;
+                this.Value = Value;
+                this.Derivative = Derivative;
+            }
+
+            /// <summary>
+            /// The time this vertex occurs at.
+            /// </summary>
+            public double Time;
+
+            /// <summary>
+            /// The value of the signal at this vertex.
+            /// </summary>
+            public T Value;
+
+            /// <summary>
+            /// The first-order derivative at this vertex.
+            /// </summary>
+            public T Derivative;
+        }
+    }
+
+    /// <summary>
     /// A continous finite signal defined by a cubic (natural) spline. These signals are best for approximations because they
     /// can not represent many curves exactly but can represent many curves closely and quickly.
     /// </summary>
-    public class CubicSignal<T, TContinuum> : Signal<T>
+    public class CubicSignal<T, TContinuum> : CubicSignal<T>
         where TContinuum : IContinuum<T>
     {
         public CubicSignal(Vertex[] Vertices, TContinuum Continuum)
@@ -44,6 +78,29 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Gets the derivative of this signal at the specified time.
+        /// </summary>
+        public T GetDerivative(double Time)
+        {
+            int i = this.GetInterval(Time);
+            Vertex f = this._Vertices[i];
+            Vertex s = this._Vertices[i + 1];
+            double delta = s.Time - f.Time;
+            double param = (Time - f.Time) / delta;
+
+            TContinuum ct = this._Continuum;
+
+            T va = f.Derivative;
+            T vb = ct.Multiply(ct.Subtract(s.Value, f.Value), 1.0 / delta);
+            T vc = s.Derivative;
+
+            T vd = ct.Mix(va, vb, param);
+            T ve = ct.Mix(vb, vc, param);
+
+            return ct.Mix(vd, ve, param);
+        }
+
         public override double Length
         {
             get
@@ -75,34 +132,6 @@ namespace Alunite
             {
                 return this._Vertices;
             }
-        }
-
-        /// <summary>
-        /// A vertex in the cubic signal.
-        /// </summary>
-        public struct Vertex
-        {
-            public Vertex(double Time, T Value, T Derivative)
-            {
-                this.Time = Time;
-                this.Value = Value;
-                this.Derivative = Derivative;
-            }
-
-            /// <summary>
-            /// The time this vertex occurs at.
-            /// </summary>
-            public double Time;
-
-            /// <summary>
-            /// The value of the signal at this vertex.
-            /// </summary>
-            public T Value;
-
-            /// <summary>
-            /// The first-order derivative at this vertex.
-            /// </summary>
-            public T Derivative;
         }
 
         /// <summary>
