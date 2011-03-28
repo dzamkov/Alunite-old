@@ -75,7 +75,10 @@ namespace Alunite
             }
         }
 
-        public override T GetDerivative(double Time)
+        /// <summary>
+        /// Gets the derivative of this signal at the specified time.
+        /// </summary>
+        public T GetDerivative(double Time)
         {
             CubicSignal.Vertex<T> f, s; double delta, param;
             this.GetInterval(Time, out f, out s, out delta, out param);

@@ -15,13 +15,14 @@ namespace Alunite
         public abstract TContinuum Continuum { get; }
 
         /// <summary>
-        /// Gets the derivative of this signal at the specified time.
+        /// Gets a signal that represents the derivative of this signal.
         /// </summary>
-        public virtual T GetDerivative(double Time)
+        public virtual ContinuousSignal<T, TContinuum> Derivative
         {
-            const double h = 0.001;
-            TContinuum ct = this.Continuum;
-            return ct.Multiply(ct.Subtract(this[Time + h], this[Time]), 1.0 / h);
+            get
+            {
+                return new DerivativeSignal<T, TContinuum>(this, Continuum);
+            }
         }
     }
 }

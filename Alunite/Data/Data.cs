@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// An immutable representation of an object.
+    /// An immutable representation of an object. Note that methods calls on data may have inaccuracies and error, but the data must still
+    /// be self-consistent and unambiguously represent an object.
     /// </summary>
     public abstract class Data<TBase>
         where TBase : Data<TBase>

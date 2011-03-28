@@ -37,6 +37,18 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates a lookat matrix using foward and up unit vectors.
+        /// </summary>
+        public static OrthogonalMatrix Lookat(Vector Foward, Vector Up)
+        {
+            Vector y = Vector.Cross(Up, Foward);
+            y.Normalize();
+            Vector z = Vector.Cross(Foward, y);
+            z.Normalize();
+            return new OrthogonalMatrix(Foward, y, z);
+        }
+
+        /// <summary>
         /// Applies the transform represented by this matrix to a vector.
         /// </summary>
         public Vector Apply(Vector Vector)
