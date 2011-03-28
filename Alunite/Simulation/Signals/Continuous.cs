@@ -4,17 +4,9 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// The generalized base class of continuous signals.
-    /// </summary>
-    public abstract class ContinuousSignal<T> : Signal<T>
-    {
-
-    }
-
-    /// <summary>
     /// A signal of continuous values over a continuum (number line).
     /// </summary>
-    public abstract class ContinuousSignal<T, TContinuum> : ContinuousSignal<T>
+    public abstract class ContinuousSignal<T, TContinuum> : Signal<T>
         where TContinuum : IContinuum<T>
     {
         /// <summary>
