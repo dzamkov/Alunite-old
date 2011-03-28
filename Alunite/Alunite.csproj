@@ -39,6 +39,7 @@
   </Target>
   -->
   <ItemGroup>
+    <Compile Include="Data\Builder.cs" />
     <Compile Include="Data\Data.cs" />
     <Compile Include="Data\Delta.cs" />
     <Compile Include="Data\Filter.cs" />

@@ -35,6 +35,31 @@ namespace Alunite
             /// </summary>
             public T Derivative;
         }
+
+        /// <summary>
+        /// Creates a path builder for a path along the given continuum.
+        /// </summary>
+        public static CubicPathBuilder<T, TContinuum> BuildPath<T, TContinuum>(TContinuum Continuum)
+            where TContinuum : IContinuum<T>
+        {
+            return new CubicPathBuilder<T, TContinuum>(Continuum);
+        }
+
+        /// <summary>
+        /// Creates a path builder for scalar values.
+        /// </summary>
+        public static CubicPathBuilder<double, ScalarContinuum> BuildScalarPath()
+        {
+            return new CubicPathBuilder<double, ScalarContinuum>(new ScalarContinuum());
+        }
+
+        /// <summary>
+        /// Creates a path builder for vector values.
+        /// </summary>
+        public static CubicPathBuilder<Vector, VectorContinuum> BuildVectorPath()
+        {
+            return new CubicPathBuilder<Vector, VectorContinuum>(new VectorContinuum());
+        }
     }
 
     /// <summary>
@@ -344,6 +369,64 @@ namespace Alunite
             Param = (Time - Start.Time) / Delta;
 
             return l;
+        }
+
+        private TContinuum _Continuum;
+        private List<CubicSignal.Vertex<T>> _Vertices;
+    }
+
+    /// <summary>
+    /// A builder for cubic signal defined by a path.
+    /// </summary>
+    public class CubicPathBuilder<T, TContinuum> : Builder<CubicSignal<T, TContinuum>>
+        where TContinuum : IContinuum<T>
+    {
+        public CubicPathBuilder(TContinuum Continuum)
+        {
+            this._Continuum = Continuum;
+            this._Vertices = new List<CubicSignal.Vertex<T>>();
+        }
+
+        /// <summary>
+        /// Adds a point to the path that is visible after the given Delta time. 
+        /// </summary>
+        public void Add(double Delta, T Value)
+        {
+            TContinuum ct = this._Continuum;
+
+            if (this._Vertices.Count > 0)
+            {
+                int i = this._Vertices.Count - 1;
+                CubicSignal.Vertex<T> prev = this._Vertices[i];
+                double time = prev.Time + Delta;
+                T deri = ct.Multiply(ct.Subtract(Value, prev.Value), 1.0 / Delta);
+                if (i > 0 && prev.Time != this._Vertices[i - 1].Time)
+                {
+                    this._Vertices[i] = new CubicSignal.Vertex<T>(prev.Time, prev.Value, ct.Mix(prev.Derivative, deri, 0.5));
+                }
+                else
+                {
+                    this._Vertices[i] = new CubicSignal.Vertex<T>(prev.Time, prev.Value, deri);
+                }
+                this._Vertices.Add(new CubicSignal.Vertex<T>(time, Value, deri));
+            }
+            else
+            {
+                this._Vertices.Add(new CubicSignal.Vertex<T>(0.0, Value, ct.Zero));
+            }
+        }
+
+        /// <summary>
+        /// Creates a discontinuous jump to the given value.
+        /// </summary>
+        public void Jump(T Value)
+        {
+            this.Add(0.0, Value);
+        }
+
+        public override CubicSignal<T, TContinuum> Finish()
+        {
+            return new CubicSignal<T, TContinuum>(this._Vertices, this._Continuum);
         }
 
         private TContinuum _Continuum;

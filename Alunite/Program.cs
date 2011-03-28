@@ -17,6 +17,8 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
+
+
             CameraEntity camsensor = Entity.Camera();
             Entity cambody = Entity.Brush(Substance.Iron, Shape.Sphere(0.1)).Apply(new Transform(-0.12, 0.0, 0.0));
             Entity cam = camsensor.Embody(cambody);
