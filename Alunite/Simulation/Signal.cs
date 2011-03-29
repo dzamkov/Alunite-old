@@ -246,8 +246,8 @@ namespace Alunite
         {
             get
             {
-                this._Primary = this._Primary.Simplify;
-                this._Secondary = this._Secondary.Simplify;
+                this._Primary = this._Primary.Prefered;
+                this._Secondary = this._Secondary.Prefered;
                 if (this._Primary == NothingSignal<T>.Singleton)
                 {
                     return this._Secondary;
@@ -333,8 +333,8 @@ namespace Alunite
         {
             get
             {
-                this._Primary = this._Primary.Simplify;
-                this._Secondary = this._Secondary.Simplify;
+                this._Primary = this._Primary.Prefered;
+                this._Secondary = this._Secondary.Prefered;
 
                 if (this._Primary == NothingSignal<T>.Singleton)
                 {
