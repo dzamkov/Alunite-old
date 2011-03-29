@@ -18,12 +18,13 @@ namespace Alunite
         public static void Main(string[] Args)
         {
 
-
+            EntityBuilder builder = Entity.Builder();
             CameraEntity camsensor = Entity.Camera();
-            Entity cambody = Entity.Brush(Substance.Iron, Shape.Sphere(0.1)).Apply(new Transform(-0.12, 0.0, 0.0));
-            Entity cam = camsensor.Embody(cambody);
-            Entity obj = Entity.Brush(Substance.Iron, Shape.Sphere(1.0)).Apply(new Transform(5.0, 0.0, 0.0));
-            Entity world = Entity.Combine(cam, obj);
+            builder.Add(camsensor);
+            builder.Embody(Entity.Brush(Substance.Iron, Shape.Sphere(0.1)));
+            builder.Apply(new Transform(-0.12, 0.0, 0.0));
+            builder.Add(Entity.Brush(Substance.Iron, Shape.Sphere(1.0)).Apply(new Transform(5.0, 0.0, 0.0)));
+            Entity world = builder.Finish();
 
             Span worldspan = Span.Create(world);
 

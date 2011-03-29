@@ -19,6 +19,72 @@ namespace Alunite
         /// Gets the length of the signal. The signal does not define any samples at or after this time.
         /// </summary>
         public abstract double Length { get; }
+
+        /// <summary>
+        /// Advances this signal by the given amount of time.
+        /// </summary>
+        public virtual Signal<T> Advance(double Time)
+        {
+            return new AdvancedSignal<T>(this, Time);
+        }
+    }
+
+    /// <summary>
+    /// An advanced form of a source signal.
+    /// </summary>
+    public class AdvancedSignal<T> : Signal<T>
+    {
+        public AdvancedSignal(Signal<T> Source, double Time)
+        {
+            this._Source = Source;
+            this._Time = Time;
+        }
+
+        /// <summary>
+        /// Gets the signal that is advanced.
+        /// </summary>
+        public Signal<T> Source
+        {
+            get
+            {
+                return this._Source;
+            }
+        }
+
+        /// <summary>
+        /// Gets the amount the source signal was advanced by.
+        /// </summary>
+        public double Time
+        {
+            get
+            {
+                return this._Time;
+            }
+        }
+
+        public override T this[double Time]
+        {
+            get
+            {
+                return this._Source[this._Time + Time];
+            }
+        }
+
+        public override double Length
+        {
+            get
+            {
+                return this._Source.Length - this._Time;
+            }
+        }
+
+        public override Signal<T> Advance(double Time)
+        {
+            return new AdvancedSignal<T>(this._Source, this._Time + Time);
+        }
+
+        private Signal<T> _Source;
+        private double _Time;
     }
 
     /// <summary>
@@ -56,6 +122,11 @@ namespace Alunite
             {
                 return Maybe<T>.Nothing;
             }
+        }
+
+        public override Signal<Maybe<T>> Advance(double Time)
+        {
+            return this;
         }
     }
 
@@ -103,6 +174,11 @@ namespace Alunite
                 this._Source = this._Source.Simplify;
                 return this;
             }
+        }
+
+        public override Signal<Maybe<T>> Advance(double Time)
+        {
+            return new JustSignal<T>(this._Source.Advance(Time));
         }
 
         private Signal<T> _Source;

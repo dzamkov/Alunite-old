@@ -4,14 +4,13 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// An entity that creates internal links within another source entity.
+    /// An entity that creates or manipulates an internal link between logical (or control) nodes within a source entity.
     /// </summary>
-    public class LinkEntity : Entity
+    public abstract class LinkEntity : Entity
     {
         public LinkEntity(Entity Source)
         {
             this._Source = Source;
-            this._Links = new List<_Link>();
         }
 
         /// <summary>
@@ -25,21 +24,22 @@ namespace Alunite
             }
         }
 
+        /// <summary>
+        /// Creates a link entity which forms the same link this entity has on another entity.
+        /// </summary>
+        public abstract LinkEntity Relink(Entity Source);
+
+        public override Entity Apply(Transform Transform)
+        {
+            return this.Relink(this._Source.Apply(Transform));
+        }
+
         public override MassAggregate Aggregate
         {
             get
             {
                 return this._Source.Aggregate;
             }
-        }
-
-        /// <summary>
-        /// Creates a link between two terminals. There is a many to one relationship between output and
-        /// input terminals.
-        /// </summary>
-        public void Link<T>(OutTerminal<T> Output, InTerminal<T> Input)
-        {
-            this._Links.Add(_Link.Create(Output, Input));
         }
 
         public override bool Phantom
@@ -50,39 +50,66 @@ namespace Alunite
             }
         }
 
+        private Entity _Source;
+    }
+
+    /// <summary>
+    /// An entity that creates an internal link between terminals within a source entity.
+    /// </summary>
+    public abstract class TerminalLinkEntity : LinkEntity
+    {
+        public TerminalLinkEntity(Entity Source)
+            : base(Source)
+        {
+
+        }
+    }
+
+    /// <summary>
+    /// A specialized terminal link entity.
+    /// </summary>
+    public class TerminalLinkEntity<T> : TerminalLinkEntity
+    {
+        public TerminalLinkEntity(Entity Source, OutTerminal<T> Output, InTerminal<T> Input)
+            : base(Source)
+        {
+            this._Output = Output;
+            this._Input = Input;
+        }
+
+        /// <summary>
+        /// Gets the output terminal of the link.
+        /// </summary>
+        public OutTerminal<T> Output
+        {
+            get
+            {
+                return this._Output;
+            }
+        }
+
+        /// <summary>
+        /// Gets the input terminal of the link.
+        /// </summary>
+        public InTerminal<T> Input
+        {
+            get
+            {
+                return this._Input;
+            }
+        }
+
+        public override LinkEntity Relink(Entity Source)
+        {
+            return new TerminalLinkEntity<T>(Source, this._Output, this._Input);
+        }
+
         public override Span CreateSpan(Span Environment, ControlInput Input)
         {
             throw new NotImplementedException();
         }
 
-        private Entity _Source;
-        private List<_Link> _Links;
-    }
-
-    /// <summary>
-    /// A link within a link entity.
-    /// </summary>
-    internal class _Link
-    {
-        /// <summary>
-        /// Creates a link between two terminals.
-        /// </summary>
-        public static _Link Create<T>(OutTerminal<T> Output, InTerminal<T> Input)
-        {
-            return new SpecialTerminal<T>
-            {
-                Output = Output,
-                Input = Input
-            };
-        }
-
-        /// <summary>
-        /// A specialized link between complimentary typed terminals.
-        /// </summary>>
-        public class SpecialTerminal<T> : _Link
-        {
-            public OutTerminal<T> Output;
-            public InTerminal<T> Input;
-        }
+        private OutTerminal<T> _Output;
+        private InTerminal<T> _Input;
     }
 }

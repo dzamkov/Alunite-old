@@ -69,6 +69,8 @@
     <Compile Include="Simulation\Dynamics\Spans\Embodied.cs" />
     <Compile Include="Simulation\Dynamics\Spans\Path.cs" />
     <Compile Include="Simulation\Dynamics\Spans\RigidBody.cs" />
+    <Compile Include="Simulation\Dynamics\Spans\Signaler.cs" />
+    <Compile Include="Simulation\Entities\Signaler.cs" />
     <Compile Include="Simulation\Dynamics\Spans\Static.cs" />
     <Compile Include="Simulation\Entities\Binary.cs" />
     <Compile Include="Simulation\Entities\Camera.cs" />

@@ -9,7 +9,7 @@ namespace Alunite
     /// </summary>
     public class CameraEntity : PhantomEntity
     {
-        internal CameraEntity()
+        private CameraEntity()
         {
             this._Output = new OutTerminal<View>();
         }

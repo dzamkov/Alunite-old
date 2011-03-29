@@ -98,11 +98,19 @@ namespace Alunite
         }
 
         /// <summary>
-        /// Creates a linking entity on another entity.
+        /// Creates a link between terminals on a source entity.
         /// </summary>
-        public static LinkEntity Link(Entity Source)
+        public static TerminalLinkEntity<T> Link<T>(Entity Source, OutTerminal<T> Output, InTerminal<T> Input)
         {
-            return new LinkEntity(Source);
+            return new TerminalLinkEntity<T>(Source, Output, Input);
+        }
+
+        /// <summary>
+        /// Creates a new entity builder.
+        /// </summary>
+        public static EntityBuilder Builder()
+        {
+            return new EntityBuilder();
         }
 
         /// <summary>
@@ -297,5 +305,73 @@ namespace Alunite
         /// The location center of mass, or barycenter in relation to the entity.
         /// </summary>
         public Vector Barycenter;
+    }
+
+    /// <summary>
+    /// Constructs an entity from various elements.
+    /// </summary>
+    public class EntityBuilder : Builder<Entity>
+    {
+        public EntityBuilder()
+        {
+            this._Current = Entity.Null;
+        }
+
+        /// <summary>
+        /// Adds (superimposes) an entity on to this builders current entity.
+        /// </summary>
+        public void Add(Entity Entity)
+        {
+            this._Current = Entity.Combine(Entity, this._Current);
+        }
+
+        /// <summary>
+        /// Adds an entity (given by its current builder state) to this builders current entity.
+        /// </summary>
+        public void Add(EntityBuilder Entity)
+        {
+            this.Add(Entity._Current);
+        }
+
+        /// <summary>
+        /// Attaches an unbound signal to an input of this entity.
+        /// </summary>
+        public void Attach<T>(InTerminal<T> Input, Signal<T> Signal)
+        {
+            SignalerEntity<T> se = new SignalerEntity<T>(Signal);
+            this.Add(se);
+            this.Link<T>(se.Terminal, Input);
+        }
+
+        /// <summary>
+        /// Links two complimentary terminals within the entity.
+        /// </summary>
+        public void Link<T>(OutTerminal<T> Output, InTerminal<T> Input)
+        {
+            this._Current = Entity.Link<T>(this._Current, Output, Input);
+        }
+
+        /// <summary>
+        /// Applies a transform to this builders current entity.
+        /// </summary>
+        public void Apply(Transform Transform)
+        {
+            this._Current = this._Current.Apply(Transform);
+        }
+
+        /// <summary>
+        /// Embodys this builders current entity into another entity. This may only be done if the current entity is a phantom entity.
+        /// </summary>
+        public void Embody(Entity Body)
+        {
+            this._Current = this._Current.Embody(Body);
+        }
+
+        public override Entity Finish()
+        {
+            return this._Current;
+        }
+
+        private Entity _Current;
     }
 }
