@@ -28,11 +28,6 @@ namespace Alunite
         public abstract MassAggregate Aggregate { get; }
 
         /// <summary>
-        /// Creates a span for this entity.
-        /// </summary>
-        public abstract Span CreateSpan(Span Environment, ControlInput Input);
-
-        /// <summary>
         /// Gets a camera entity.
         /// </summary>
         public static CameraEntity Camera()
@@ -148,11 +143,6 @@ namespace Alunite
         /// </summary>
         public static readonly NullEntity Singleton = new NullEntity();
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            return NullSpan.Singleton;
-        }
-
         public override MassAggregate Aggregate
         {
             get
@@ -243,11 +233,6 @@ namespace Alunite
             {
                 return this._Transform;
             }
-        }
-
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            return this._Source.CreateSpan(Environment.Apply(this._Transform.Inverse), Input).Apply(this._Transform);
         }
 
         public override bool Phantom

@@ -54,11 +54,6 @@ namespace Alunite
             }
         }
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            return EmbodiedSpan.Create(this._Control, this._Body.CreateSpan(Environment, Input), Environment, Input);
-        }
-
         private Entity _Control;
         private Entity _Body;
     }

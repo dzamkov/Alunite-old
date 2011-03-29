@@ -26,10 +26,8 @@ namespace Alunite
             builder.Add(Entity.Brush(Substance.Iron, Shape.Sphere(1.0)).Apply(new Transform(5.0, 0.0, 0.0)));
             Entity world = builder.Finish();
 
-            Span worldspan = Span.Create(world);
-
             HostWindow hw = new HostWindow("Alunite", 640, 480);
-            hw.Control = new Visualizer(worldspan.Read(camsensor.Output).Simplify);
+            hw.Control = new Visualizer(null);
             hw.Run(60.0);
         }
     }

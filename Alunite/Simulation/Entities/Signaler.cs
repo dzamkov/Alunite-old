@@ -42,11 +42,6 @@ namespace Alunite
             }
         }
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            return new SignalerSpan<T>(this._Signal, this._Terminal);
-        }
-
         private Signal<T> _Signal;
         private OutTerminal<T> _Terminal;
     }

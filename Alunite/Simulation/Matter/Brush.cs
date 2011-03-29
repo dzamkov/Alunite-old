@@ -66,11 +66,6 @@ namespace Alunite
             }
         }
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            return StaticSpan.CreateSimple(this);
-        }
-
         private Shape<Substance> _Shape;
     }
 }

@@ -104,11 +104,6 @@ namespace Alunite
             return new TerminalLinkEntity<T>(Source, this._Output, this._Input);
         }
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            throw new NotImplementedException();
-        }
-
         private OutTerminal<T> _Output;
         private InTerminal<T> _Input;
     }

@@ -30,11 +30,6 @@ namespace Alunite
             }
         }
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            return new CameraSpan(Environment);
-        }
-
         private OutTerminal<View> _Output;
     }
 }

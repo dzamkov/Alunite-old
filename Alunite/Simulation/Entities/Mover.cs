@@ -36,11 +36,6 @@ namespace Alunite
             }
         }
 
-        public override Span CreateSpan(Span Environment, ControlInput Input)
-        {
-            throw new NotImplementedException();
-        }
-
         private Entity _Source;
         private InTerminal<Transform> _Terminal;
     }
