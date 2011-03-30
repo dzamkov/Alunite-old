@@ -31,6 +31,22 @@ namespace Alunite
         public abstract Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal);
 
         /// <summary>
+        /// Creates a span representing the natural progression of an entity in a given environment with the given a terminal input.
+        /// </summary>
+        public static Span Natural(Entity Initial, Span Environment, TerminalInput Input)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Creates a span representing the natural progression of an entity with no outside environment.
+        /// </summary>
+        public static Span Natural(Entity Initial)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Gets the null span.
         /// </summary>
         public static NullSpan Null
@@ -74,6 +90,50 @@ namespace Alunite
         }
 
         public override Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal)
+        {
+            return Signal.Nothing<T>();
+        }
+    }
+
+    /// <summary>
+    /// Gives signals for input terminals for a span. Note that this object is not guranteed to be immutable, and
+    /// should not be stored when it is passed as a parameter.
+    /// </summary>
+    public abstract class TerminalInput
+    {
+        /// <summary>
+        /// Gets the signal given to the specified terminal. All signals returned by this method are unbound.
+        /// </summary>
+        public abstract Signal<Maybe<T>> Read<T>(InTerminal<T> Terminal);
+
+        /// <summary>
+        /// Gets the null "TerminalInput".
+        /// </summary>
+        public static NullTerminalInput Null
+        {
+            get
+            {
+                return NullTerminalInput.Null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Terminal input with no active terminals.
+    /// </summary>
+    public class NullTerminalInput : TerminalInput
+    {
+        private NullTerminalInput()
+        {
+
+        }
+
+        /// <summary>
+        /// The only instance of this class.
+        /// </summary>
+        public static readonly NullTerminalInput Singleton = new NullTerminalInput();
+
+        public override Signal<Maybe<T>> Read<T>(InTerminal<T> Terminal)
         {
             return Signal.Nothing<T>();
         }
