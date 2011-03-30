@@ -63,6 +63,7 @@
     <Compile Include="Math\Transform.cs" />
     <Compile Include="Data\UsageSet.cs" />
     <Compile Include="Math\Vector.cs" />
+    <Compile Include="Simulation\Dynamics\Span.cs" />
     <Compile Include="Simulation\Entities\Mover.cs" />
     <Compile Include="Simulation\Entities\Signaler.cs" />
     <Compile Include="Simulation\Entities\Binary.cs" />
@@ -96,8 +97,5 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Drawing" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Simulation\Dynamics\" />
   </ItemGroup>
 </Project>
