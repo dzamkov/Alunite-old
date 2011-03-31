@@ -47,6 +47,14 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates a natural span with the same initial entity as this one but with a different environment or terminal input.
+        /// </summary>
+        public virtual Span UpdateNatural(Span Environment, TerminalInput Input)
+        {
+            return Natural(this.Initial, Environment, Input);
+        }
+
+        /// <summary>
         /// Gets the null span.
         /// </summary>
         public static NullSpan Null

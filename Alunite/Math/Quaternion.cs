@@ -57,6 +57,21 @@ namespace Alunite
             axis *= 1.0 / sinang;
             return new Quaternion(hcosang, axis * hsinang);
         }
+        
+        /// <summary>
+        /// Gets a rotational quaternion from an orthogonal matrix representing a rotation.
+        /// </summary>
+        public static Quaternion FromMatrix(OrthogonalMatrix Matrix)
+        {
+            double r = Math.Sqrt(1 + Matrix.M11 - Matrix.M22 - Matrix.M33);
+            double dr = r * 2.0;
+            Quaternion q = new Quaternion(
+                (Matrix.M23 - Matrix.M32) / dr,
+                r / 2.0,
+                (Matrix.M12 + Matrix.M21) / dr,
+                (Matrix.M31 + Matrix.M13) / dr);
+            return q;
+        }
 
         /// <summary>
         /// Gets the identity quaternion.

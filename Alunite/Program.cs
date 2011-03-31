@@ -17,6 +17,13 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
+            Quaternion tq = Quaternion.AxisAngle(Vector.Normalize(new Vector(0.5, 0.7, 0.8)), 0.6);
+            OrthogonalMatrix om = tq;
+
+            Vector test = new Vector(0.0, 1.0, 2.0);
+            Vector ra = tq.Rotate(test);
+            Vector rb = om.Apply(test);
+            Vector rc = Quaternion.FromMatrix(om).Rotate(test);
 
             EntityBuilder builder = Entity.Builder();
             CameraEntity camsensor = Entity.Camera();

@@ -494,6 +494,31 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the derivative of a signal using the given continuum (number line).
+        /// </summary>
+        public static Signal<T> Derivative<T, TContinuum>(Signal<T> Signal, TContinuum Continuum)
+            where TContinuum : IContinuum<T>
+        {
+            return new DerivativeSignal<T, TContinuum>(Signal, Continuum);
+        }
+
+        /// <summary>
+        /// Gets the derivative of a signal of vectors.
+        /// </summary>
+        public static Signal<Vector> Derivative(Signal<Vector> Signal)
+        {
+            return new DerivativeSignal<Vector, VectorContinuum>(Signal, new VectorContinuum());
+        }
+        
+        /// <summary>
+        /// Gets the derivative of a signal of scalars.
+        /// </summary>
+        public static Signal<double> Derivative(Signal<double> Signal)
+        {
+            return new DerivativeSignal<double, ScalarContinuum>(Signal, new ScalarContinuum());
+        }
+
+        /// <summary>
         /// Creates a signal that returns the value from the primary signal if its not nothing, or gets the value from the secondary signal otherwise.
         /// </summary>
         public static Signal<T> Default<T>(Signal<Maybe<T>> Primary, Signal<T> Secondary)
