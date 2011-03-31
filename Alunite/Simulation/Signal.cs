@@ -167,11 +167,11 @@ namespace Alunite
             }
         }
 
-        public override Signal<Maybe<T>> Simplify
+        protected override Signal<Maybe<T>> Simplify
         {
             get
             {
-                this._Source = this._Source.Simplify;
+                this._Source = this._Source.Prefered;
                 return this;
             }
         }
@@ -242,7 +242,7 @@ namespace Alunite
             }
         }
 
-        public override Signal<Maybe<T>> Simplify
+        protected override Signal<Maybe<T>> Simplify
         {
             get
             {
@@ -329,7 +329,7 @@ namespace Alunite
             }
         }
 
-        public override Signal<T> Simplify
+        protected override Signal<T> Simplify
         {
             get
             {
@@ -383,7 +383,7 @@ namespace Alunite
             }
         }
 
-        public override Signal<T> Simplify
+        protected override Signal<T> Simplify
         {
             get
             {

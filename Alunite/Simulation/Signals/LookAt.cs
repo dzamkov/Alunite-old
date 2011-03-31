@@ -67,7 +67,7 @@ namespace Alunite
             }
         }
 
-        public override Signal<Transform> Simplify
+        protected override Signal<Transform> Simplify
         {
             get
             {

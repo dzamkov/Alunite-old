@@ -33,7 +33,7 @@ namespace Alunite
         /// of data. Since this does not change the meaning of data, it may be performed in place, and change the
         /// data.
         /// </summary>
-        public virtual TBase Simplify
+        protected virtual TBase Simplify
         {
             get
             {

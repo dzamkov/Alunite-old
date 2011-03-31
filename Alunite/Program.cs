@@ -35,15 +35,11 @@ namespace Alunite
             CameraEntity camera = Entity.Camera();
             MoverEntity mover = Entity.Mover(camera);
 
-            Signal<Transform> msig = Signal.LookAt(lookpos, looktar, lookup);
-
             EntityBuilder builder = Entity.Builder();
             builder.Add(mover);
-            builder.Attach(mover.Input, msig);
+            builder.Attach(mover.Input, Signal.LookAt(lookpos, looktar, lookup));
             builder.Add(Entity.Brush(Substance.Iron, Shape.Sphere(1.0)));
             Entity world = builder.Finish();
-
-            Transform testa = msig[0.0];
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
             hw.Control = new Visualizer(Span.Natural(world).Read(camera.Output));

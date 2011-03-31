@@ -42,7 +42,7 @@ namespace Alunite
             }
         }
 
-        public override Signal<T> Simplify
+        protected override Signal<T> Simplify
         {
             get
             {
