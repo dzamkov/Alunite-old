@@ -4,15 +4,10 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// The unbounded progression of an entity over time possibly through natural interactions with other spans.
+    /// A natural (governed by physical laws) progression of an entity given as a signal.
     /// </summary>
-    public abstract class Span : Data<Span>
+    public abstract class Span : Signal<Entity>
     {
-        /// <summary>
-        /// Gets an entity that represents the state of this span at the given time relative to the begining of the span.
-        /// </summary>
-        public abstract Entity this[double Time] { get; }
-
         /// <summary>
         /// Gets the initial entity this span is for.
         /// </summary>
@@ -31,27 +26,28 @@ namespace Alunite
         public abstract Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal);
 
         /// <summary>
-        /// Creates a span representing the natural progression of an entity in a given environment with the given a terminal input.
+        /// Creates a span representing the natural progression of an entity in a given environment with the given a terminal input. The resulting span
+        /// will have a length equal to that of the environment. All terminal input signals should be at or exceed this length.
         /// </summary>
-        public static Span Natural(Entity Initial, Span Environment, TerminalInput Input)
+        public static Span Create(Entity Initial, Signal<Entity> Environment, TerminalInput Input)
         {
             throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Creates a span representing the natural progression of an entity with no outside environment.
+        /// Creates an unbound span representing the natural progression of an entity with no outside environment.
         /// </summary>
-        public static Span Natural(Entity Initial)
+        public static Span Create(Entity Initial)
         {
-            throw new NotImplementedException();
+            return Create(Initial, Null, TerminalInput.Null);
         }
 
         /// <summary>
         /// Creates a natural span with the same initial entity as this one but with a different environment or terminal input.
         /// </summary>
-        public virtual Span UpdateNatural(Span Environment, TerminalInput Input)
+        public virtual Span Update(Signal<Entity> Environment, TerminalInput Input)
         {
-            return Natural(this.Initial, Environment, Input);
+            return Create(this.Initial, Environment, Input);
         }
 
         /// <summary>
@@ -67,9 +63,23 @@ namespace Alunite
     }
 
     /// <summary>
-    /// A span which gives a null entity at any moment and contains no active terminals.
+    /// A span with an indefinite length.
     /// </summary>
-    public class NullSpan : Span
+    public abstract class UnboundSpan : Span
+    {
+        public override double Length
+        {
+            get
+            {
+                return double.PositiveInfinity;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The span for a null entity.
+    /// </summary>
+    public class NullSpan : UnboundSpan
     {
         private NullSpan()
         {
