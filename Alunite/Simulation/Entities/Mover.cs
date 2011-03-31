@@ -8,20 +8,32 @@ namespace Alunite
     /// </summary>
     public class MoverEntity : PhantomEntity
     {
-        public MoverEntity(Entity Source)
+        public MoverEntity(Entity Source, Transform Default)
         {
             this._Source = Source;
             this._Terminal = new InTerminal<Transform>();
+            this._Default = Default;
         }
 
         /// <summary>
-        /// Gets the entity that is displaced. This should be a phantom entity.
+        /// Gets the entity that is moved. This should be a phantom entity.
         /// </summary>
         public Entity Source
         {
             get
             {
                 return this._Source;
+            }
+        }
+
+        /// <summary>
+        /// Gets the default transform used if the input terminal is inactive.
+        /// </summary>
+        public Transform Default
+        {
+            get
+            {
+                return this._Default;
             }
         }
 
@@ -38,5 +50,6 @@ namespace Alunite
 
         private Entity _Source;
         private InTerminal<Transform> _Terminal;
+        private Transform _Default;
     }
 }

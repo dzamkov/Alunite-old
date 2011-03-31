@@ -5,7 +5,7 @@ namespace Alunite
 {
     /// <summary>
     /// A signal which, at any moment, gives a transform that aligns an entity at (0.0, 0.0, 0.0) looking towards (1.0, 0.0, 0.0) with
-    /// (0.0, 0.0, 1.0) as the up vector to be positioned and look in a certain direction. All components of this signal must be the same length.
+    /// (0.0, 0.0, 1.0) as the up vector to be positioned and look in a certain direction.
     /// </summary>
     public class LookAtSignal : Signal<Transform>
     {
@@ -87,7 +87,12 @@ namespace Alunite
                 Vector vel = this._Velocity[Time];
                 Vector fow = this._Foward[Time];
                 Vector up = this._Up[Time];
-                throw new NotImplementedException();
+
+                // This could probably be faster
+                OrthogonalMatrix om = OrthogonalMatrix.Lookat(Vector.Normalize(fow), Vector.Normalize(up));
+                Quaternion rot = Quaternion.FromMatrix(om);
+
+                return new Transform(pos, vel, rot);
             }
         }
 
@@ -95,7 +100,11 @@ namespace Alunite
         {
             get
             {
-                return this._Position.Length;
+                double len = this._Position.Length;
+                len = Math.Min(len, this._Foward.Length);
+                len = Math.Min(len, this._Up.Length);
+                len = Math.Min(len, this._Velocity.Length);
+                return len;
             }
         }
 

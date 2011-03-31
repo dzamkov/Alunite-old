@@ -64,6 +64,10 @@ namespace Alunite
         public static Quaternion FromMatrix(OrthogonalMatrix Matrix)
         {
             double r = Math.Sqrt(1 + Matrix.M11 - Matrix.M22 - Matrix.M33);
+            if (r == 0.0)
+            {
+                return Quaternion.Identity;
+            }
             double dr = r * 2.0;
             Quaternion q = new Quaternion(
                 (Matrix.M23 - Matrix.M32) / dr,

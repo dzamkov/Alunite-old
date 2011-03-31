@@ -519,6 +519,49 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Gets the sum of two vector signals.
+        /// </summary>
+        public static Signal<Vector> Sum(Signal<Vector> A, Signal<Vector> B)
+        {
+            return new SumSignal<Vector, VectorContinuum>(A, B, new VectorContinuum());
+        }
+
+        /// <summary>
+        /// Gets the sum of two scalar signals.
+        /// </summary>
+        public static Signal<double> Sum(Signal<double> A, Signal<double> B)
+        {
+            return new SumSignal<double, ScalarContinuum>(A, B, new ScalarContinuum());
+        }
+
+        /// <summary>
+        /// Gets the difference of two vector signals.
+        /// </summary>
+        public static Signal<Vector> Difference(Signal<Vector> A, Signal<Vector> B)
+        {
+            return new DifferenceSignal<Vector, VectorContinuum>(A, B, new VectorContinuum());
+        }
+
+        /// <summary>
+        /// Gets the difference of two scalar signals.
+        /// </summary>
+        public static Signal<double> Difference(Signal<double> A, Signal<double> B)
+        {
+            return new DifferenceSignal<double, ScalarContinuum>(A, B, new ScalarContinuum());
+        }
+
+        /// <summary>
+        /// Creates a lookat transform signal useful for paths and motion tracks.
+        /// </summary>
+        public static Signal<Transform> LookAt(Signal<Vector> Position, Signal<Vector> Target, Signal<Vector> Up)
+        {
+            return new LookAtSignal(
+                Position,
+                Difference(Target, Position),
+                Up);
+        }
+
+        /// <summary>
         /// Creates a signal that returns the value from the primary signal if its not nothing, or gets the value from the secondary signal otherwise.
         /// </summary>
         public static Signal<T> Default<T>(Signal<Maybe<T>> Primary, Signal<T> Secondary)

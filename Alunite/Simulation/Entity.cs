@@ -101,6 +101,38 @@ namespace Alunite
         }
 
         /// <summary>
+        /// Creates an entity which moves phantom entities in response to a signal.
+        /// </summary>
+        public static MoverEntity Mover(Entity Source, Transform Default)
+        {
+            return new MoverEntity(Source, Default);
+        }
+
+        /// <summary>
+        /// Creates an entity which moves phantom entities in response to a signal.
+        /// </summary>
+        public static MoverEntity Mover(Entity Source)
+        {
+            return Mover(Source, Transform.Identity);
+        }
+
+        /// <summary>
+        /// Creates an entity which plays a signal to an output terminal after a certain delay.
+        /// </summary>
+        public static SignalerEntity<T> Signaler<T>(Signal<T> Signal, double Delay)
+        {
+            return new SignalerEntity<T>(Signal, Delay);
+        }
+
+        /// <summary>
+        /// Creates an entity which plays a signal to an output terminal.
+        /// </summary>
+        public static SignalerEntity<T> Signaler<T>(Signal<T> Signal)
+        {
+            return new SignalerEntity<T>(Signal, 0.0);
+        }
+
+        /// <summary>
         /// Creates a new entity builder.
         /// </summary>
         public static EntityBuilder Builder()
@@ -323,7 +355,7 @@ namespace Alunite
         /// </summary>
         public void Attach<T>(InTerminal<T> Input, Signal<T> Signal)
         {
-            SignalerEntity<T> se = new SignalerEntity<T>(Signal);
+            SignalerEntity<T> se = new SignalerEntity<T>(Signal, 0.0);
             this.Add(se);
             this.Link<T>(se.Terminal, Input);
         }

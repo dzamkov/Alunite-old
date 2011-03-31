@@ -17,24 +17,36 @@ namespace Alunite
         /// </summary>
         public static void Main(string[] Args)
         {
-            Quaternion tq = Quaternion.AxisAngle(Vector.Normalize(new Vector(0.5, 0.7, 0.8)), 0.6);
-            OrthogonalMatrix om = tq;
+            Signal<Vector> lookpos;
+            Signal<Vector> looktar;
+            Signal<Vector> lookup;
+            {
+                var path = CubicSignal.BuildVectorPath();
+                path.Jump(new Vector(-5.0, 0.0, 0.0));
+                path.Add(1.0, new Vector(0.0, -5.0, 1.0));
+                path.Add(1.0, new Vector(5.0, 0.0, 2.0));
+                path.Add(1.0, new Vector(0.0, 5.0, 3.0));
+                lookpos = path.Finish();
 
-            Vector test = new Vector(0.0, 1.0, 2.0);
-            Vector ra = tq.Rotate(test);
-            Vector rb = om.Apply(test);
-            Vector rc = Quaternion.FromMatrix(om).Rotate(test);
+                looktar = Signal.Constant(Vector.Origin);
+                lookup = Signal.Constant(new Vector(0.0, 0.0, 1.0));
+            }
+
+            CameraEntity camera = Entity.Camera();
+            MoverEntity mover = Entity.Mover(camera);
+
+            Signal<Transform> msig = Signal.LookAt(lookpos, looktar, lookup);
 
             EntityBuilder builder = Entity.Builder();
-            CameraEntity camsensor = Entity.Camera();
-            builder.Add(camsensor);
-            builder.Embody(Entity.Brush(Substance.Iron, Shape.Sphere(0.1)));
-            builder.Apply(new Transform(-0.12, 0.0, 0.0));
-            builder.Add(Entity.Brush(Substance.Iron, Shape.Sphere(1.0)).Apply(new Transform(5.0, 0.0, 0.0)));
+            builder.Add(mover);
+            builder.Attach(mover.Input, msig);
+            builder.Add(Entity.Brush(Substance.Iron, Shape.Sphere(1.0)));
             Entity world = builder.Finish();
 
+            Transform testa = msig[0.0];
+
             HostWindow hw = new HostWindow("Alunite", 640, 480);
-            hw.Control = new Visualizer(Span.Natural(world).Read(camsensor.Output));
+            hw.Control = new Visualizer(Span.Natural(world).Read(camera.Output));
             hw.Run(60.0);
         }
     }
