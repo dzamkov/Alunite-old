@@ -42,7 +42,7 @@ namespace Alunite
             Entity world = builder.Finish();
 
             HostWindow hw = new HostWindow("Alunite", 640, 480);
-            hw.Control = new Visualizer(Span.Create(world).Read(camera.Output));
+            hw.Control = new Visualizer(Span.Natural(world).Read(camera.Output));
             hw.Run(60.0);
         }
     }

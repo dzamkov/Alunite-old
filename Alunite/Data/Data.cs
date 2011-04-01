@@ -10,6 +10,14 @@ namespace Alunite
     public abstract class Data<TBase>
         where TBase : Data<TBase>
     {
+        /// <summary>
+        /// Creates data that approximates the object this data represents in order to increase performance. Quality is given on a subjective scale between
+        /// 0.0 (fastest performance) and 1.0 (best qualty) with 0.5 being average quality and performance.
+        /// </summary>
+        public virtual TBase Approximate(double Quality)
+        {
+            return (TBase)this;
+        }
 
         /// <summary>
         /// Gets the prefered (for performance) form of this data. All references pointing this data should be updated to the prefered data

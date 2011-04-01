@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Alunite
 {
     /// <summary>
-    /// A natural (governed by physical laws) progression of an entity given as a signal.
+    /// A progression of an entity given as a signal.
     /// </summary>
     public abstract class Span : Signal<Entity>
     {
@@ -29,25 +29,25 @@ namespace Alunite
         /// Creates a span representing the natural progression of an entity in a given environment with the given a terminal input. The resulting span
         /// will have a length equal to that of the environment. All terminal input signals should be at or exceed this length.
         /// </summary>
-        public static Span Create(Entity Initial, Signal<Entity> Environment, TerminalInput Input)
+        public static Span Natural(Entity Initial, Signal<Entity> Environment, TerminalInput Input)
         {
-            throw new NotImplementedException();
+            return new NaturalSpan(Initial, Environment, Input);
         }
 
         /// <summary>
         /// Creates an unbound span representing the natural progression of an entity with no outside environment.
         /// </summary>
-        public static Span Create(Entity Initial)
+        public static Span Natural(Entity Initial)
         {
-            return Create(Initial, Null, TerminalInput.Null);
+            return Natural(Initial, Null, TerminalInput.Null);
         }
 
         /// <summary>
         /// Creates a natural span with the same initial entity as this one but with a different environment or terminal input.
         /// </summary>
-        public virtual Span Update(Signal<Entity> Environment, TerminalInput Input)
+        public virtual Span UpdateNatural(Signal<Entity> Environment, TerminalInput Input)
         {
-            return Create(this.Initial, Environment, Input);
+            return Natural(this.Initial, Environment, Input);
         }
 
         /// <summary>
@@ -60,6 +60,75 @@ namespace Alunite
                 return NullSpan.Singleton;
             }
         }
+    }
+
+    /// <summary>
+    /// Represents the natural (governed by physical laws) progression of an entity with a given
+    /// environment and terminal input.
+    /// </summary>
+    public class NaturalSpan : Span
+    {
+        public NaturalSpan(Entity Initial, Signal<Entity> Environment, TerminalInput Input)
+        {
+            this._Initial = Initial;
+            this._Input = Input;
+            this._Environment = Environment;
+        }
+
+        /// <summary>
+        /// Gets the terminal input for the natural span.
+        /// </summary>
+        public TerminalInput Input
+        {
+            get
+            {
+                return this._Input;
+            }
+        }
+
+        /// <summary>
+        /// Gets the environment for the entity.
+        /// </summary>
+        public Signal<Entity> Environment
+        {
+            get
+            {
+                return this._Environment;
+            }
+        }
+
+        public override Entity Initial
+        {
+            get
+            {
+                return this._Initial;    
+            }
+        }
+
+        public override double Length
+        {
+            get
+            {
+                return this._Environment.Length;
+            }
+        }
+
+        public override Entity this[double Time]
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override Signal<Maybe<T>> Read<T>(OutTerminal<T> Terminal)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Entity _Initial;
+        private Signal<Entity> _Environment;
+        private TerminalInput _Input;
     }
 
     /// <summary>
@@ -114,13 +183,12 @@ namespace Alunite
     }
 
     /// <summary>
-    /// Gives signals for input terminals for a span. Note that this object is not guranteed to be immutable, and
-    /// should not be stored when it is passed as a parameter.
+    /// Gives signals for input terminals for a span.
     /// </summary>
     public abstract class TerminalInput
     {
         /// <summary>
-        /// Gets the signal given to the specified terminal. All signals returned by this method are unbound.
+        /// Gets the signal given to the specified terminal.
         /// </summary>
         public abstract Signal<Maybe<T>> Read<T>(InTerminal<T> Terminal);
 
@@ -131,7 +199,7 @@ namespace Alunite
         {
             get
             {
-                return NullTerminalInput.Null;
+                return NullTerminalInput.Singleton;
             }
         }
     }
